@@ -11,13 +11,11 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
+import type { Service as FirestoreService } from '@/lib/firestore-multitenant';
 
-interface Service {
-  id: string;
-  serviceDate: Date;
-  totalAttendance: number;
-  visitorCount: number;
-}
+type Service = FirestoreService & {
+  visitorCount?: number;
+};
 
 interface RecentActivityProps {
   services: Service[];
@@ -121,7 +119,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                       <div className="flex items-center gap-2">
                         <UserPlus className="w-4 h-4 text-gray-400" />
                         <span className="text-sm font-medium text-gray-700">
-                          {service.visitorCount}
+                          {service.visitorCount ?? 0}
                         </span>
                       </div>
                     </td>
@@ -186,7 +184,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                     <div className="flex items-center gap-1">
                       <UserPlus className="w-4 h-4 text-gray-400" />
                       <span className="text-sm font-medium text-gray-700">
-                        {service.visitorCount}
+                        {service.visitorCount ?? 0}
                       </span>
                     </div>
                   </div>
