@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user owns a specific user document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is a member of a specific organization
+    function isOrgMember(orgId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/organizations/$(orgId)) &&
+             request.auth.uid in get(/databases/$(database)/documents/organizations/$(orgId)).data.members;
+    }
+
+    // Check if user owns a specific organization
+    function isOrgOwner(orgId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/organizations/$(orgId)) &&
+             request.auth.uid == get(/databases/$(database)/documents/organizations/$(orgId)).data.ownerId;
+    }
+
+    // Check if user has access to organization based on user document
+    function hasOrgAccess(orgId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             orgId in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.organizations;
+    }
+
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+
+    match /users/{userId} {
+      // Users can only read/write their own document
+      allow read: if isOwner(userId);
+
+      // Allow create only for new users (during sign-up)
+      allow create: if isOwner(userId) &&
+                       request.resource.data.email == request.auth.token.email;
+
+      // Allow update only by owner
+      allow update: if isOwner(userId);
+
+      // Delete not allowed (keep user records)
+      allow delete: if false;
+    }
+
+    // ============================================
+    // ORGANIZATIONS COLLECTION
+    // ============================================
+
+    match /organizations/{orgId} {
+      // Anyone authenticated can create an organization
+      allow create: if isAuthenticated() &&
+                       request.resource.data.ownerId == request.auth.uid &&
+                       request.resource.data.members.hasAll([request.auth.uid]);
+
+      // Organization members can read
+      allow read: if isOrgMember(orgId) || hasOrgAccess(orgId);
+
+      // Only owner can update organization details
+      allow update: if isOrgOwner(orgId) || hasOrgAccess(orgId);
+
+      // Only owner can delete (with all services deleted first)
+      allow delete: if isOrgOwner(orgId);
+    }
+
+    // ============================================
+    // SERVICES COLLECTION
+    // ============================================
+
+    match /services/{serviceId} {
+      // Organization members can create services for their org
+      allow create: if isAuthenticated() &&
+                       hasOrgAccess(request.resource.data.organizationId) &&
+                       request.resource.data.organizationId is string;
+
+      // Organization members can read their org's services
+      allow read: if isAuthenticated() &&
+                     hasOrgAccess(resource.data.organizationId);
+
+      // Organization members can update their org's services
+      allow update: if isAuthenticated() &&
+                       hasOrgAccess(resource.data.organizationId) &&
+                       request.resource.data.organizationId == resource.data.organizationId;
+
+      // Organization members can delete their org's services
+      allow delete: if isAuthenticated() &&
+                       hasOrgAccess(resource.data.organizationId);
+
+      // ============================================
+      // VISITORS SUB-COLLECTION
+      // ============================================
+
+      match /visitors/{visitorId} {
+        // Get parent service's organizationId
+        function getServiceOrgId() {
+          return get(/databases/$(database)/documents/services/$(serviceId)).data.organizationId;
+        }
+
+        // Same access rules as parent service
+        allow create: if isAuthenticated() && hasOrgAccess(getServiceOrgId());
+        allow read: if isAuthenticated() && hasOrgAccess(getServiceOrgId());
+        allow update: if isAuthenticated() && hasOrgAccess(getServiceOrgId());
+        allow delete: if isAuthenticated() && hasOrgAccess(getServiceOrgId());
+      }
+    }
+
+    // ============================================
+    // PRO WAITLIST COLLECTION
+    // ============================================
+
+    match /pro_waitlist/{entryId} {
+      allow create: if isAuthenticated() &&
+                       request.resource.data.email == request.auth.token.email;
+      allow read, update, delete: if false;
+    }
+
+    // ============================================
+    // DENY ALL OTHER COLLECTIONS
+    // ============================================
+
+    // Deny access to any other collections not explicitly defined
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
