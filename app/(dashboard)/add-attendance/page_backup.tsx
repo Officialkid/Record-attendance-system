@@ -1,1 +1,3 @@
-Backup created before rewriting corrupted file
+export default function AddAttendanceBackupPage() {
+	return null;
+}
