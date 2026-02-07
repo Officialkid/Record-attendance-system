@@ -47,7 +47,8 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
     await logout();
   };
 
-  ret>
+  return (
+    <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-4 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -60,25 +61,24 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
               onClick={onMenuClick}
             >
               <Menu className="w-6 h-6 text-gray-600" />
-              <Menu className="w-6 h-6 text-gray-600" />
-          </button>
+            </button>
 
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center lg:hidden">
-              <span className="text-white font-bold text-sm">
-                {currentOrg?.name.charAt(0)}
-              </span>
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-sm font-semibold text-gray-900 truncate">
-                {currentOrg?.name || 'Loading...'}
-              </h2>
-              <p className="text-xs text-gray-500 hidden sm:block truncate">
-                {currentOrg?.type}
-              </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center lg:hidden">
+                <span className="text-white font-bold text-sm">
+                  {currentOrg?.name.charAt(0)}
+                </span>
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-gray-900 truncate">
+                  {currentOrg?.name || 'Loading...'}
+                </h2>
+                <p className="text-xs text-gray-500 hidden sm:block truncate">
+                  {currentOrg?.type}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
         <div className="hidden md:flex flex-1 max-w-md mx-8">
           <div className="relative w-full">
@@ -155,13 +155,6 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     type="button"
                     onClick={handleLogout}
-
-      {/* MOBILE DRAWER */}
-      <MobileDrawer 
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-      />
-    </>
                   >
                     Logout
                   </button>
@@ -172,5 +165,12 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
         </div>
       </div>
     </header>
+
+      {/* MOBILE DRAWER */}
+      <MobileDrawer 
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
+    </>
   );
 }
