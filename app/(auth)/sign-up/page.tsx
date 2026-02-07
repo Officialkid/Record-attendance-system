@@ -158,7 +158,7 @@ export default function SignUpPage() {
       
       // Redirect to dashboard
       setTimeout(() => {
-        router.push('/add-attendance');
+        router.push('/dashboard');
       }, 1500);
 
     } catch (error: unknown) {
