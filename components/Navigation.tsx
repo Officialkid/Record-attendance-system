@@ -14,7 +14,7 @@ export default function Navigation() {
   const { user, logout } = useAuth();
 
   const navLinks = [
-    { href: '/', label: 'Home', icon: Home },
+    { href: '/dashboard', label: 'Home', icon: Home },
     { href: '/add-attendance', label: 'Add Attendance', icon: CalendarPlus },
     { href: '/view-analytics', label: 'Analytics', icon: BarChart3 },
   ];
@@ -31,7 +31,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
+          <Link href="/dashboard" className="flex items-center space-x-2 group">
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-r from-royal-purple to-primary-blue rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-300"></div>
               <div className="relative bg-white px-3 py-2 rounded-lg">

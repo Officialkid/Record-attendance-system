@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
-import { getServicesByMonth, getMonthlyStats, type Service, type MonthlyStats } from '@/lib/firestore-multitenant';
-import { format } from 'date-fns';
+import { getRecentServices, getMonthlyStats, type Service, type MonthlyStats } from '@/lib/firestore-multitenant';
+import { format, formatDistanceToNow } from 'date-fns';
 import StatCard from '@/components/dashboard/StatCard';
 import QuickActions from '@/components/dashboard/QuickActions';
 import RecentActivity from '@/components/dashboard/RecentActivity';
@@ -32,11 +32,11 @@ export default function DashboardPage() {
     try {
       const [monthStats, services] = await Promise.all([
         getMonthlyStats(currentOrg.id, currentMonth, currentYear),
-        getServicesByMonth(currentOrg.id, currentMonth, currentYear),
+        getRecentServices(currentOrg.id, 5),
       ]);
 
       setStats(monthStats);
-      setRecentServices(services.slice(0, 5));
+      setRecentServices(services);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       if ((error as { message?: string }).message === 'INDEX_REQUIRED') {
@@ -62,7 +62,7 @@ export default function DashboardPage() {
 
   const lastService = recentServices[0];
   const lastServiceDate = lastService
-    ? format(new Date(lastService.serviceDate), 'MMM d, yyyy')
+    ? `${format(new Date(lastService.serviceDate), 'MMM d, yyyy')} (${formatDistanceToNow(new Date(lastService.serviceDate), { addSuffix: true })})`
     : 'No services yet';
 
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
@@ -90,7 +90,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          {getGreeting()}, {user?.email?.split('@')[0]}! 👋
+          {getGreeting()}, {user?.displayName || user?.email?.split('@')[0]}! 👋
         </h1>
         <p className="text-gray-600 mt-2">
           Here&apos;s what&apos;s happening with {currentOrg?.name}

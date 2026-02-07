@@ -73,6 +73,9 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                   Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Service Type
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Attendance
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -110,6 +113,12 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                           </div>
                         </div>
                       </div>
+                    </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
+                        {service.serviceType}
+                      </span>
                     </td>
 
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -181,6 +190,11 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                     </div>
                     <div className="text-xs text-gray-500">
                       {formatDistanceToNow(new Date(service.serviceDate), { addSuffix: true })}
+                    </div>
+                    <div className="mt-1">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
+                        {service.serviceType}
+                      </span>
                     </div>
                   </div>
                 </div>

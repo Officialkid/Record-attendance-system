@@ -419,6 +419,54 @@ export async function getServicesByMonth(
 }
 
 /**
+ * Get most recent services for a specific organization
+ */
+export async function getRecentServices(
+  organizationId: string,
+  count = 5
+): Promise<Service[]> {
+  try {
+    const servicesQuery = query(
+      collection(db, 'services'),
+      where('organizationId', '==', organizationId),
+      orderBy('serviceDate', 'desc'),
+      limit(count)
+    );
+
+    const querySnapshot = await getDocs(servicesQuery);
+    const services: Service[] = [];
+
+    for (const docSnap of querySnapshot.docs) {
+      const data = docSnap.data();
+
+      const visitorsSnap = await getDocs(
+        collection(db, 'services', docSnap.id, 'visitors')
+      );
+      const visitorCount = visitorsSnap.size;
+
+      services.push({
+        id: docSnap.id,
+        organizationId: data.organizationId,
+        serviceDate: data.serviceDate.toDate(),
+        serviceType: data.serviceType,
+        totalAttendance: data.totalAttendance,
+        visitorCount,
+        createdAt: data.createdAt.toDate(),
+        updatedAt: data.updatedAt.toDate(),
+      });
+    }
+
+    return services;
+  } catch (error) {
+    console.error('Error fetching recent services:', error);
+    if (isIndexRequiredError(error)) {
+      throw new Error('INDEX_REQUIRED');
+    }
+    throw new Error('Failed to fetch recent services');
+  }
+}
+
+/**
  * Get monthly statistics for a specific organization
  * CRITICAL: Uses organizationId to ensure data isolation
  */
