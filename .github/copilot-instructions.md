@@ -14,13 +14,13 @@
 - [x] Build core components and pages
 
 ## Project Overview
-Attendance management system for Christhood Ministry built with Next.js 14, TypeScript, Tailwind CSS, and Firebase Firestore.
+Attendance management system for Insight Tracker built with Next.js 14, TypeScript, Tailwind CSS, and Firebase Firestore.
 
 ## Setup Complete! 🎉
 
 The project has been successfully initialized with:
 - ✅ Next.js 14 with App Router and TypeScript
-- ✅ Tailwind CSS with custom Christhood Ministry colors
+- ✅ Tailwind CSS with custom Insight Tracker colors
 - ✅ Firebase Firestore integration
 - ✅ Complete project structure
 - ✅ Modern animated landing page with gradient background
@@ -92,7 +92,7 @@ The project has been successfully initialized with:
 - 📊 Real-time attendance tracking
 - 👥 Visitor management
 - 📈 Analytics dashboard with growth metrics
-- 🎨 Custom Christhood Ministry branding
+- 🎨 Custom Insight Tracker branding
 - 📱 Fully responsive design
 - ✨ Modern animations with Framer Motion
 - 🌊 Glass morphism navigation

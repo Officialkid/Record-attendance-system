@@ -180,7 +180,7 @@ export default function SignUpPage() {
               <div className="w-10 h-10 bg-gradient-to-br from-[#4b248c] to-[#0047AB] rounded-lg flex items-center justify-center">
                 <span className="text-white text-xl font-bold">C</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">Christhood</span>
+              <span className="text-xl font-bold text-gray-900">Insight Tracker</span>
             </div>
           </Link>
 
@@ -372,7 +372,7 @@ export default function SignUpPage() {
                         onChange={(e) => updateFormData('organizationName', e.target.value)}
                         required
                         className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#4b248c] focus:outline-none transition-colors"
-                        placeholder="Christhood Ministry"
+                        placeholder="Insight Tracker"
                       />
                     </div>
                   </div>

@@ -1,5 +1,5 @@
 # Firebase Setup Guide
-## Christhood Ministry Attendance Management System
+## Insight Tracker Attendance Management System
 
 Complete step-by-step guide to set up Firebase for your attendance management system.
 
@@ -17,7 +17,7 @@ Complete step-by-step guide to set up Firebase for your attendance management sy
 
 1. Go to [Firebase Console](https://console.firebase.google.com)
 2. Click **"Add project"** or **"Create a project"**
-3. Enter project name: `christhood-attendance` (or your preferred name)
+3. Enter project name: `insight-tracker` (or your preferred name)
 4. Click **Continue**
 5. **Google Analytics**: Enable or disable (optional for this project)
 6. Click **Create project**
@@ -30,7 +30,7 @@ Complete step-by-step guide to set up Firebase for your attendance management sy
 
 1. In Firebase Console, click the **Web icon** (`</>`) on the project homepage
 2. Register app:
-   - **App nickname**: `Christhood Attendance Web`
+   - **App nickname**: `Insight Tracker Web`
    - **Firebase Hosting**: Leave unchecked for now
    - Click **Register app**
 3. **Copy the Firebase configuration**:
@@ -283,4 +283,4 @@ For database structure details, see [FIRESTORE_STRUCTURE.md](FIRESTORE_STRUCTURE
 
 ---
 
-**Need Help?** Contact the Christhood Ministry tech team.
+**Need Help?** Contact the Insight Tracker team.

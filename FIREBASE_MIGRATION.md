@@ -2,7 +2,7 @@
 
 ## Summary of Changes
 
-The Christhood Ministry Attendance Management System has been successfully migrated from Supabase to Firebase Firestore.
+The Insight Tracker Attendance Management System has been successfully migrated from Supabase to Firebase Firestore.
 
 ---
 
@@ -196,7 +196,7 @@ For questions or issues:
 1. Check [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for setup help
 2. Review [FIRESTORE_STRUCTURE.md](FIRESTORE_STRUCTURE.md) for database info
 3. See [Firebase Documentation](https://firebase.google.com/docs)
-4. Contact Christhood Ministry tech team
+4. Contact Insight Tracker team
 
 ---
 

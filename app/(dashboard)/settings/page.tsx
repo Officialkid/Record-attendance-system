@@ -7,19 +7,25 @@ import { ensureUserOrgAccess, updateOrganization } from '@/lib/firestore-multite
 import { Building2, User, Bell, HelpCircle, Camera, Lock, Users, Shield, Trash2, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { storage } from '@/lib/firebase';
 
 export default function SettingsPage() {
   const { currentOrg, refreshOrganizations } = useOrganization();
-  const { user, updateUserProfile, changePassword } = useAuth();
+  const { user, updateUserProfile, changePassword, updateUserEmail } = useAuth();
   const [activeSection, setActiveSection] = useState('organization');
   const [loading, setLoading] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isFixingPermissions, setIsFixingPermissions] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showEmailPassword, setShowEmailPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [profileFile, setProfileFile] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState('');
 
   // Organization form state
   const [formData, setFormData] = useState({
@@ -34,6 +40,11 @@ export default function SettingsPage() {
     displayName: '',
     email: '',
     photoURL: '',
+  });
+
+  const [emailData, setEmailData] = useState({
+    newEmail: '',
+    currentPassword: '',
   });
 
   // Password change state
@@ -68,6 +79,14 @@ export default function SettingsPage() {
       });
     }
   }, [user]);
+
+  useEffect(() => {
+    return () => {
+      if (profilePreview) {
+        URL.revokeObjectURL(profilePreview);
+      }
+    };
+  }, [profilePreview]);
 
   const sections = [
     { id: 'organization', label: 'Organization', icon: Building2 },
@@ -106,23 +125,40 @@ export default function SettingsPage() {
   const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // TODO: Implement actual file upload to Firebase Storage
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAccountData({ ...accountData, photoURL: reader.result as string });
-        toast.success('Profile picture updated! (Note: Changes will be saved when implemented)');
-      };
-      reader.readAsDataURL(file);
+      if (profilePreview) {
+        URL.revokeObjectURL(profilePreview);
+      }
+      const previewUrl = URL.createObjectURL(file);
+      setProfilePreview(previewUrl);
+      setProfileFile(file);
+      setAccountData({ ...accountData, photoURL: previewUrl });
     }
   };
 
   const handleUpdateAccount = async () => {
     setIsUpdatingProfile(true);
     try {
+      let uploadedPhotoUrl: string | undefined;
+
+      if (profileFile && user) {
+        const storageRef = ref(storage, `avatars/${user.uid}/${profileFile.name}`);
+        await uploadBytes(storageRef, profileFile);
+        uploadedPhotoUrl = await getDownloadURL(storageRef);
+      }
+
       await updateUserProfile({
         displayName: accountData.displayName,
-        photoURL: accountData.photoURL,
+        ...(uploadedPhotoUrl ? { photoURL: uploadedPhotoUrl } : {}),
       });
+
+      if (uploadedPhotoUrl) {
+        if (profilePreview) {
+          URL.revokeObjectURL(profilePreview);
+        }
+        setProfilePreview('');
+        setProfileFile(null);
+        setAccountData((prev) => ({ ...prev, photoURL: uploadedPhotoUrl }));
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
@@ -147,6 +183,28 @@ export default function SettingsPage() {
       console.error('Error changing password:', error);
     } finally {
       setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!emailData.newEmail.trim()) {
+      toast.error('Please enter a new email address');
+      return;
+    }
+    if (!emailData.currentPassword) {
+      toast.error('Please enter your current password');
+      return;
+    }
+
+    setIsUpdatingEmail(true);
+    try {
+      await updateUserEmail(emailData.currentPassword, emailData.newEmail.trim());
+      setAccountData((prev) => ({ ...prev, email: emailData.newEmail.trim() }));
+      setEmailData({ newEmail: '', currentPassword: '' });
+    } catch (error) {
+      console.error('Error updating email:', error);
+    } finally {
+      setIsUpdatingEmail(false);
     }
   };
 
@@ -245,7 +303,7 @@ export default function SettingsPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="e.g., Christhood Ministry"
+                    placeholder="e.g., Insight Tracker"
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     This name appears throughout the app
@@ -422,7 +480,7 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  {/* Primary Email (Read-only) */}
+                  {/* Primary Email */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Primary Email Address
@@ -439,18 +497,67 @@ export default function SettingsPage() {
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 mt-1">
-                      Contact support to change your email address
+                      Use your current password to change your login email
                     </p>
                   </div>
 
+                  {/* Update Email */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        New Email Address
+                      </label>
+                      <input
+                        type="email"
+                        value={emailData.newEmail}
+                        onChange={(e) => setEmailData({ ...emailData, newEmail: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="name@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Current Password
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showEmailPassword ? 'text' : 'password'}
+                          value={emailData.currentPassword}
+                          onChange={(e) => setEmailData({ ...emailData, currentPassword: e.target.value })}
+                          className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                          placeholder="Enter current password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowEmailPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          aria-label={showEmailPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showEmailPassword ? (
+                            <EyeOff className="w-5 h-5" />
+                          ) : (
+                            <Eye className="w-5 h-5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Save Button */}
-                  <div className="flex items-center gap-4 pt-6 border-t border-gray-200">
+                  <div className="flex flex-wrap items-center gap-4 pt-6 border-t border-gray-200">
                     <button
                       onClick={handleUpdateAccount}
                       disabled={isUpdatingProfile}
                       className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold rounded-lg transition-all disabled:opacity-50"
                     >
                       {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
+                    </button>
+                    <button
+                      onClick={handleUpdateEmail}
+                      disabled={isUpdatingEmail}
+                      className="px-6 py-3 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold rounded-lg transition-all disabled:opacity-50"
+                    >
+                      {isUpdatingEmail ? 'Updating Email...' : 'Update Email'}
                     </button>
                   </div>
 

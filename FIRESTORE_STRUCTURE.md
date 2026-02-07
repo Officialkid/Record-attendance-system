@@ -1,5 +1,5 @@
 # Firebase Firestore Database Structure
-## Christhood Ministry Attendance Management System
+## Insight Tracker Attendance Management System
 
 This document outlines the Firestore database structure for the attendance management system.
 
@@ -265,4 +265,4 @@ gcloud firestore export gs://[BUCKET_NAME]
 
 ## Contact
 
-For technical support or database questions, contact the Christhood Ministry tech team.
+For technical support or database questions, contact the Insight Tracker team.

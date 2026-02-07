@@ -1,4 +1,4 @@
-# Christhood Ministry Attendance Management System - Setup Instructions
+# Insight Tracker Attendance Management System - Setup Instructions
 
 ## Database Setup (Supabase)
 
@@ -40,7 +40,7 @@
 - ✅ Track visitor information
 - ✅ View analytics and statistics
 - ✅ Responsive design
-- ✅ Christhood Ministry branding
+- ✅ Insight Tracker branding
 
 ## Usage
 
@@ -76,7 +76,7 @@
 
 ## Color Scheme
 
-The application uses Christhood Ministry's brand colors:
+The application uses Insight Tracker's brand colors:
 - Royal Purple: #4b248c
 - Primary Blue: #0047AB
 - Gold: #F3CC3C
@@ -94,4 +94,4 @@ The application uses Christhood Ministry's brand colors:
 
 ## Support
 
-For issues or questions, contact the Christhood Ministry tech team.
+For issues or questions, contact the Insight Tracker team.

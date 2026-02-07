@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Calendar, BarChart3, TrendingUp, Users, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
-import { isFirebaseConfigured } from '@/lib/firebase';
-import { getServices } from '@/lib/firestore';
 
 interface Stats {
   totalServices: number;
@@ -27,25 +25,12 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push('/add-attendance');
+      router.push('/dashboard');
     }
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (authLoading || user) {
-      return;
-    }
-
-    // Only fetch stats if Firebase is configured
-    if (isFirebaseConfigured()) {
-      fetchStats();
-    } else {
-      // Show demo data if Firebase is not configured
-      setStats({
-        totalServices: 0,
-        totalAttendanceThisMonth: 0,
-        growthRate: 0,
-      });
+    if (!authLoading && !user) {
       setLoading(false);
     }
   }, [authLoading, user]);
@@ -62,52 +47,6 @@ export default function HomePage() {
     return null;
   }
 
-  const fetchStats = async () => {
-    try {
-      const services = await getServices();
-
-      if (services) {
-        const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const firstDayOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-        const thisMonthServices = services.filter((s) => {
-          const date = new Date(s.service_date);
-          return date >= firstDayOfMonth;
-        });
-
-        const lastMonthServices = services.filter((s) => {
-          const date = new Date(s.service_date);
-          return date >= firstDayOfLastMonth && date < firstDayOfMonth;
-        });
-
-        const totalThisMonth = thisMonthServices.reduce(
-          (sum, s) => sum + s.total_attendance,
-          0
-        );
-
-        const totalLastMonth = lastMonthServices.reduce(
-          (sum, s) => sum + s.total_attendance,
-          0
-        );
-
-        const growth =
-          totalLastMonth > 0
-            ? ((totalThisMonth - totalLastMonth) / totalLastMonth) * 100
-            : 0;
-
-        setStats({
-          totalServices: services.length,
-          totalAttendanceThisMonth: totalThisMonth,
-          growthRate: growth,
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -201,7 +140,7 @@ export default function HomePage() {
               <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2">
                 <Sparkles className="w-4 h-4 text-gold-color" />
                 <span className="text-white/90 text-sm font-medium">
-                  Ministry Management System
+                  Attendance & Insights Platform
                 </span>
               </div>
             </motion.div>
@@ -211,10 +150,10 @@ export default function HomePage() {
               variants={itemVariants}
               className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight"
             >
-              Christhood Ministry
+              Insight Tracker
               <br />
               <span className="bg-gradient-to-r from-gold-color to-yellow-300 bg-clip-text text-transparent">
-                Attendance System
+                Attendance & Analytics
               </span>
             </motion.h1>
 
@@ -223,7 +162,7 @@ export default function HomePage() {
               variants={itemVariants}
               className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto font-medium"
             >
-              Track Your Ministry Growth with Precision and Purpose
+              Track services, visitors, and growth with clarity and speed
             </motion.p>
 
             {/* CTA Buttons */}
@@ -233,22 +172,22 @@ export default function HomePage() {
             >
               <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
                 <Link
-                  href="/add-attendance"
+                  href="/sign-in"
                   className="group relative inline-flex items-center space-x-3 bg-gold-color text-black-color px-8 py-4 rounded-full font-bold text-lg shadow-2xl hover:shadow-gold-color/50 transition-all duration-300"
                 >
                   <Calendar className="w-6 h-6" />
-                  <span>Add Attendance</span>
+                  <span>Start Tracking</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </motion.div>
 
               <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
                 <Link
-                  href="/view-analytics"
+                  href="/sign-up"
                   className="group relative inline-flex items-center space-x-3 bg-primary-blue text-white px-8 py-4 rounded-full font-bold text-lg shadow-2xl hover:shadow-primary-blue/50 transition-all duration-300 border-2 border-white/20"
                 >
                   <BarChart3 className="w-6 h-6" />
-                  <span>View Analytics</span>
+                  <span>Create Account</span>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </motion.div>
@@ -283,12 +222,12 @@ export default function HomePage() {
                 />
               </div>
               <h3 className="text-gray-600 font-medium mb-2 text-sm uppercase tracking-wide">
-                Total Services
+                Services Logged
               </h3>
               <p className="text-4xl font-bold text-royal-purple mb-1">
                 {loading ? '...' : stats.totalServices}
               </p>
-              <p className="text-sm text-gray-500">All time records</p>
+              <p className="text-sm text-gray-500">Live in your dashboard</p>
             </motion.div>
 
             {/* Monthly Attendance Card */}
@@ -316,7 +255,7 @@ export default function HomePage() {
               <p className="text-4xl font-bold text-primary-blue mb-1">
                 {loading ? '...' : stats.totalAttendanceThisMonth}
               </p>
-              <p className="text-sm text-gray-500">Total people reached</p>
+              <p className="text-sm text-gray-500">Updated after sign-in</p>
             </motion.div>
 
             {/* Growth Rate Card */}
@@ -367,10 +306,10 @@ export default function HomePage() {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-bold text-royal-purple mb-4">
-            Empower Your Ministry
+            Insight Tracker at a Glance
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Simple, powerful tools to track attendance and grow your congregation
+            Simple, powerful tools to track services, visitors, and growth
           </p>
         </motion.div>
 
@@ -378,20 +317,20 @@ export default function HomePage() {
           {[
             {
               icon: Calendar,
-              title: 'Easy Tracking',
-              description: 'Record attendance in seconds with our intuitive interface',
+              title: 'Fast Attendance',
+              description: 'Record services in seconds with a clean, guided flow',
               color: 'royal-purple',
             },
             {
               icon: BarChart3,
-              title: 'Powerful Analytics',
-              description: 'Gain insights with comprehensive reports and visualizations',
+              title: 'Actionable Analytics',
+              description: 'See trends and monthly insights across your organization',
               color: 'primary-blue',
             },
             {
               icon: Users,
-              title: 'Visitor Management',
-              description: 'Keep track of visitors and follow up effectively',
+              title: 'Visitor Tracking',
+              description: 'Capture visitor details and understand engagement',
               color: 'gold-color',
             },
           ].map((feature, index) => (

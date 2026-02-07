@@ -34,7 +34,7 @@ export default function SignInPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      router.push('/add-attendance');
+      router.push('/dashboard');
     }
   }, [user, router]);
 
@@ -83,7 +83,7 @@ export default function SignInPage() {
       const displayName = auth.currentUser?.displayName || 'there';
       toast.success(`Welcome back, ${displayName}!`);
       
-      router.push('/add-attendance');
+      router.push('/dashboard');
     } catch (error: unknown) {
       // Trigger shake animation
       setShakeForm(true);
@@ -138,10 +138,10 @@ export default function SignInPage() {
             transition={{ duration: 0.5 }}
             className="bg-white rounded-lg shadow-sm p-8"
           >
-            {/* Ministry Logo */}
+            {/* Brand Logo */}
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gradient-to-br from-[#4b248c] to-[#0047AB] rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-white text-2xl font-bold">CM</span>
+                <span className="text-white text-2xl font-bold">IT</span>
               </div>
               <h1 className="text-[2rem] font-bold text-gray-900 mb-2">Welcome Back</h1>
               <p className="text-base text-gray-600">Sign in to your account</p>

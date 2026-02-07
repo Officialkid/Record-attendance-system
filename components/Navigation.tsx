@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, BarChart3, CalendarPlus, Home, LogOut, User } from 'lucide-react';
+import { Menu, X, BarChart3, CalendarPlus, Home, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
 import OrganizationSwitcher from '@/components/OrganizationSwitcher';
@@ -12,6 +12,9 @@ export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+  const avatarUrl = user?.photoURL && /^https?:\/\//i.test(user.photoURL) ? user.photoURL : null;
 
   const navLinks = [
     { href: '/dashboard', label: 'Home', icon: Home },
@@ -36,7 +39,7 @@ export default function Navigation() {
               <div className="absolute -inset-1 bg-gradient-to-r from-royal-purple to-primary-blue rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-300"></div>
               <div className="relative bg-white px-3 py-2 rounded-lg">
                 <span className="text-2xl font-bold bg-gradient-to-r from-royal-purple to-primary-blue bg-clip-text text-transparent">
-                  Christhood
+                  Insight Tracker
                 </span>
               </div>
             </div>
@@ -80,9 +83,24 @@ export default function Navigation() {
             {/* Auth Buttons - Desktop */}
             {user ? (
               <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-200">
-                <div className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700">
-                  <User className="w-4 h-4" />
-                  <span className="hidden lg:inline">{user.email}</span>
+                <div className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-royal-purple to-primary-blue text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <span>{avatarLetter}</span>
+                    )}
+                  </div>
+                  <div className="hidden lg:block">
+                    <div className="text-xs font-semibold text-gray-900">{displayName}</div>
+                    <div className="text-[11px] text-gray-500">{user.email}</div>
+                  </div>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -160,9 +178,24 @@ export default function Navigation() {
               <div className="pt-4 border-t border-gray-200 space-y-2">
                 {user ? (
                   <>
-                    <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700">
-                      <User className="w-4 h-4" />
-                      <span className="truncate">{user.email}</span>
+                    <div className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-royal-purple to-primary-blue text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
+                        {avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={displayName}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                          />
+                        ) : (
+                          <span>{avatarLetter}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-gray-900 truncate">{displayName}</div>
+                        <div className="text-[11px] text-gray-500 truncate">{user.email}</div>
+                      </div>
                     </div>
                     <button
                       onClick={handleLogout}

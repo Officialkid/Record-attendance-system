@@ -1,4 +1,4 @@
-# Christhood Ministry Attendance System - User Guide
+# Insight Tracker Attendance System - User Guide
 
 ## Quick Start
 
@@ -188,7 +188,7 @@ Each visitor record includes:
 
 ## Contact & Support
 
-For technical issues or feature requests, contact the Christhood Ministry tech team.
+For technical issues or feature requests, contact the Insight Tracker team.
 
 ---
 

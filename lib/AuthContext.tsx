@@ -10,6 +10,7 @@ import {
   sendPasswordResetEmail,
   updateProfile,
   updatePassword,
+  updateEmail,
   reauthenticateWithCredential,
   EmailAuthProvider,
 } from 'firebase/auth';
@@ -32,6 +33,7 @@ interface AuthContextType {
   resetPassword: (email: string) => Promise<void>;
   updateUserProfile: (data: { displayName: string; photoURL?: string }) => Promise<void>;
   changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  updateUserEmail: (currentPassword: string, newEmail: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -68,6 +70,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return 'Network error. Please check your connection';
       case 'auth/invalid-credential':
         return 'Invalid email or password';
+      case 'auth/requires-recent-login':
+        return 'Please re-authenticate and try again';
       default:
         return 'An error occurred. Please try again';
     }
@@ -198,6 +202,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUserEmail = async (currentPassword: string, newEmail: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updateEmail(auth.currentUser, newEmail);
+
+      await setDoc(
+        doc(db, 'users', auth.currentUser.uid),
+        {
+          email: newEmail,
+          updatedAt: Timestamp.now(),
+        },
+        { merge: true }
+      );
+
+      toast.success('Email updated successfully');
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string }).code;
+      const errorMessage = getErrorMessage(errorCode || 'unknown');
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -207,6 +239,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resetPassword,
     updateUserProfile,
     changePassword,
+    updateUserEmail,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

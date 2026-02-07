@@ -8,8 +8,8 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Christhood Ministry - Attendance Management',
-  description: 'Track Your Ministry Growth with Precision and Purpose',
+  title: 'Insight Tracker - Attendance & Analytics',
+  description: 'Track attendance, visitors, and growth with real-time insights.',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',

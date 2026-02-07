@@ -1,4 +1,4 @@
-# Christhood Ministry Attendance Management System
+# Insight Tracker - Attendance Management System
 
 A modern attendance management system built with Next.js 14, TypeScript, Tailwind CSS, and Supabase.
 
@@ -7,7 +7,7 @@ A modern attendance management system built with Next.js 14, TypeScript, Tailwin
 - 📊 Real-time attendance tracking
 - 👥 Visitor management
 - 📈 Analytics and insights
-- 🎨 Custom color scheme matching Christhood Ministry branding
+- 🎨 Custom color scheme matching Insight Tracker branding
 - 📱 Responsive design
 
 ## Tech Stack
@@ -99,4 +99,4 @@ See [FIRESTORE_STRUCTURE.md](FIRESTORE_STRUCTURE.md) for detailed database docum
 
 ## License
 
-Private - Christhood Ministry
+Private - Insight Tracker
