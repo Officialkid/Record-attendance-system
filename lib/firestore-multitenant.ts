@@ -37,12 +37,6 @@ export interface Organization {
   phone: string;
   ownerId: string;
   members: string[];
-  subscription: {
-    plan: 'free' | 'trial' | 'starter' | 'growth' | 'professional';
-    status: 'trial' | 'active' | 'expired' | 'cancelled';
-    trialEndsAt?: Date;
-    currentPeriodEnd?: Date;
-  };
   settings: {
     currency: 'KES' | 'USD';
     timezone: string;
@@ -138,10 +132,6 @@ export async function createOrganization(data: {
       phone: data.phone,
       ownerId: data.ownerId,
       members: [data.ownerId],
-      subscription: {
-        plan: 'free' as const,
-        status: 'active' as const,
-      },
       settings: {
         currency,
         timezone,
@@ -174,8 +164,6 @@ export async function getOrganization(orgId: string): Promise<Organization | nul
     }
 
     const data = docSnap.data();
-    const plan = data.subscription?.plan || data.plan || 'free';
-    const status = data.subscription?.status || 'active';
     return {
       id: docSnap.id,
       name: data.name,
@@ -184,12 +172,6 @@ export async function getOrganization(orgId: string): Promise<Organization | nul
       phone: data.phone,
       ownerId: data.ownerId,
       members: data.members || [],
-      subscription: {
-        plan,
-        status,
-        trialEndsAt: data.subscription?.trialEndsAt?.toDate(),
-        currentPeriodEnd: data.subscription?.currentPeriodEnd?.toDate(),
-      },
       settings: {
         currency: data.settings?.currency || 'USD',
         timezone: data.settings?.timezone || 'UTC',
@@ -252,24 +234,8 @@ export async function updateOrganization(
   try {
     const docRef = doc(db, 'organizations', orgId);
     
-    // Convert Date objects to Timestamps
-    type UpdateData = Partial<Omit<Organization, 'id' | 'createdAt'>> & {
-      subscription?: {
-        trialEndsAt?: Timestamp;
-        currentPeriodEnd?: Timestamp;
-      };
-    };
-
-    const updateData: UpdateData = { ...updates };
-    if (updates.subscription?.trialEndsAt) {
-      updateData.subscription.trialEndsAt = Timestamp.fromDate(updates.subscription.trialEndsAt);
-    }
-    if (updates.subscription?.currentPeriodEnd) {
-      updateData.subscription.currentPeriodEnd = Timestamp.fromDate(updates.subscription.currentPeriodEnd);
-    }
-
     await updateDoc(docRef, {
-      ...updateData,
+      ...updates,
       updatedAt: Timestamp.now(),
     });
 

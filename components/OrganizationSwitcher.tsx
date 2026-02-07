@@ -62,7 +62,7 @@ export default function OrganizationSwitcher() {
     return null;
   }
 
-  const planLabel = currentOrg.subscription?.plan === 'free' ? 'Free plan' : 'Pro plan';
+  const planLabel = 'Free plan';
   const hasMultiple = organizations.length > 1;
   const totalItems = organizations.length + 1;
 
