@@ -3,11 +3,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
-import { ensureUserOrgAccess, updateOrganization } from '@/lib/firestore-multitenant';
+import { createOrganizationInvite, ensureUserOrgAccess, updateOrganization } from '@/lib/firestore-multitenant';
 import { Building2, User, Bell, HelpCircle, Camera, Lock, Users, Shield, Trash2, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { storage } from '@/lib/firebase';
 
 export default function SettingsPage() {
@@ -23,6 +23,11 @@ export default function SettingsPage() {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showEmailPassword, setShowEmailPassword] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
+  const [isInviting, setIsInviting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [profileFile, setProfileFile] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState('');
@@ -142,8 +147,22 @@ export default function SettingsPage() {
 
       if (profileFile && user) {
         const storageRef = ref(storage, `avatars/${user.uid}/${profileFile.name}`);
-        await uploadBytes(storageRef, profileFile);
-        uploadedPhotoUrl = await getDownloadURL(storageRef);
+        const uploadTask = uploadBytesResumable(storageRef, profileFile);
+
+        uploadedPhotoUrl = await new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+              setUploadProgress(progress);
+            },
+            (error) => reject(error),
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              resolve(url);
+            }
+          );
+        });
       }
 
       await updateUserProfile({
@@ -162,6 +181,7 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
+      setUploadProgress(0);
       setIsUpdatingProfile(false);
     }
   };
@@ -209,7 +229,41 @@ export default function SettingsPage() {
   };
 
   const handleInviteMember = () => {
-    toast.success('Team member invitation coming soon!');
+    setShowInviteModal(true);
+  };
+
+  const handleSendInvite = async () => {
+    if (!currentOrg || !user) return;
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email) {
+      toast.error('Please enter an email address');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
+    setIsInviting(true);
+    try {
+      await createOrganizationInvite({
+        orgId: currentOrg.id,
+        email,
+        role: inviteRole,
+        invitedBy: user.uid,
+      });
+      toast.success('Invite created. You can share login details with the member.');
+      setInviteEmail('');
+      setInviteRole('member');
+      setShowInviteModal(false);
+    } catch (error) {
+      console.error('Error inviting member:', error);
+      toast.error('Failed to send invite');
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   const handleFixPermissions = async () => {
@@ -456,6 +510,11 @@ export default function SettingsPage() {
                         >
                           Change Photo
                         </button>
+                        {uploadProgress > 0 && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Uploading... {uploadProgress}%
+                          </p>
+                        )}
                         <p className="text-xs text-gray-500 mt-2">
                           JPG, PNG or GIF. Max size 2MB.
                         </p>
@@ -808,6 +867,62 @@ export default function SettingsPage() {
 
         </div>
       </div>
+
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Invite a Member</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Add a teammate to {currentOrg?.name}. Invites are recorded now; email delivery can be added next.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Member Email
+                </label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="member@example.com"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Role
+                </label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as 'member' | 'admin')}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                >
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleSendInvite}
+                disabled={isInviting}
+                className="px-5 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+              >
+                {isInviting ? 'Sending...' : 'Send Invite'}
+              </button>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="px-5 py-3 text-gray-700 hover:text-gray-900 font-medium"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -102,6 +102,17 @@ export interface YearComparison {
   growth: number;
 }
 
+export interface OrganizationInvite {
+  id: string;
+  orgId: string;
+  email: string;
+  role: 'member' | 'admin';
+  status: 'pending' | 'accepted' | 'revoked';
+  invitedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 1. ORGANIZATION FUNCTIONS
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -251,6 +262,33 @@ export async function updateOrganization(
   } catch (error) {
     console.error('Error updating organization:', error);
     throw new Error('Failed to update organization');
+  }
+}
+
+/**
+ * Invite a new member to an organization
+ */
+export async function createOrganizationInvite(data: {
+  orgId: string;
+  email: string;
+  role: 'member' | 'admin';
+  invitedBy: string;
+}): Promise<boolean> {
+  try {
+    await addDoc(collection(db, 'organization_invites'), {
+      orgId: data.orgId,
+      email: data.email.toLowerCase(),
+      role: data.role,
+      status: 'pending',
+      invitedBy: data.invitedBy,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error creating organization invite:', error);
+    throw new Error('Failed to invite member');
   }
 }
 

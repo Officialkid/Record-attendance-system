@@ -127,6 +127,24 @@ service cloud.firestore {
     }
 
     // ============================================
+    // ORGANIZATION INVITES
+    // ============================================
+
+    match /organization_invites/{inviteId} {
+      allow create: if isAuthenticated() &&
+                       request.resource.data.orgId is string &&
+                       isOrgOwner(request.resource.data.orgId);
+
+      allow read: if isAuthenticated() &&
+                    resource.data.orgId is string &&
+                    isOrgOwner(resource.data.orgId);
+
+      allow update, delete: if isAuthenticated() &&
+                              resource.data.orgId is string &&
+                              isOrgOwner(resource.data.orgId);
+    }
+
+    // ============================================
     // DENY ALL OTHER COLLECTIONS
     // ============================================
 
