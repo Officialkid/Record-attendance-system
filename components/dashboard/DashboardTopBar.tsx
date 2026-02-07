@@ -93,7 +93,8 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
           <span className="ml-2 text-xs text-gray-400 self-center">(Coming soon)</span>
         </div>
 
-        <d{/* MOBILE DRAWER TRIGGER (SECONDARY MENU) */}
+        <div className="flex items-center gap-2">
+          {/* MOBILE DRAWER TRIGGER (SECONDARY MENU) */}
           <button
             onClick={() => setIsDrawerOpen(true)}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -103,7 +104,6 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
             <MoreVertical className="w-5 h-5 text-gray-600" />
           </button>
 
-          iv className="flex items-center gap-2">
           <button
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
             aria-label="Notifications"
