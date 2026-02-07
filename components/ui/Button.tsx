@@ -11,8 +11,6 @@ interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onD
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', children, ...props }, ref) => {
-    // Exclude conflicting drag event props
-    const { onDrag: _onDrag, onDragStart: _onDragStart, onDragEnd: _onDragEnd, ...safeProps } = props;
     const baseStyles =
       'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -33,11 +31,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: safeProps.disabled ? 1 : 1.02 }}
-        whileTap={{ scale: safeProps.disabled ? 1 : 0.98 }}
+        whileHover={{ scale: props.disabled ? 1 : 1.02 }}
+        whileTap={{ scale: props.disabled ? 1 : 0.98 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className={cn(baseStyles, variants[variant], sizes[size], className)}
-        {...safeProps}
+        {...props}
       >
         {children}
       </motion.button>
