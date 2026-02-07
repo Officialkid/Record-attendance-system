@@ -3,16 +3,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
-import { updateOrganization } from '@/lib/firestore-multitenant';
-import { Building2, User, Bell, HelpCircle, Camera, Lock, Users, Shield, Trash2, UserPlus } from 'lucide-react';
+import { ensureUserOrgAccess, updateOrganization } from '@/lib/firestore-multitenant';
+import { Building2, User, Bell, HelpCircle, Camera, Lock, Users, Shield, Trash2, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
 
 export default function SettingsPage() {
-  const { currentOrg } = useOrganization();
-  const { user } = useAuth();
+  const { currentOrg, refreshOrganizations } = useOrganization();
+  const { user, updateUserProfile, changePassword } = useAuth();
   const [activeSection, setActiveSection] = useState('organization');
   const [loading, setLoading] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [isFixingPermissions, setIsFixingPermissions] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Organization form state
@@ -82,6 +88,8 @@ export default function SettingsPage() {
         phone: formData.phone,
       });
 
+      await refreshOrganizations();
+
       toast.success('Settings saved successfully!');
     } catch (error) {
       console.error('Error saving settings:', error);
@@ -108,12 +116,21 @@ export default function SettingsPage() {
     }
   };
 
-  const handleUpdateAccount = () => {
-    // TODO: Implement actual account update with Firebase
-    toast.success('Account details updated! (Coming soon)');
+  const handleUpdateAccount = async () => {
+    setIsUpdatingProfile(true);
+    try {
+      await updateUserProfile({
+        displayName: accountData.displayName,
+        photoURL: accountData.photoURL,
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    } finally {
+      setIsUpdatingProfile(false);
+    }
   };
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match');
       return;
@@ -122,14 +139,38 @@ export default function SettingsPage() {
       toast.error('Password must be at least 6 characters');
       return;
     }
-    // TODO: Implement password change with Firebase
-    toast.success('Password change will be implemented soon');
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setIsUpdatingPassword(true);
+    try {
+      await changePassword(passwordData.currentPassword, passwordData.newPassword);
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (error) {
+      console.error('Error changing password:', error);
+    } finally {
+      setIsUpdatingPassword(false);
+    }
   };
 
   const handleInviteMember = () => {
     toast.success('Team member invitation coming soon!');
   };
+
+  const handleFixPermissions = async () => {
+    if (!currentOrg || !user) return;
+
+    setIsFixingPermissions(true);
+    try {
+      await ensureUserOrgAccess(user.uid, currentOrg.id);
+      await refreshOrganizations();
+      toast.success('Permissions synced for this organization.');
+    } catch (error) {
+      console.error('Error fixing permissions:', error);
+      toast.error('Unable to sync permissions.');
+    } finally {
+      setIsFixingPermissions(false);
+    }
+  };
+
+  const isOrgOwner = Boolean(currentOrg && user && currentOrg.ownerId === user.uid);
 
   return (
     <div className="space-y-6">
@@ -269,7 +310,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Save Button */}
-                <div className="flex items-center gap-4 pt-6 border-t border-gray-200">
+                <div className="flex flex-wrap items-center gap-4 pt-6 border-t border-gray-200">
                   <button
                     onClick={handleSave}
                     disabled={loading}
@@ -288,6 +329,16 @@ export default function SettingsPage() {
                   >
                     Cancel
                   </button>
+                  {isOrgOwner && (
+                    <button
+                      onClick={handleFixPermissions}
+                      disabled={isFixingPermissions}
+                      className="inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold text-purple-700 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors disabled:opacity-50"
+                    >
+                      <Shield className="w-4 h-4" />
+                      {isFixingPermissions ? 'Fixing...' : 'Fix Permissions'}
+                    </button>
+                  )}
                 </div>
 
               </div>
@@ -396,9 +447,10 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-4 pt-6 border-t border-gray-200">
                     <button
                       onClick={handleUpdateAccount}
-                      className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold rounded-lg transition-all"
+                      disabled={isUpdatingProfile}
+                      className="px-6 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold rounded-lg transition-all disabled:opacity-50"
                     >
-                      Update Profile
+                      {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
                     </button>
                   </div>
 
@@ -421,13 +473,27 @@ export default function SettingsPage() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Current Password
                     </label>
-                    <input
-                      type="password"
-                      value={passwordData.currentPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Enter current password"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        value={passwordData.currentPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Enter current password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* New Password */}
@@ -435,13 +501,27 @@ export default function SettingsPage() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       New Password
                     </label>
-                    <input
-                      type="password"
-                      value={passwordData.newPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Enter new password (min 6 characters)"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={passwordData.newPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Enter new password (min 6 characters)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Confirm New Password */}
@@ -449,13 +529,27 @@ export default function SettingsPage() {
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Confirm New Password
                     </label>
-                    <input
-                      type="password"
-                      value={passwordData.confirmPassword}
-                      onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Confirm new password"
-                    />
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        value={passwordData.confirmPassword}
+                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Confirm new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="w-5 h-5" />
+                        ) : (
+                          <Eye className="w-5 h-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Password Requirements */}
@@ -470,9 +564,10 @@ export default function SettingsPage() {
 
                   <button
                     onClick={handleChangePassword}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all"
+                    disabled={isUpdatingPassword}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
                   >
-                    Change Password
+                    {isUpdatingPassword ? 'Updating...' : 'Change Password'}
                   </button>
 
                 </div>

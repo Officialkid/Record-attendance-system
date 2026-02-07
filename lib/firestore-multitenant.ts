@@ -21,9 +21,16 @@ import {
   Timestamp,
   writeBatch,
   updateDoc,
+  arrayUnion,
   limit,
 } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, startOfDay, endOfDay } from 'date-fns';
+
+const isIndexRequiredError = (error: unknown) => {
+  const err = error as { code?: string; message?: string };
+  const message = err?.message?.toLowerCase() ?? '';
+  return err?.code === 'failed-precondition' || message.includes('requires an index') || message.includes('index required');
+};
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // TYPESCRIPT TYPES
@@ -247,6 +254,25 @@ export async function updateOrganization(
   }
 }
 
+/**
+ * Ensure a user has access to an organization
+ */
+export async function ensureUserOrgAccess(userId: string, organizationId: string): Promise<boolean> {
+  try {
+    const userRef = doc(db, 'users', userId);
+
+    await updateDoc(userRef, {
+      organizations: arrayUnion(organizationId),
+      lastLoginAt: Timestamp.now(),
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error ensuring user organization access:', error);
+    throw new Error('Failed to update user access');
+  }
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 2. ATTENDANCE FUNCTIONS (MULTI-TENANT)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -323,6 +349,12 @@ export async function addAttendanceRecord(
     };
   } catch (error) {
     console.error('Error adding attendance record:', error);
+    if (isIndexRequiredError(error)) {
+      return {
+        success: false,
+        error: 'INDEX_REQUIRED',
+      };
+    }
     return {
       success: false,
       error: 'Failed to add attendance record',
@@ -379,6 +411,9 @@ export async function getServicesByMonth(
     return services;
   } catch (error) {
     console.error('Error fetching services by month:', error);
+    if (isIndexRequiredError(error)) {
+      throw new Error('INDEX_REQUIRED');
+    }
     throw new Error('Failed to fetch services');
   }
 }
@@ -408,6 +443,9 @@ export async function getMonthlyStats(
     };
   } catch (error) {
     console.error('Error calculating monthly stats:', error);
+    if ((error as { message?: string }).message === 'INDEX_REQUIRED') {
+      throw new Error('INDEX_REQUIRED');
+    }
     throw new Error('Failed to calculate monthly stats');
   }
 }
@@ -481,6 +519,9 @@ export async function getServicesByYear(
     return services;
   } catch (error) {
     console.error('Error fetching services by year:', error);
+    if (isIndexRequiredError(error)) {
+      throw new Error('INDEX_REQUIRED');
+    }
     throw new Error('Failed to fetch services');
   }
 }
@@ -515,6 +556,9 @@ export async function getMonthlyTotalsByYear(
     return monthlyTotals;
   } catch (error) {
     console.error('Error getting monthly totals:', error);
+    if ((error as { message?: string }).message === 'INDEX_REQUIRED') {
+      throw new Error('INDEX_REQUIRED');
+    }
     throw new Error('Failed to get monthly totals');
   }
 }

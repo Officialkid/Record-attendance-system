@@ -8,6 +8,10 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
 } from 'firebase/auth';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
@@ -26,6 +30,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, userData: UserData) => Promise<string>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  updateUserProfile: (data: { displayName: string; photoURL?: string }) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -131,6 +137,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateUserProfile = async (data: { displayName: string; photoURL?: string }) => {
+    if (!auth.currentUser) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      await updateProfile(auth.currentUser, {
+        displayName: data.displayName,
+        photoURL: data.photoURL,
+      });
+
+      await setDoc(
+        doc(db, 'users', auth.currentUser.uid),
+        {
+          fullName: data.displayName,
+          photoURL: data.photoURL || null,
+          updatedAt: Timestamp.now(),
+        },
+        { merge: true }
+      );
+
+      toast.success('Profile updated successfully');
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string }).code;
+      const errorMessage = getErrorMessage(errorCode || 'unknown');
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error('User not authenticated');
+    }
+
+    try {
+      const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+      await reauthenticateWithCredential(auth.currentUser, credential);
+      await updatePassword(auth.currentUser, newPassword);
+      toast.success('Password updated successfully');
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string }).code;
+      const errorMessage = getErrorMessage(errorCode || 'unknown');
+      toast.error(errorMessage);
+      throw new Error(errorMessage);
+    }
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -138,6 +192,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signUp,
     logout,
     resetPassword,
+    updateUserProfile,
+    changePassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

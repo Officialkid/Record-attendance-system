@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Calendar, Plus, Trash2, Minus, Upload, FileSpreadsheet, CheckCircle, LayoutDashboard, BarChart3 } from 'lucide-react';
+import { Calendar, Plus, Trash2, Minus, Upload, FileSpreadsheet, CheckCircle, LayoutDashboard, BarChart3, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -32,6 +32,7 @@ export default function AddAttendancePage() {
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkImportText, setBulkImportText] = useState('');
   const [lastService, setLastService] = useState<Service | null>(null);
+  const [indexRequired, setIndexRequired] = useState(false);
 
   const loadLastService = useCallback(async () => {
     if (!currentOrg) return;
@@ -44,6 +45,9 @@ export default function AddAttendancePage() {
       setLastService(services.length > 0 ? services[0] : null);
     } catch (error) {
       console.error('Error loading last service:', error);
+      if ((error as { message?: string }).message === 'INDEX_REQUIRED') {
+        setIndexRequired(true);
+      }
     } finally {
       setPageLoading(false);
     }
@@ -261,6 +265,11 @@ export default function AddAttendancePage() {
           toast.error('⚠️ Attendance for this date already exists. Please choose a different date.', {
             duration: 6000,
           });
+        } else if (result.error === 'INDEX_REQUIRED') {
+          setIndexRequired(true);
+          toast.error('Firestore index required. Create the composite index to continue.', {
+            duration: 6000,
+          });
         } else {
           toast.error(result.error || 'Failed to save attendance');
         }
@@ -299,6 +308,11 @@ export default function AddAttendancePage() {
     );
   }
 
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const firebaseIndexesUrl = projectId
+    ? `https://console.firebase.google.com/project/${projectId}/firestore/indexes`
+    : 'https://console.firebase.google.com/';
+
   return (
     <div className="space-y-6">
       <div>
@@ -315,6 +329,28 @@ export default function AddAttendancePage() {
         <p className="text-gray-600">
           Track attendance for today&apos;s service and add visitor information.
         </p>
+
+        {indexRequired && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900">Firestore index required</p>
+                <p className="text-sm text-amber-800 mt-1">
+                  Create the composite index for services on organizationId and serviceDate to load recent data.
+                </p>
+                <Link
+                  href={firebaseIndexesUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center mt-3 text-sm font-semibold text-amber-900 hover:text-amber-700"
+                >
+                  Open Firebase Indexes
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {lastService && (
           <div className="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">

@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { getServicesByMonth, getMonthlyStats } from '@/lib/firestore-multitenant';
 import MonthlyAttendanceChart from '@/components/charts/MonthlyAttendanceChart';
 import { StatCardSkeleton, ChartSkeleton, TableSkeleton } from '@/components/ui/LoadingSkeletons';
-import { Calendar, Users, TrendingUp, Sparkles, CalendarX } from 'lucide-react';
+import { Calendar, Users, TrendingUp, Sparkles, CalendarX, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
@@ -35,6 +35,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
+  const [indexRequired, setIndexRequired] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!currentOrg) return;
@@ -58,11 +59,19 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
       setServices(normalizedServices);
     } catch (error) {
       console.error('Error loading overview data:', error);
+      if ((error as { message?: string }).message === 'INDEX_REQUIRED') {
+        setIndexRequired(true);
+      }
       toast.error('Failed to load analytics data. Please try again.');
     } finally {
       setLoading(false);
     }
   }, [currentOrg, month, year]);
+
+  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+  const firebaseIndexesUrl = projectId
+    ? `https://console.firebase.google.com/project/${projectId}/firestore/indexes`
+    : 'https://console.firebase.google.com/';
 
   useEffect(() => {
     if (currentOrg) {
@@ -89,6 +98,27 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
 
   return (
     <div className="space-y-6">
+      {indexRequired && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Firestore index required</p>
+              <p className="text-sm text-amber-800 mt-1">
+                Create the composite index for services on organizationId and serviceDate to load analytics.
+              </p>
+              <Link
+                href={firebaseIndexesUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center mt-3 text-sm font-semibold text-amber-900 hover:text-amber-700"
+              >
+                Open Firebase Indexes
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
