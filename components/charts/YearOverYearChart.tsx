@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { compareYears } from '@/lib/firestore-multitenant';
+import { compareYears, type YearComparison } from '@/lib/firestore-multitenant';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -13,22 +13,14 @@ interface Props {
 
 export default function YearOverYearChart({ selectedYear }: Props) {
   const { currentOrg } = useOrganization();
-  const [comparisonData, setComparisonData] = useState<any[]>([]);
+  const [comparisonData, setComparisonData] = useState<YearComparison[]>([]);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const currentYear = selectedYear;
   const previousYear = selectedYear - 1;
 
-  useEffect(() => {
-    if (currentOrg) {
-      loadComparisonData();
-    } else {
-      setLoading(true);
-    }
-  }, [selectedYear, currentOrg?.id]);
-
-  const loadComparisonData = async () => {
+  const loadComparisonData = useCallback(async () => {
     if (!currentOrg) return;
 
     setLoading(true);
@@ -40,7 +32,15 @@ export default function YearOverYearChart({ selectedYear }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentOrg, currentYear, previousYear]);
+
+  useEffect(() => {
+    if (currentOrg) {
+      loadComparisonData();
+    } else {
+      setLoading(true);
+    }
+  }, [currentOrg, loadComparisonData, selectedYear]);
 
   // Calculate overall stats
   const currentYearTotal = comparisonData.reduce((sum, m) => sum + (m[currentYear] || 0), 0);
@@ -60,10 +60,10 @@ export default function YearOverYearChart({ selectedYear }: Props) {
   const avgMonthly = currentYearTotal / 12;
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ dataKey: number; value: number }>; label?: string }) => {
     if (active && payload && payload.length) {
-      const current = payload.find((p: any) => p.dataKey === currentYear);
-      const previous = payload.find((p: any) => p.dataKey === previousYear);
+      const current = payload.find((p) => p.dataKey === currentYear);
+      const previous = payload.find((p) => p.dataKey === previousYear);
       const growth = comparisonData.find((d) => d.month === label)?.growth || 0;
 
       return (

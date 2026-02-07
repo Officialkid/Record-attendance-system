@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { format, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import {
@@ -88,7 +89,13 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                 const isPositive = growth && growth > 0;
 
                 return (
-                  <tr key={service.id} className="hover:bg-gray-50 transition-colors">
+                  <motion.tr
+                    key={service.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3, ease: 'easeOut' }}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
@@ -144,7 +151,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                         <span className="text-xs text-gray-400">—</span>
                       )}
                     </td>
-                  </tr>
+                  </motion.tr>
                 );
               })}
             </tbody>
@@ -157,7 +164,13 @@ export default function RecentActivity({ services }: RecentActivityProps) {
             const isPositive = growth && growth > 0;
 
             return (
-              <div key={service.id} className="p-4">
+              <motion.div
+                key={service.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3, ease: 'easeOut' }}
+                className="p-4"
+              >
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Calendar className="w-5 h-5 text-purple-600" />
@@ -206,7 +219,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                     </div>
                   )}
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
-import { getUserOrganizations, getOrganization, Organization } from './firestore-multitenant';
+import { getUserOrganizations, Organization } from './firestore-multitenant';
 import { toast } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -37,7 +37,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   /**
    * Load organizations for current user
    */
-  const loadOrganizations = async () => {
+  const loadOrganizations = useCallback(async () => {
     if (!user) {
       setOrganizations([]);
       setCurrentOrg(null);
@@ -89,7 +89,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   /**
    * Switch to a different organization
@@ -121,7 +121,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   // Load organizations when user changes
   useEffect(() => {
     loadOrganizations();
-  }, [user]);
+  }, [loadOrganizations]);
 
   // Don't render children until organizations are loaded
   if (loading) {
@@ -148,7 +148,7 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">No Organization Found</h2>
           <p className="text-gray-600 mb-6">
-            You don't have access to any organizations. Please contact support or create a new organization.
+            You don&apos;t have access to any organizations. Please contact support or create a new organization.
           </p>
           <button
             onClick={() => window.location.href = '/sign-up'}

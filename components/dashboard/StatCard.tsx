@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
@@ -77,8 +78,12 @@ export default function StatCard({
   const trendInfo = getTrendInfo();
 
   return (
-    <div
-      className={`relative overflow-hidden rounded-xl border ${styles.border} bg-white p-6 shadow-sm hover:shadow-md transition-shadow duration-200`}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      whileHover={{ y: -4, boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}
+      className={`relative overflow-hidden rounded-xl border ${styles.border} bg-white p-6 shadow-sm transition-shadow duration-200`}
     >
       <div
         className={`absolute top-0 right-0 w-32 h-32 ${styles.bg} rounded-full -translate-y-1/2 translate-x-1/2 opacity-50`}
@@ -115,6 +120,6 @@ export default function StatCard({
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

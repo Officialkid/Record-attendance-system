@@ -1,6 +1,7 @@
 'use client';
 
 import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -28,13 +29,16 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     return (
-      <button
+      <motion.button
         ref={ref}
+        whileHover={{ scale: props.disabled ? 1 : 1.02 }}
+        whileTap={{ scale: props.disabled ? 1 : 0.98 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
         className={cn(baseStyles, variants[variant], sizes[size], className)}
         {...props}
       >
         {children}
-      </button>
+      </motion.button>
     );
   }
 );

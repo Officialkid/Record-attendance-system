@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { OrganizationProvider } from '@/lib/OrganizationContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -13,6 +15,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   useEffect(() => {
@@ -83,7 +86,17 @@ export default function DashboardLayout({
 
               <main className="flex-1 overflow-y-auto bg-gray-50 p-4 lg:p-8 pb-20 lg:pb-8">
                 <div className="max-w-7xl mx-auto">
-                  {children}
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={pathname}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                    >
+                      {children}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
               </main>
             </div>

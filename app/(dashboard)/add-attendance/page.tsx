@@ -1,16 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Calendar, Plus, Trash2, Save, Minus, Check, Upload, FileSpreadsheet } from 'lucide-react';
+import Link from 'next/link';
+import { format } from 'date-fns';
+import { Calendar, Plus, Trash2, Minus, Upload, FileSpreadsheet, CheckCircle, LayoutDashboard, BarChart3 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { useOrganization } from '@/lib/OrganizationContext';
-import { addAttendanceRecord } from '@/lib/firestore-multitenant';
+import { addAttendanceRecord, getServicesByMonth, type Service } from '@/lib/firestore-multitenant';
+import { PageHeaderSkeleton, FormSkeleton } from '@/components/ui/LoadingSkeletons';
 import toast from 'react-hot-toast';
 import confetti from 'canvas-confetti';
-import type { VisitorFormData } from '@/types';
 
 interface Visitor {
   visitor_name: string;
@@ -21,13 +23,40 @@ export default function AddAttendancePage() {
   const router = useRouter();
   const { currentOrg } = useOrganization();
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [showSuccessActions, setShowSuccessActions] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [serviceType, setServiceType] = useState('Saturday Fellowship');
   const [totalAttendance, setTotalAttendance] = useState(1);
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [bulkImportText, setBulkImportText] = useState('');
+  const [lastService, setLastService] = useState<Service | null>(null);
+
+  const loadLastService = useCallback(async () => {
+    if (!currentOrg) return;
+    setPageLoading(true);
+
+    try {
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      const services = await getServicesByMonth(currentOrg.id, currentMonth, currentYear);
+      setLastService(services.length > 0 ? services[0] : null);
+    } catch (error) {
+      console.error('Error loading last service:', error);
+    } finally {
+      setPageLoading(false);
+    }
+  }, [currentOrg]);
+
+  useEffect(() => {
+    if (currentOrg) {
+      loadLastService();
+    } else {
+      setLastService(null);
+      setPageLoading(false);
+    }
+  }, [currentOrg, loadLastService]);
 
   // Increment/Decrement functions
   const incrementAttendance = () => {
@@ -170,6 +199,7 @@ export default function AddAttendancePage() {
       return;
     }
 
+    setShowSuccessActions(false);
     setLoading(true);
     const loadingToast = toast.loading('Saving attendance record...');
 
@@ -193,13 +223,23 @@ export default function AddAttendancePage() {
       toast.dismiss(loadingToast);
 
       if (result.success) {
-        // Success!
-        const visitorCount = visitorsData.length;
-        const message = visitorCount > 0 
-          ? `🎉 Attendance saved! ${totalAttendance.toLocaleString()} attendees, ${visitorCount.toLocaleString()} visitors tracked`
-          : `🎉 Attendance saved! ${totalAttendance.toLocaleString()} attendees recorded`;
+        toast.success('Attendance saved successfully! 🎉', { duration: 4000 });
         
-        toast.success(message, { duration: 4000 });
+        // Check for milestone achievements
+        const milestones = [50, 100, 150, 200, 250, 300, 500, 1000];
+        if (milestones.includes(totalAttendance)) {
+          setTimeout(() => {
+            toast.success(`🎉 Milestone! ${totalAttendance} attendees!`, {
+              duration: 5000,
+              style: {
+                background: 'linear-gradient(135deg, #4b248c 0%, #0047AB 100%)',
+                color: 'white',
+                fontSize: '16px',
+                fontWeight: '600',
+              },
+            });
+          }, 500);
+        }
         
         // Confetti celebration
         confetti({
@@ -209,18 +249,10 @@ export default function AddAttendancePage() {
           colors: ['#4b248c', '#0047AB', '#F3CC3C']
         });
 
-        setSuccess(true);
-        
-        // Reset form after delay
+        setShowSuccessActions(true);
+
         setTimeout(() => {
-          setSelectedDate(new Date());
-          setServiceType('Saturday Fellowship');
-          setTotalAttendance(1);
-          setVisitors([]);
-          setSuccess(false);
-          
-          // Redirect to analytics
-          router.push('/view-analytics');
+          router.push('/dashboard');
         }, 2000);
         
       } else {
@@ -234,69 +266,74 @@ export default function AddAttendancePage() {
         }
       }
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.dismiss(loadingToast);
       console.error('Error saving attendance:', error);
-      toast.error(error.message || 'Something went wrong. Please try again.');
+      const message = (error as { message?: string }).message;
+      toast.error(message || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (!currentOrg) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background-color via-blue-50 to-purple-50 pt-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="mb-8">
-            <div className="h-10 w-2/3 bg-gray-200 rounded-lg animate-pulse" />
-            <div className="h-4 w-1/2 bg-gray-200 rounded-lg animate-pulse mt-3" />
-          </div>
-        </div>
+  const handleCancel = () => {
+    router.push('/dashboard');
+  };
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 space-y-8">
-            <div className="h-24 bg-gray-200 rounded-xl animate-pulse" />
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="h-16 bg-gray-200 rounded-xl animate-pulse" />
-              <div className="h-16 bg-gray-200 rounded-xl animate-pulse" />
-            </div>
-            <div className="h-40 bg-gray-200 rounded-xl animate-pulse" />
-            <div className="h-32 bg-gray-200 rounded-xl animate-pulse" />
-            <div className="h-12 bg-gray-200 rounded-xl animate-pulse" />
-          </div>
-        </div>
+  const handleAddAnother = () => {
+    setSelectedDate(new Date());
+    setServiceType('Saturday Fellowship');
+    setTotalAttendance(1);
+    setVisitors([]);
+    setShowSuccessActions(false);
+    setBulkImportText('');
+    setShowBulkImport(false);
+  };
+
+  if (!currentOrg || pageLoading) {
+    return (
+      <div className="space-y-6">
+        <PageHeaderSkeleton />
+        <FormSkeleton />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background-color via-blue-50 to-purple-50 pt-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Add Attendance</h1>
-      </div>
-      {/* Page Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
-      >
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-royal-purple mb-2">
-            Record Attendance - {currentOrg?.name}
-          </h1>
-          <p className="text-gray-600">Record service attendance and visitor information</p>
-        </div>
-      </motion.div>
+    <div className="space-y-6">
+      <div>
+        <nav className="text-sm text-gray-500 mb-2">
+          <span>Dashboard</span>
+          <span className="mx-2">/</span>
+          <span className="text-gray-900 font-medium">Add Attendance</span>
+        </nav>
 
-      {/* Form Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-        <motion.form
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          onSubmit={handleSubmit}
-          className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl p-8 space-y-8"
-        >
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Record Service Attendance
+        </h1>
+
+        <p className="text-gray-600">
+          Track attendance for today&apos;s service and add visitor information.
+        </p>
+
+        {lastService && (
+          <div className="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">
+            <Calendar className="w-4 h-4" />
+            <span>
+              Last recorded: <strong>{format(new Date(lastService.serviceDate), 'MMM d, yyyy')}</strong>
+              {' '}({lastService.totalAttendance} attendees)
+            </span>
+          </div>
+        )}
+      </div>
+
+      <motion.form
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.1 }}
+        onSubmit={handleSubmit}
+        className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 lg:p-8 space-y-8"
+      >
           {/* Selected Date Display */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -328,7 +365,7 @@ export default function AddAttendancePage() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Service Date
                 </label>
                 <DatePicker
@@ -336,7 +373,7 @@ export default function AddAttendancePage() {
                   onChange={(date: Date | null) => date && setSelectedDate(date)}
                   dateFormat="MMMM d, yyyy"
                   maxDate={new Date()}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-all text-lg font-medium"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   calendarClassName="custom-datepicker"
                   dayClassName={(date) =>
                     isSaturday(date)
@@ -347,13 +384,13 @@ export default function AddAttendancePage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Service Type
                 </label>
                 <select
                   value={serviceType}
                   onChange={(e) => setServiceType(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-all text-lg"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 >
                   <option value="Saturday Fellowship">Saturday Fellowship</option>
                   <option value="Sunday Service">Sunday Service</option>
@@ -383,7 +420,7 @@ export default function AddAttendancePage() {
                 max="1000000"
                 value={totalAttendance}
                 onChange={(e) => handleAttendanceChange(e.target.value)}
-                className="w-full px-6 py-4 text-center text-4xl font-bold text-primary-blue border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-all"
+                className="w-full px-6 py-4 text-center text-4xl font-bold text-primary-blue border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 placeholder="Enter number"
               />
               <p className="text-center text-xs text-gray-500 mt-2">
@@ -430,7 +467,7 @@ export default function AddAttendancePage() {
           >
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-royal-purple">Visitors</h2>
+                <h2 className="text-2xl font-bold text-royal-purple">Visitor Details</h2>
                 <p className="text-sm text-gray-500 mt-1">
                   Optional - For first-time visitors or event attendees
                 </p>
@@ -488,7 +525,7 @@ export default function AddAttendancePage() {
                         value={bulkImportText}
                         onChange={(e) => setBulkImportText(e.target.value)}
                         placeholder="Paste your visitor data here...&#10;&#10;Example with multiple columns:&#10;John Doe&#9;0701234567&#9;john@email.com&#9;Nairobi&#10;Jane Smith&#9;0707654321&#9;jane@email.com&#9;Mombasa&#10;Bob Johnson&#9;0703456789&#9;bob@email.com&#9;Kisumu&#10;&#10;All columns will be saved!"
-                        className="w-full h-48 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-all font-mono text-sm"
+                        className="w-full h-48 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all font-mono text-sm"
                       />
                       <div className="flex justify-end gap-3 mt-4">
                         <button
@@ -529,7 +566,7 @@ export default function AddAttendancePage() {
                     No visitors added yet
                   </p>
                   <p className="text-gray-400 text-sm mt-2">
-                    Click "Import from Excel" for bulk import or "Add Single Visitor" for manual entry
+                    Click &quot;Import from Excel&quot; for bulk import or &quot;Add Single Visitor&quot; for manual entry
                   </p>
                 </motion.div>
               ) : (
@@ -545,7 +582,7 @@ export default function AddAttendancePage() {
                     >
                       <div className="flex-1 grid md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Visitor Name
                           </label>
                           <input
@@ -555,12 +592,12 @@ export default function AddAttendancePage() {
                               updateVisitor(index, 'visitor_name', e.target.value)
                             }
                             maxLength={100}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-all"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                             placeholder="Enter visitor name"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <label className="block text-sm font-semibold text-gray-700 mb-2">
                             Contact / Additional Info
                           </label>
                           <input
@@ -570,7 +607,7 @@ export default function AddAttendancePage() {
                               updateVisitor(index, 'visitor_contact', e.target.value)
                             }
                             maxLength={500}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-blue focus:border-primary-blue transition-all"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                             placeholder="Phone, email, location, etc."
                           />
                         </div>
@@ -600,64 +637,65 @@ export default function AddAttendancePage() {
             )}
           </motion.div>
 
-          {/* Submit Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="flex justify-end pt-4"
+        <div className="flex items-center gap-4 pt-6 border-t border-gray-200">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 lg:flex-none px-8 py-3 bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black font-semibold rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading || success}
-              className="relative overflow-hidden flex items-center px-10 py-4 bg-gold-color text-black-color rounded-xl hover:bg-gold-color/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg font-bold shadow-2xl min-w-[250px] justify-center"
-            >
-              <AnimatePresence mode="wait">
-                {success ? (
-                  <motion.div
-                    key="success"
-                    initial={{ scale: 0, rotate: -180 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    exit={{ scale: 0, rotate: 180 }}
-                    className="flex items-center"
-                  >
-                    <Check className="w-6 h-6 mr-2" />
-                    Saved Successfully!
-                  </motion.div>
-                ) : loading ? (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center"
-                  >
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                      className="w-6 h-6 border-3 border-black-color border-t-transparent rounded-full mr-2"
-                    />
-                    Saving...
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="idle"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex items-center"
-                  >
-                    <Save className="w-6 h-6 mr-2" />
-                    Save Attendance Record
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          </motion.div>
-        </motion.form>
-      </div>
+            {loading ? 'Saving...' : 'Save Attendance Record'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="px-6 py-3 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </motion.form>
+
+      {showSuccessActions && (
+        <div className="mt-6 bg-green-50 border border-green-200 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-green-900 mb-2">
+                Attendance Recorded!
+              </h3>
+              <p className="text-sm text-green-700 mb-4">
+                Your service attendance has been saved successfully.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Go to Dashboard
+                </Link>
+                <Link
+                  href="/view-analytics"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-green-700 border border-green-200 font-medium rounded-lg transition-colors"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  View Analytics
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleAddAnother}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 text-green-700 hover:text-green-800 font-medium transition-colors"
+                >
+                  Add Another Service
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

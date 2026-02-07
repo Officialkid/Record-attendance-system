@@ -27,29 +27,46 @@ export default function RootLayout({
         <Toaster 
           position="top-right"
           toastOptions={{
-            success: { 
-              duration: 3000, 
-              style: { 
-                background: '#22c55e',
-                color: '#fff',
-                fontWeight: '600',
-              } 
+            // Success toasts
+            success: {
+              duration: 3000,
+              style: {
+                background: '#10b981',
+                color: 'white',
+                fontWeight: '500',
+              },
+              iconTheme: {
+                primary: 'white',
+                secondary: '#10b981',
+              },
             },
-            error: { 
-              duration: 5000, 
-              style: { 
+            // Error toasts
+            error: {
+              duration: 4000,
+              style: {
                 background: '#ef4444',
-                color: '#fff',
-                fontWeight: '600',
-              } 
+                color: 'white',
+                fontWeight: '500',
+              },
+              iconTheme: {
+                primary: 'white',
+                secondary: '#ef4444',
+              },
             },
+            // Loading toasts
             loading: {
               style: {
-                background: '#0047AB',
-                color: '#fff',
-                fontWeight: '600',
-              }
-            }
+                background: '#3b82f6',
+                color: 'white',
+                fontWeight: '500',
+              },
+            },
+            // Default style
+            style: {
+              borderRadius: '8px',
+              padding: '12px 16px',
+              fontSize: '14px',
+            },
           }}
         />
       </body>

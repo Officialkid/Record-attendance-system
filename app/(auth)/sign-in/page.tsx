@@ -84,7 +84,7 @@ export default function SignInPage() {
       toast.success(`Welcome back, ${displayName}!`);
       
       router.push('/add-attendance');
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Trigger shake animation
       setShakeForm(true);
       setTimeout(() => setShakeForm(false), 500);
@@ -95,13 +95,15 @@ export default function SignInPage() {
       // Convert Firebase errors to user-friendly messages
       let errorMessage = 'Something went wrong. Please try again.';
       
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+      const errorCode = (error as { code?: string }).code;
+
+      if (errorCode === 'auth/user-not-found' || errorCode === 'auth/wrong-password') {
         errorMessage = 'Invalid email or password';
-      } else if (error.code === 'auth/too-many-requests') {
+      } else if (errorCode === 'auth/too-many-requests') {
         errorMessage = 'Too many failed attempts. Please try again in a few minutes.';
-      } else if (error.code === 'auth/network-request-failed') {
+      } else if (errorCode === 'auth/network-request-failed') {
         errorMessage = 'Please check your internet connection';
-      } else if (error.code === 'auth/invalid-credential') {
+      } else if (errorCode === 'auth/invalid-credential') {
         errorMessage = 'Invalid email or password';
       }
 
@@ -263,7 +265,7 @@ export default function SignInPage() {
           {/* Footer */}
           <div className="text-center mt-6">
             <p className="text-gray-600">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link
                 href="/sign-up"
                 className="text-[#0047AB] font-semibold hover:text-[#4b248c] transition-colors"
@@ -325,14 +327,16 @@ function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
       await resetPassword(email);
       setSuccess(true);
       toast.success('Password reset email sent!');
-    } catch (error: any) {
+    } catch (error: unknown) {
       let errorMessage = 'Please check your connection and try again';
+
+      const errorCode = (error as { code?: string }).code;
       
-      if (error.code === 'auth/user-not-found') {
+      if (errorCode === 'auth/user-not-found') {
         errorMessage = 'No account found with this email';
-      } else if (error.code === 'auth/invalid-email') {
+      } else if (errorCode === 'auth/invalid-email') {
         errorMessage = 'Please enter a valid email address';
-      } else if (error.code === 'auth/too-many-requests') {
+      } else if (errorCode === 'auth/too-many-requests') {
         errorMessage = 'Too many requests. Please try again later.';
       }
 
@@ -376,7 +380,7 @@ function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
                   <div className="mb-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Reset Your Password</h2>
                     <p className="text-gray-600">
-                      Enter your email and we'll send you a reset link
+                      Enter your email and we&apos;ll send you a reset link
                     </p>
                   </div>
 
@@ -430,7 +434,7 @@ function ForgotPasswordModal({ isOpen, onClose }: ForgotPasswordModalProps) {
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Check your email!</h2>
                     <p className="text-gray-600 mb-6">
-                      We've sent password reset instructions to <strong>{email}</strong>
+                      We&apos;ve sent password reset instructions to <strong>{email}</strong>
                     </p>
                     <button
                       onClick={onClose}

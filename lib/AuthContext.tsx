@@ -71,8 +71,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('Welcome back! 🎉');
-    } catch (error: any) {
-      const errorMessage = getErrorMessage(error.code);
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string }).code;
+      const errorMessage = getErrorMessage(errorCode || 'unknown');
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -98,8 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       toast.success('Account created successfully! 🎉');
       return userId;
-    } catch (error: any) {
-      const errorMessage = getErrorMessage(error.code);
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string }).code;
+      const errorMessage = getErrorMessage(errorCode || 'unknown');
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -109,8 +111,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await firebaseSignOut(auth);
       toast.success('Signed out successfully');
-    } catch (error: any) {
-      const errorMessage = getErrorMessage(error.code);
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string }).code;
+      const errorMessage = getErrorMessage(errorCode || 'unknown');
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }
@@ -120,8 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await sendPasswordResetEmail(auth, email);
       toast.success('Password reset email sent! Check your inbox 📧');
-    } catch (error: any) {
-      const errorMessage = getErrorMessage(error.code);
+    } catch (error: unknown) {
+      const errorCode = (error as { code?: string }).code;
+      const errorMessage = getErrorMessage(errorCode || 'unknown');
       toast.error(errorMessage);
       throw new Error(errorMessage);
     }

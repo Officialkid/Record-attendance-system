@@ -1,6 +1,6 @@
 'use client';
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import { CalendarX } from 'lucide-react';
@@ -34,7 +34,7 @@ export default function MonthlyAttendanceChart({ services, selectedMonth, select
   const maxAttendance = Math.max(...services.map(s => s.totalAttendance), 0);
 
   // Custom tooltip
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ value: number; payload: { fullDate: string; visitors: number } }> }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-purple-500">

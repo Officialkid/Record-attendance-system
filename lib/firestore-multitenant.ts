@@ -253,7 +253,14 @@ export async function updateOrganization(
     const docRef = doc(db, 'organizations', orgId);
     
     // Convert Date objects to Timestamps
-    const updateData: any = { ...updates };
+    type UpdateData = Partial<Omit<Organization, 'id' | 'createdAt'>> & {
+      subscription?: {
+        trialEndsAt?: Timestamp;
+        currentPeriodEnd?: Timestamp;
+      };
+    };
+
+    const updateData: UpdateData = { ...updates };
     if (updates.subscription?.trialEndsAt) {
       updateData.subscription.trialEndsAt = Timestamp.fromDate(updates.subscription.trialEndsAt);
     }

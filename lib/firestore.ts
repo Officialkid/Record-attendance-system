@@ -7,8 +7,6 @@ import {
   where,
   orderBy,
   Timestamp,
-  CollectionReference,
-  DocumentData,
   doc,
   serverTimestamp,
   writeBatch,
@@ -58,7 +56,6 @@ export async function addAttendanceRecord(
 
     // 3. Add visitors as sub-collection if any provided (batch write for performance)
     if (visitors && visitors.length > 0) {
-      const batch = writeBatch(db);
       const validVisitors = visitors.filter(v => v.name || v.contact);
       
       // Firestore batch limit is 500, so split if needed
@@ -83,9 +80,10 @@ export async function addAttendanceRecord(
 
     return { success: true, serviceId: serviceRef.id };
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error adding attendance:', error);
-    return { success: false, error: error.message };
+    const message = (error as { message?: string }).message || 'Failed to add attendance';
+    return { success: false, error: message };
   }
 }
 
@@ -263,10 +261,10 @@ export async function getVisitorsForService(serviceId: string) {
  */
 export async function getMonthlyStats(month: number, year: number) {
   const services = await getServicesByMonth(month, year);
-  
+
   const totalServices = services.length;
-  const totalAttendance = services.reduce((sum: number, s: any) => sum + s.totalAttendance, 0);
-  const totalVisitors = services.reduce((sum: number, s: any) => sum + s.visitorCount, 0);
+  const totalAttendance = services.reduce((sum: number, s: { totalAttendance: number }) => sum + s.totalAttendance, 0);
+  const totalVisitors = services.reduce((sum: number, s: { visitorCount: number }) => sum + s.visitorCount, 0);
   const avgAttendance = totalServices > 0 ? Math.round(totalAttendance / totalServices) : 0;
 
   return {
@@ -319,7 +317,7 @@ export async function getMonthlyTotalsByYear(year: number) {
     serviceCount: 0,
   }));
 
-  services.forEach((service: any) => {
+  services.forEach((service: { serviceDate: Date; totalAttendance: number }) => {
     const month = service.serviceDate.getMonth();
     monthlyData[month].totalAttendance += service.totalAttendance;
     monthlyData[month].serviceCount += 1;

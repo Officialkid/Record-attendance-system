@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
-import { Menu, Search, Bell, ChevronDown } from 'lucide-react';
+import { Menu, Search, Bell, ChevronDown, MoreVertical } from 'lucide-react';
+import MobileDrawer from './MobileDrawer';
 
 interface DashboardTopBarProps {
   onMenuClick?: () => void;
@@ -14,6 +15,7 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
   const { currentOrg } = useOrganization();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,19 +47,20 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
     await logout();
   };
 
-  return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-      <div className="px-4 lg:px-8 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            aria-label="Open menu"
-            aria-controls="mobile-dashboard-drawer"
-            aria-expanded={isMenuOpen ?? false}
-            type="button"
-            onClick={onMenuClick}
-          >
-            <Menu className="w-6 h-6 text-gray-600" />
+  ret>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-4 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button
+              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label="Open menu"
+              aria-controls="mobile-dashboard-drawer"
+              aria-expanded={isMenuOpen ?? false}
+              type="button"
+              onClick={onMenuClick}
+            >
+              <Menu className="w-6 h-6 text-gray-600" />
+              <Menu className="w-6 h-6 text-gray-600" />
           </button>
 
           <div className="flex items-center gap-2 min-w-0">
@@ -90,7 +93,17 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
           <span className="ml-2 text-xs text-gray-400 self-center">(Coming soon)</span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <d{/* MOBILE DRAWER TRIGGER (SECONDARY MENU) */}
+          <button
+            onClick={() => setIsDrawerOpen(true)}
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Open secondary menu"
+            type="button"
+          >
+            <MoreVertical className="w-5 h-5 text-gray-600" />
+          </button>
+
+          iv className="flex items-center gap-2">
           <button
             className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
             aria-label="Notifications"
@@ -142,6 +155,13 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     type="button"
                     onClick={handleLogout}
+
+      {/* MOBILE DRAWER */}
+      <MobileDrawer 
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+      />
+    </>
                   >
                     Logout
                   </button>

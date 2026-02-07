@@ -161,7 +161,7 @@ export default function SignUpPage() {
         router.push('/add-attendance');
       }, 1500);
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Sign up error:', error);
       // Error already handled in AuthContext
     } finally {
@@ -536,7 +536,7 @@ export default function SignUpPage() {
               ))}
             </div>
             <p className="text-white/90 italic mb-4">
-              "This tool transformed how we track our growth. Highly recommend!"
+              &quot;This tool transformed how we track our growth. Highly recommend!&quot;
             </p>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-[#F3CC3C] rounded-full flex items-center justify-center">

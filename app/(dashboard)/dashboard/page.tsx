@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
 import { getServicesByMonth, getMonthlyStats, type Service, type MonthlyStats } from '@/lib/firestore-multitenant';
@@ -9,6 +9,7 @@ import StatCard from '@/components/dashboard/StatCard';
 import QuickActions from '@/components/dashboard/QuickActions';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import MiniTrendChart from '@/components/dashboard/MiniTrendChart';
+import { StatCardSkeleton, QuickActionsSkeleton, TableSkeleton, ChartSkeleton, PageHeaderSkeleton } from '@/components/ui/LoadingSkeletons';
 import { Users, TrendingUp, Calendar, Sparkles } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -22,13 +23,7 @@ export default function DashboardPage() {
   const currentMonth = currentDate.getMonth() + 1;
   const currentYear = currentDate.getFullYear();
 
-  useEffect(() => {
-    if (currentOrg) {
-      loadDashboardData();
-    }
-  }, [currentOrg]);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     if (!currentOrg) return;
 
     setLoading(true);
@@ -45,7 +40,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentOrg, currentMonth, currentYear]);
+
+  useEffect(() => {
+    if (currentOrg) {
+      loadDashboardData();
+    }
+  }, [currentOrg, loadDashboardData]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -61,16 +62,16 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-        </div>
+      <div className="space-y-8">
+        <PageHeaderSkeleton />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse"></div>
+            <StatCardSkeleton key={i} />
           ))}
         </div>
+        <QuickActionsSkeleton />
+        <TableSkeleton />
+        <ChartSkeleton />
       </div>
     );
   }
@@ -82,7 +83,7 @@ export default function DashboardPage() {
           {getGreeting()}, {user?.email?.split('@')[0]}! 👋
         </h1>
         <p className="text-gray-600 mt-2">
-          Here's what's happening with {currentOrg?.name}
+          Here&apos;s what&apos;s happening with {currentOrg?.name}
         </p>
       </div>
 

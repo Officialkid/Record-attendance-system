@@ -19,7 +19,7 @@ export default function ForgotPasswordPage() {
     try {
       await resetPassword(email);
       setEmailSent(true);
-    } catch (error) {
+    } catch {
       // Error is already handled in AuthContext with toast
     } finally {
       setIsLoading(false);
@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
               <div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">Email Sent!</h3>
                 <p className="text-gray-600 mb-6">
-                  We've sent a password reset link to <strong>{email}</strong>
+                  We&apos;ve sent a password reset link to <strong>{email}</strong>
                 </p>
               </div>
               <Link

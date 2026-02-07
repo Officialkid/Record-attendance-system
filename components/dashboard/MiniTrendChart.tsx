@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
@@ -60,7 +61,12 @@ export default function MiniTrendChart({ services }: MiniTrendChartProps) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="bg-white rounded-xl border border-gray-200 p-6"
+    >
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Attendance Trend</h2>
@@ -136,6 +142,6 @@ export default function MiniTrendChart({ services }: MiniTrendChartProps) {
           </p>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
