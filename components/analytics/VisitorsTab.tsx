@@ -7,7 +7,7 @@ interface VisitorsTabProps {
   year: number;
 }
 
-export default function VisitorsTab({ month, year }: VisitorsTabProps) {
+export default function VisitorsTab({ month: _month, year: _year }: VisitorsTabProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
       <div className="max-w-md mx-auto">

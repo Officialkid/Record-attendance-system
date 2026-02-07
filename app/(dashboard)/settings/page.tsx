@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
 import { updateOrganization } from '@/lib/firestore-multitenant';
-import { Building2, User, Bell, HelpCircle, Camera, Mail, Lock, Users, Shield, Trash2, UserPlus } from 'lucide-react';
+import { Building2, User, Bell, HelpCircle, Camera, Lock, Users, Shield, Trash2, UserPlus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
 

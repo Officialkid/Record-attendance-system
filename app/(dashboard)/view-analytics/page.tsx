@@ -10,7 +10,6 @@ import {
   Download,
   Printer 
 } from 'lucide-react';
-import { PageHeaderSkeleton, FiltersBarSkeleton } from '@/components/ui/LoadingSkeletons';
 import OverviewTab from '@/components/analytics/OverviewTab';
 import TrendsTab from '@/components/analytics/TrendsTab';
 import VisitorsTab from '@/components/analytics/VisitorsTab';
