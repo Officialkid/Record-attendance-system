@@ -143,16 +143,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      await updateProfile(auth.currentUser, {
+      const normalizePhotoUrl = (photoURL?: string) => {
+        if (!photoURL) return undefined;
+        const trimmed = photoURL.trim();
+        if (!trimmed || trimmed.startsWith('data:')) return undefined;
+        if (!/^https?:\/\//i.test(trimmed)) return undefined;
+        return trimmed;
+      };
+
+      const safePhotoUrl = normalizePhotoUrl(data.photoURL);
+      const profileUpdates: { displayName?: string; photoURL?: string } = {
         displayName: data.displayName,
-        photoURL: data.photoURL,
-      });
+        ...(safePhotoUrl ? { photoURL: safePhotoUrl } : {}),
+      };
+
+      if (Object.keys(profileUpdates).length > 0) {
+        await updateProfile(auth.currentUser, profileUpdates);
+      }
 
       await setDoc(
         doc(db, 'users', auth.currentUser.uid),
         {
           fullName: data.displayName,
-          photoURL: data.photoURL || null,
+          ...(safePhotoUrl ? { photoURL: safePhotoUrl } : {}),
           updatedAt: Timestamp.now(),
         },
         { merge: true }
