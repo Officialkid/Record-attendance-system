@@ -199,7 +199,15 @@ export async function getVisitorsByService(serviceId: string): Promise<Visitor[]
 /**
  * Fetch services for a specific month/year
  */
-export async function getServicesByMonth(month: number, year: number) {
+type MonthlyService = {
+  id: string;
+  serviceDate: Date;
+  serviceType: string;
+  totalAttendance: number;
+  visitorCount: number;
+};
+
+export async function getServicesByMonth(month: number, year: number): Promise<MonthlyService[]> {
   try {
     const start = startOfMonth(new Date(year, month - 1));
     const end = endOfMonth(new Date(year, month - 1));
@@ -219,11 +227,15 @@ export async function getServicesByMonth(month: number, year: number) {
         const visitorsSnapshot = await getDocs(
           collection(db, `services/${serviceDoc.id}/visitors`)
         );
+        const data = serviceDoc.data();
+        const totalAttendance =
+          typeof data.totalAttendance === 'number' ? data.totalAttendance : 0;
 
         return {
           id: serviceDoc.id,
-          ...serviceDoc.data(),
-          serviceDate: serviceDoc.data().serviceDate.toDate(),
+          serviceDate: data.serviceDate?.toDate() || new Date(),
+          serviceType: data.serviceType || '',
+          totalAttendance,
           visitorCount: visitorsSnapshot.size,
         };
       })
@@ -263,8 +275,8 @@ export async function getMonthlyStats(month: number, year: number) {
   const services = await getServicesByMonth(month, year);
 
   const totalServices = services.length;
-  const totalAttendance = services.reduce((sum: number, s: { totalAttendance: number }) => sum + s.totalAttendance, 0);
-  const totalVisitors = services.reduce((sum: number, s: { visitorCount: number }) => sum + s.visitorCount, 0);
+  const totalAttendance = services.reduce((sum, service) => sum + service.totalAttendance, 0);
+  const totalVisitors = services.reduce((sum, service) => sum + service.visitorCount, 0);
   const avgAttendance = totalServices > 0 ? Math.round(totalAttendance / totalServices) : 0;
 
   return {
@@ -278,7 +290,13 @@ export async function getMonthlyStats(month: number, year: number) {
 /**
  * Fetch all services for a specific year
  */
-export async function getServicesByYear(year: number) {
+type YearlyService = {
+  id: string;
+  serviceDate: Date;
+  totalAttendance: number;
+};
+
+export async function getServicesByYear(year: number): Promise<YearlyService[]> {
   try {
     const start = startOfYear(new Date(year, 0));
     const end = endOfYear(new Date(year, 0));
@@ -292,11 +310,17 @@ export async function getServicesByYear(year: number) {
 
     const snapshot = await getDocs(q);
     
-    return snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      serviceDate: doc.data().serviceDate.toDate(),
-    }));
+    return snapshot.docs.map(doc => {
+      const data = doc.data();
+      const totalAttendance =
+        typeof data.totalAttendance === 'number' ? data.totalAttendance : 0;
+
+      return {
+        id: doc.id,
+        serviceDate: data.serviceDate?.toDate() || new Date(),
+        totalAttendance,
+      };
+    });
   } catch (error) {
     console.error('Error fetching yearly services:', error);
     throw error;
