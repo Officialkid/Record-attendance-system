@@ -1,16 +1,18 @@
 'use client';
 
 import { ButtonHTMLAttributes, forwardRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag' | 'onDragStart' | 'onDragEnd'> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger';
   size?: 'sm' | 'md' | 'lg';
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', children, ...props }, ref) => {
+    // Exclude conflicting drag event props
+    const { onDrag, onDragStart, onDragEnd, ...safeProps } = props as any;
     const baseStyles =
       'inline-flex items-center justify-center rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
 
@@ -31,11 +33,11 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <motion.button
         ref={ref}
-        whileHover={{ scale: props.disabled ? 1 : 1.02 }}
-        whileTap={{ scale: props.disabled ? 1 : 0.98 }}
+        whileHover={{ scale: safeProps.disabled ? 1 : 1.02 }}
+        whileTap={{ scale: safeProps.disabled ? 1 : 0.98 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className={cn(baseStyles, variants[variant], sizes[size], className)}
-        {...props}
+        {...safeProps}
       >
         {children}
       </motion.button>
