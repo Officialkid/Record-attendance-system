@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader2, X, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { browserLocalPersistence, browserSessionPersistence, setPersistence } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import Image from 'next/image';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
@@ -125,7 +126,7 @@ export default function SignInPage() {
 
   return (
     <>
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#4b248c] via-[#0047AB] to-[#4b248c] px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -136,15 +137,23 @@ export default function SignInPage() {
           <motion.div
             animate={shakeForm ? { x: [-10, 10, -10, 10, 0] } : {}}
             transition={{ duration: 0.5 }}
-            className="bg-white rounded-lg shadow-sm p-8"
+            className="bg-white/95 backdrop-blur rounded-lg shadow-xl p-8"
           >
             {/* Brand Logo */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg mx-auto mb-4 flex items-center justify-center">
-                <Eye className="w-9 h-9 text-black" />
+              <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-md">
+                <Image
+                  src="/icons/Logo.svg"
+                  alt="Insight Tracker"
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 object-contain"
+                  unoptimized
+                />
               </div>
-              <h1 className="text-[2rem] font-bold text-gray-900 mb-2">Welcome Back</h1>
-              <p className="text-base text-gray-600">Sign in to Insight Tracker</p>
+              <div className="text-[1.35rem] font-semibold text-gray-900">Insight Tracker</div>
+              <h1 className="text-[2rem] font-bold text-gray-900 mb-1">Welcome Back</h1>
+              <p className="text-base text-gray-600">Turn attendance into actionable insights</p>
             </div>
 
             {/* Form */}

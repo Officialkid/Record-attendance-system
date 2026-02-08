@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import Image from 'next/image';
 import { 
   BarChart3, 
   Users, 
@@ -23,8 +24,21 @@ export default function LandingPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && user) {
+    if (loading) return;
+
+    if (user) {
       router.push('/dashboard');
+      return;
+    }
+
+    const isStandalone =
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(display-mode: standalone)').matches ||
+        // @ts-expect-error - iOS Safari standalone mode
+        window.navigator.standalone === true);
+
+    if (isStandalone) {
+      router.replace('/sign-in');
     }
   }, [user, loading, router]);
 
@@ -50,10 +64,20 @@ export default function LandingPage() {
             
             {/* Logo */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
-                <Eye className="w-6 h-6 text-black" />
+              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
+                <Image
+                  src="/icons/Logo.svg"
+                  alt="Insight Tracker"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                  unoptimized
+                />
               </div>
-              <span className="text-xl font-bold text-white">Insight Tracker</span>
+              <div>
+                <span className="text-xl font-bold text-white">Insight Tracker</span>
+                <div className="text-xs text-white/70">Turn attendance into actionable insights</div>
+              </div>
             </div>
 
             {/* Auth Links */}
@@ -117,9 +141,9 @@ export default function LandingPage() {
               transition={{ duration: 0.6 }}
             >
               <h1 className="text-5xl lg:text-7xl font-bold text-white mb-6">
-                Turn Attendance into
+                Insight Tracker
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-500">
-                  Actionable Insights
+                  Turn Attendance into Actionable Insights
                 </span>
               </h1>
             </motion.div>

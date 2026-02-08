@@ -37,10 +37,18 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/dashboard" className="flex items-center space-x-2 group">
+          <Link href="/dashboard" className="flex items-center space-x-3 group">
             <div className="relative">
               <div className="absolute -inset-1 bg-gradient-to-r from-royal-purple to-primary-blue rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-300"></div>
-              <div className="relative bg-white px-3 py-2 rounded-lg">
+              <div className="relative bg-white px-2 py-2 rounded-lg flex items-center gap-2">
+                <Image
+                  src="/icons/Logo.svg"
+                  alt="Insight Tracker"
+                  width={28}
+                  height={28}
+                  className="w-7 h-7 object-contain"
+                  unoptimized
+                />
                 <span className="text-2xl font-bold bg-gradient-to-r from-royal-purple to-primary-blue bg-clip-text text-transparent">
                   Insight Tracker
                 </span>

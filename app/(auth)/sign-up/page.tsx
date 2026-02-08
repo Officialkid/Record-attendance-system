@@ -10,6 +10,7 @@ import {
   Check, X, ChevronLeft, ChevronRight, Sparkles,
   BarChart3, Users, Calendar
 } from 'lucide-react';
+import Image from 'next/image';
 import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import confetti from 'canvas-confetti';
@@ -189,11 +190,21 @@ export default function SignUpPage() {
         <div className="w-full max-w-[500px]">
           {/* Logo */}
           <Link href="/" className="inline-block mb-8">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
-                <Eye className="w-6 h-6 text-black" />
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
+                <Image
+                  src="/icons/Logo.svg"
+                  alt="Insight Tracker"
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 object-contain"
+                  unoptimized
+                />
               </div>
-              <span className="text-xl font-bold text-gray-900">Insight Tracker</span>
+              <div>
+                <div className="text-xl font-bold text-gray-900">Insight Tracker</div>
+                <div className="text-xs text-gray-500">Turn attendance into actionable insights</div>
+              </div>
             </div>
           </Link>
 

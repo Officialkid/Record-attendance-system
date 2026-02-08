@@ -2,7 +2,7 @@
   "name": "Insight Tracker - Event Analytics",
   "short_name": "Insight Tracker",
   "description": "Track events, analyze trends, and grow your community with beautiful analytics",
-  "start_url": "/",
+  "start_url": "/sign-in",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",

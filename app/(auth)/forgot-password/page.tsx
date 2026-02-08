@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Mail, ArrowLeft } from 'lucide-react';
+import Image from 'next/image';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -38,9 +39,17 @@ export default function ForgotPasswordPage() {
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/* Logo/Header */}
           <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-[#4b248c] to-[#0047AB] rounded-full mx-auto mb-4 flex items-center justify-center">
-              <span className="text-white text-2xl font-bold">C</span>
+            <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-md">
+              <Image
+                src="/icons/Logo.svg"
+                alt="Insight Tracker"
+                width={48}
+                height={48}
+                className="w-12 h-12 object-contain"
+                unoptimized
+              />
             </div>
+            <div className="text-sm font-semibold text-gray-700">Insight Tracker</div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset Password</h1>
             <p className="text-gray-600">
               {emailSent
