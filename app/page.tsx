@@ -165,7 +165,7 @@ export default function LandingPage() {
             >
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
-                <span>Free Forever Plan</span>
+                <span>Free Plan</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-green-400" />
@@ -369,7 +369,7 @@ export default function LandingPage() {
             <ArrowRight className="w-5 h-5" />
           </Link>
           <p className="text-white/80 mt-4 text-sm">
-            No credit card required • Free forever plan available
+            No credit card required • Get started free
           </p>
         </div>
       </section>

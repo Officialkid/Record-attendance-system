@@ -234,9 +234,9 @@ export default function SubscribePage() {
                 We will share Pro launch news, upcoming benefits, and upgrade options directly to
                 your inbox.
               </p>
-              <div className="mt-6 flex items-center gap-3 text-white/90">
+                <div className="mt-6 flex items-center gap-3 text-white/90">
                 <div className="h-2 w-2 rounded-full bg-white" />
-                <span>Free forever on the current plan</span>
+                <span>Get started free on the current plan</span>
               </div>
             </div>
           </motion.div>
