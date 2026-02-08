@@ -15,7 +15,7 @@ import {
 import { toast } from 'react-hot-toast';
 
 export default function ReportsTab() {
-  const { currentOrg, terminology } = useOrganization();
+  const { terminology } = useOrganization();
   const [generating, setGenerating] = useState(false);
   const [selectedReport, setSelectedReport] = useState<string | null>(null);
 
