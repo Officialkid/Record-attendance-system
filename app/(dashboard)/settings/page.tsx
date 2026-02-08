@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
 import { createOrganizationInvite, ensureUserOrgAccess, updateOrganization } from '@/lib/firestore-multitenant';
-import { Building2, User, Bell, HelpCircle, Camera, Lock, Users, Shield, Trash2, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { Building2, User, Bell, HelpCircle, Lock, Users, Shield, Trash2, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import ProfilePictureUpload from '@/components/ProfilePictureUpload';
 import {

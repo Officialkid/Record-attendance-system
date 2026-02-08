@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, HelpCircle, FileText, LogOut, Eye, Bell } from 'lucide-react';
+import { X, HelpCircle, FileText, LogOut, Bell } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useOrganization } from '@/lib/OrganizationContext';
@@ -46,8 +46,15 @@ export default function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             {/* HEADER */}
             <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
-                  <Eye className="w-6 h-6 text-black" />
+                <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                  <Image
+                    src="/icons/Logo.png"
+                    alt="Insight Tracker"
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 object-contain"
+                    unoptimized
+                  />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-gray-900">Insight Tracker</h2>

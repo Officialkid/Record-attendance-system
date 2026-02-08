@@ -17,13 +17,21 @@ import {
   LogOut,
   Building2,
   ChevronDown,
-  Eye,
 } from 'lucide-react';
 
-export default function DashboardSidebar() {
+interface DashboardSidebarProps {
+  onNavigate?: () => void;
+}
+
+export default function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
   const pathname = usePathname();
   const { currentOrg, organizations, terminology } = useOrganization();
   const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    onNavigate?.();
+  };
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
@@ -44,8 +52,15 @@ export default function DashboardSidebar() {
   return (
     <div className="flex flex-col w-64 bg-white border-r border-gray-200 h-full">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-200">
-        <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
-          <Eye className="w-6 h-6 text-black" />
+        <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
+          <Image
+            src="/icons/Logo.png"
+            alt="Insight Tracker"
+            width={32}
+            height={32}
+            className="w-8 h-8 object-contain"
+            unoptimized
+          />
         </div>
         <div>
           <h1 className="text-lg font-bold text-gray-900">Insight Tracker</h1>
@@ -62,6 +77,7 @@ export default function DashboardSidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 active
                   ? 'bg-[#4b248c] text-white shadow-md'
@@ -86,6 +102,7 @@ export default function DashboardSidebar() {
             <Link
               key={item.name}
               href={item.href}
+              onClick={onNavigate}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                 active
                   ? 'bg-gray-100 text-gray-900'
@@ -147,7 +164,7 @@ export default function DashboardSidebar() {
 
         <button
           type="button"
-          onClick={logout}
+          onClick={handleLogout}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
         >
           <LogOut className="w-4 h-4" />

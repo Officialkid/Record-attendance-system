@@ -26,11 +26,30 @@ export default function UpdatesAndFeedbackTab() {
 
     setSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestType,
+          message: featureRequest.trim(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send feedback');
+      }
+
       toast.success('Thank you! Your feedback has been submitted.');
       setFeatureRequest('');
+    } catch (error) {
+      console.error(error);
+      toast.error('Unable to send feedback right now. Please try again.');
+    } finally {
       setSubmitting(false);
-    }, 1000);
+    }
   };
 
   const updates = [

@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import Navigation from '@/components/Navigation';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '@/lib/AuthContext';
+import PwaUpdatePrompt from '@/components/PwaUpdatePrompt';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -51,6 +52,7 @@ export default function RootLayout({
           <Navigation />
           {children}
         </AuthProvider>
+        <PwaUpdatePrompt />
         <Toaster 
           position="top-right"
           toastOptions={{

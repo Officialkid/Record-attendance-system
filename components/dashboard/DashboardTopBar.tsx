@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
-import { Menu, Search, ChevronDown, MoreVertical, Eye, Plus, Building2, Check } from 'lucide-react';
+import { Menu, Search, ChevronDown, MoreVertical, Plus, Building2, Check } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import MobileDrawer from './MobileDrawer';
@@ -70,8 +70,15 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
             </button>
 
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center lg:hidden">
-                <Eye className="w-5 h-5 text-black" />
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm lg:hidden">
+                <Image
+                  src="/icons/Logo.png"
+                  alt="Insight Tracker"
+                  width={24}
+                  height={24}
+                  className="w-6 h-6 object-contain"
+                  unoptimized
+                />
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-gray-900 truncate">

@@ -70,7 +70,7 @@ export default function DashboardLayout({
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-            <DashboardSidebar />
+            <DashboardSidebar onNavigate={() => setIsMobileNavOpen(false)} />
           </div>
 
           <div className="flex h-screen overflow-hidden">
