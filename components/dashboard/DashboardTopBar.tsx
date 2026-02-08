@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
-import { Menu, Search, Bell, ChevronDown, MoreVertical, Eye } from 'lucide-react';
+import { Menu, Search, ChevronDown, MoreVertical, Eye, Plus, Building2, Check } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import MobileDrawer from './MobileDrawer';
+import AddOrganizationModal from '@/components/modals/AddOrganizationModal';
+import NotificationBell from '@/components/NotificationBell';
 
 interface DashboardTopBarProps {
   onMenuClick?: () => void;
@@ -13,10 +16,12 @@ interface DashboardTopBarProps {
 }
 
 export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTopBarProps) {
-  const { currentOrg, terminology } = useOrganization();
+  const { currentOrg, organizations, switchOrganization, terminology } = useOrganization();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [showOrgMenu, setShowOrgMenu] = useState(false);
+  const [showAddOrgModal, setShowAddOrgModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,6 +82,79 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
                 </p>
               </div>
             </div>
+
+            {organizations.length > 0 && (
+              <div className="relative hidden sm:block">
+                <button
+                  onClick={() => setShowOrgMenu(!showOrgMenu)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  type="button"
+                >
+                  <Building2 className="w-5 h-5 text-gray-600" />
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-gray-900 truncate max-w-[200px]">
+                      {currentOrg?.name}
+                    </p>
+                    <p className="text-xs text-gray-500">{currentOrg?.type}</p>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </button>
+
+                {showOrgMenu && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setShowOrgMenu(false)}
+                    />
+                    <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-gray-200 z-20">
+                      <div className="p-2">
+                        <p className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase">
+                          Your Organizations
+                        </p>
+                        {organizations.map((org) => (
+                          <button
+                            key={org.id}
+                            onClick={() => {
+                              switchOrganization(org.id);
+                              setShowOrgMenu(false);
+                            }}
+                            className={`
+                              w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors
+                              ${currentOrg?.id === org.id
+                                ? 'bg-purple-50 text-purple-700'
+                                : 'hover:bg-gray-50 text-gray-700'
+                              }
+                            `}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{org.name}</p>
+                              <p className="text-xs text-gray-500">{org.type}</p>
+                            </div>
+                            {currentOrg?.id === org.id && (
+                              <Check className="w-5 h-5 text-purple-600 flex-shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="border-t border-gray-200 p-2">
+                        <button
+                          onClick={() => {
+                            setShowOrgMenu(false);
+                            setShowAddOrgModal(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 text-purple-600 font-medium transition-colors"
+                          type="button"
+                        >
+                          <Plus className="w-5 h-5" />
+                          Add Organization
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
         <div className="hidden md:flex flex-1 max-w-md mx-8">
@@ -103,14 +181,7 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
             <MoreVertical className="w-5 h-5 text-gray-600" />
           </button>
 
-          <button
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-            aria-label="Notifications"
-            disabled
-            type="button"
-          >
-            <Bell className="w-5 h-5 text-gray-400" />
-          </button>
+          <NotificationBell />
 
           <div className="relative" ref={menuRef}>
             <button
@@ -118,10 +189,21 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
               className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
               type="button"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-xs">
-                  {user?.email?.charAt(0).toUpperCase()}
-                </span>
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+                {user?.photoURL ? (
+                  <Image
+                    src={user.photoURL}
+                    alt="Profile"
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <span className="text-white font-semibold text-xs">
+                    {user?.email?.charAt(0).toUpperCase()}
+                  </span>
+                )}
               </div>
 
               <div className="hidden sm:block text-left">
@@ -172,6 +254,12 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
       <MobileDrawer 
         isOpen={isDrawerOpen}
         onClose={() => setIsDrawerOpen(false)}
+      />
+
+      <AddOrganizationModal
+        isOpen={showAddOrgModal}
+        onClose={() => setShowAddOrgModal(false)}
+        onSuccess={() => window.location.reload()}
       />
     </>
   );

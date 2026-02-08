@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
+import Image from 'next/image';
 import {
   LayoutDashboard,
   Plus,
@@ -12,6 +13,7 @@ import {
   Settings,
   HelpCircle,
   FileText,
+  Bell,
   LogOut,
   Building2,
   ChevronDown,
@@ -33,6 +35,7 @@ export default function DashboardSidebar() {
 
   const secondaryNav = [
     { name: 'Help & Support', href: '/help', icon: HelpCircle },
+    { name: 'Notifications', href: '/notifications', icon: Bell },
     { name: 'Documentation', href: '/docs', icon: FileText },
   ];
 
@@ -115,10 +118,21 @@ export default function DashboardSidebar() {
 
       <div className="px-3 py-4 border-t border-gray-200 bg-gray-50">
         <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold text-sm">
-              {user?.email?.charAt(0).toUpperCase()}
-            </span>
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center overflow-hidden">
+            {user?.photoURL ? (
+              <Image
+                src={user.photoURL}
+                alt="Profile"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+                unoptimized
+              />
+            ) : (
+              <span className="text-white font-semibold text-sm">
+                {user?.email?.charAt(0).toUpperCase()}
+              </span>
+            )}
           </div>
 
           <div className="flex-1 min-w-0">

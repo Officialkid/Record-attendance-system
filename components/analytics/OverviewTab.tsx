@@ -345,7 +345,16 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                 return (
                 <div
                   key={service.id}
-                  className="bg-gray-50 rounded-lg p-4 space-y-3"
+                  className="bg-gray-50 rounded-lg p-4 space-y-3 cursor-pointer hover:bg-gray-100 transition-colors"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleEdit(service)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      handleEdit(service);
+                    }
+                  }}
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -377,7 +386,10 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                   <div className="flex justify-end">
                     <div className="relative inline-block text-left">
                       <button
-                        onClick={() => setOpenMenuId(isMenuOpen ? null : service.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenMenuId(isMenuOpen ? null : service.id);
+                        }}
                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                         aria-label={`${terminology.Event} actions`}
                       >
@@ -388,9 +400,11 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                         <div
                           className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
                           onMouseLeave={() => setOpenMenuId(null)}
+                          onClick={(event) => event.stopPropagation()}
                         >
                           <button
-                            onClick={() => {
+                            onClick={(event) => {
+                              event.stopPropagation();
                               handleEdit(service);
                               setOpenMenuId(null);
                             }}
@@ -400,7 +414,8 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                             Edit {terminology.Event}
                           </button>
                           <button
-                            onClick={() => {
+                            onClick={(event) => {
+                              event.stopPropagation();
                               handleDelete(service.id, service.serviceDate);
                               setOpenMenuId(null);
                             }}

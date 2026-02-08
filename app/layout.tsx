@@ -9,8 +9,15 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Insight Tracker - Turn Attendance into Actionable Insights',
-  description: 'Track events, analyze trends, and grow your community with beautiful analytics. Perfect for churches, NGOs, corporate events, and more.',
+  description: 'Track events, analyze trends, and grow your community with beautiful analytics.',
   keywords: 'attendance tracking, event analytics, church management, NGO tools, corporate events, visitor tracking',
+  manifest: '/manifest.json',
+  themeColor: '#4b248c',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Insight Tracker',
+  },
   openGraph: {
     title: 'Insight Tracker',
     description: 'Turn attendance into actionable insights',
@@ -19,7 +26,7 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
+    apple: '/icons/icon-192x192.png',
   },
 };
 
@@ -30,6 +37,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <meta name="application-name" content="Insight Tracker" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Insight Tracker" />
+        <meta name="theme-color" content="#4b248c" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
           <Navigation />

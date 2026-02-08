@@ -6,31 +6,26 @@ import { useAuth } from '@/lib/AuthContext';
 import { createOrganizationInvite, ensureUserOrgAccess, updateOrganization } from '@/lib/firestore-multitenant';
 import { Building2, User, Bell, HelpCircle, Camera, Lock, Users, Shield, Trash2, UserPlus, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import Image from 'next/image';
-import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
+import ProfilePictureUpload from '@/components/ProfilePictureUpload';
+import {
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from 'firebase/auth';
 
 export default function SettingsPage() {
   const { currentOrg, refreshOrganizations } = useOrganization();
-  const { user, updateUserProfile, changePassword, updateUserEmail } = useAuth();
+  const { user, updateUserProfile, updateUserEmail } = useAuth();
   const [activeSection, setActiveSection] = useState('organization');
   const [loading, setLoading] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
   const [isFixingPermissions, setIsFixingPermissions] = useState(false);
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showEmailPassword, setShowEmailPassword] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState<'member' | 'admin'>('member');
   const [isInviting, setIsInviting] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [profileFile, setProfileFile] = useState<File | null>(null);
-  const [profilePreview, setProfilePreview] = useState('');
 
   // Organization form state
   const [formData, setFormData] = useState({
@@ -52,12 +47,17 @@ export default function SettingsPage() {
     currentPassword: '',
   });
 
-  // Password change state
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
 
   // Team members (placeholder data)
   const [teamMembers] = useState([
@@ -85,14 +85,6 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  useEffect(() => {
-    return () => {
-      if (profilePreview) {
-        URL.revokeObjectURL(profilePreview);
-      }
-    };
-  }, [profilePreview]);
-
   const sections = [
     { id: 'organization', label: 'Organization', icon: Building2 },
     { id: 'account', label: 'Account', icon: User },
@@ -101,108 +93,104 @@ export default function SettingsPage() {
   ];
 
   const handleSave = async () => {
-    if (!currentOrg) return;
+    if (!currentOrg) {
+      toast.error('No organization selected');
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      toast.error('Organization name is required');
+      return;
+    }
 
     setLoading(true);
     try {
-      await updateOrganization(currentOrg.id, {
-        name: formData.name,
+      const result = await updateOrganization(currentOrg.id, {
+        name: formData.name.trim(),
         type: formData.type,
         country: formData.country,
-        phone: formData.phone,
+        phone: formData.phone.trim(),
       });
 
-      await refreshOrganizations();
-
-      toast.success('Settings saved successfully!');
+      if (result.success) {
+        toast.success('Settings saved successfully!');
+        window.location.reload();
+      } else {
+        toast.error(result.error || 'Failed to save settings');
+      }
     } catch (error) {
       console.error('Error saving settings:', error);
-      toast.error('Failed to save settings');
+      toast.error('An error occurred while saving');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleProfilePictureClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleProfilePictureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (profilePreview) {
-        URL.revokeObjectURL(profilePreview);
-      }
-      const previewUrl = URL.createObjectURL(file);
-      setProfilePreview(previewUrl);
-      setProfileFile(file);
-      setAccountData({ ...accountData, photoURL: previewUrl });
     }
   };
 
   const handleUpdateAccount = async () => {
     setIsUpdatingProfile(true);
     try {
-      let uploadedPhotoUrl: string | undefined;
-
-      if (profileFile && user) {
-        const storageRef = ref(storage, `avatars/${user.uid}/${profileFile.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, profileFile);
-
-        uploadedPhotoUrl = await new Promise<string>((resolve, reject) => {
-          uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-              const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              setUploadProgress(progress);
-            },
-            (error) => reject(error),
-            async () => {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve(url);
-            }
-          );
-        });
-      }
-
       await updateUserProfile({
         displayName: accountData.displayName,
-        ...(uploadedPhotoUrl ? { photoURL: uploadedPhotoUrl } : {}),
       });
-
-      if (uploadedPhotoUrl) {
-        if (profilePreview) {
-          URL.revokeObjectURL(profilePreview);
-        }
-        setProfilePreview('');
-        setProfileFile(null);
-        setAccountData((prev) => ({ ...prev, photoURL: uploadedPhotoUrl }));
-      }
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
-      setUploadProgress(0);
       setIsUpdatingProfile(false);
     }
   };
 
-  const handleChangePassword = async () => {
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast.error('No user logged in');
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error('New password must be at least 6 characters');
+      return;
+    }
+
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       toast.error('New passwords do not match');
       return;
     }
-    if (passwordData.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+
+    if (passwordData.currentPassword === passwordData.newPassword) {
+      toast.error('New password must be different from current password');
       return;
     }
-    setIsUpdatingPassword(true);
+
+    setChangingPassword(true);
     try {
-      await changePassword(passwordData.currentPassword, passwordData.newPassword);
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    } catch (error) {
+      const credential = EmailAuthProvider.credential(
+        user.email || '',
+        passwordData.currentPassword
+      );
+
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, passwordData.newPassword);
+
+      toast.success('Password changed successfully!');
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error: unknown) {
       console.error('Error changing password:', error);
+      const authError = error as { code?: string };
+
+      if (authError.code === 'auth/wrong-password') {
+        toast.error('Current password is incorrect');
+      } else if (authError.code === 'auth/weak-password') {
+        toast.error('Password is too weak');
+      } else {
+        toast.error('Failed to change password. Please try again.');
+      }
     } finally {
-      setIsUpdatingPassword(false);
+      setChangingPassword(false);
     }
   };
 
@@ -461,68 +449,16 @@ export default function SettingsPage() {
           {activeSection === 'account' && (
             <div className="space-y-6">
               
-              {/* PROFILE SECTION */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">
                   Profile Information
                 </h2>
 
                 <div className="space-y-6">
-                  
-                  {/* Profile Picture */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Profile Picture
-                    </label>
-                    <div className="flex items-center gap-6">
-                      <div className="relative">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white text-3xl font-bold overflow-hidden">
-                          {accountData.photoURL ? (
-                            <Image
-                              src={accountData.photoURL}
-                              alt="Profile"
-                              width={96}
-                              height={96}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span>{accountData.displayName?.[0]?.toUpperCase() || 'U'}</span>
-                          )}
-                        </div>
-                        <button
-                          onClick={handleProfilePictureClick}
-                          className="absolute bottom-0 right-0 w-8 h-8 bg-white border-2 border-gray-200 rounded-full flex items-center justify-center hover:bg-gray-50 transition-colors"
-                        >
-                          <Camera className="w-4 h-4 text-gray-600" />
-                        </button>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          onChange={handleProfilePictureChange}
-                          className="hidden"
-                        />
-                      </div>
-                      <div>
-                        <button
-                          onClick={handleProfilePictureClick}
-                          className="px-4 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors text-sm"
-                        >
-                          Change Photo
-                        </button>
-                        {uploadProgress > 0 && (
-                          <p className="text-xs text-gray-500 mt-2">
-                            Uploading... {uploadProgress}%
-                          </p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-2">
-                          JPG, PNG or GIF. Max size 2MB.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <ProfilePictureUpload />
 
-                  {/* Display Name */}
+                  <div className="border-t border-gray-200" />
+
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Display Name
@@ -539,7 +475,6 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  {/* Primary Email */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Primary Email Address
@@ -560,7 +495,6 @@ export default function SettingsPage() {
                     </p>
                   </div>
 
-                  {/* Update Email */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -602,7 +536,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Save Button */}
                   <div className="flex flex-wrap items-center gap-4 pt-6 border-t border-gray-200">
                     <button
                       onClick={handleUpdateAccount}
@@ -619,11 +552,9 @@ export default function SettingsPage() {
                       {isUpdatingEmail ? 'Updating Email...' : 'Update Email'}
                     </button>
                   </div>
-
                 </div>
               </div>
 
-              {/* PASSWORD SECTION */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <Lock className="w-5 h-5 text-gray-700" />
@@ -632,111 +563,108 @@ export default function SettingsPage() {
                   </h2>
                 </div>
 
-                <div className="space-y-4">
-                  
-                  {/* Current Password */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Current Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showCurrentPassword ? 'text' : 'password'}
-                        value={passwordData.currentPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="Enter current password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowCurrentPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                        aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showCurrentPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                <form onSubmit={handlePasswordChange} className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Current Password
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type={showPasswords.current ? 'text' : 'password'}
+                            value={passwordData.currentPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Enter current password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            aria-label={showPasswords.current ? 'Hide password' : 'Show password'}
+                          >
+                            {showPasswords.current ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
 
-                  {/* New Password */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showNewPassword ? 'text' : 'password'}
-                        value={passwordData.newPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="Enter new password (min 6 characters)"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                        aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showNewPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          New Password
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type={showPasswords.new ? 'text' : 'password'}
+                            value={passwordData.newPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Enter new password"
+                            required
+                            minLength={6}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            aria-label={showPasswords.new ? 'Hide password' : 'Show password'}
+                          >
+                            {showPasswords.new ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Must be at least 6 characters
+                        </p>
+                      </div>
 
-                  {/* Confirm New Password */}
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Confirm New Password
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showConfirmPassword ? 'text' : 'password'}
-                        value={passwordData.confirmPassword}
-                        onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                        className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                        placeholder="Confirm new password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                        aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="w-5 h-5" />
-                        ) : (
-                          <Eye className="w-5 h-5" />
-                        )}
-                      </button>
-                    </div>
-                  </div>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Confirm New Password
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                          <input
+                            type={showPasswords.confirm ? 'text' : 'password'}
+                            value={passwordData.confirmPassword}
+                            onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                            className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                            placeholder="Confirm new password"
+                            required
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            aria-label={showPasswords.confirm ? 'Hide password' : 'Show password'}
+                          >
+                            {showPasswords.confirm ? (
+                              <EyeOff className="w-5 h-5" />
+                            ) : (
+                              <Eye className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
 
-                  {/* Password Requirements */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <p className="text-sm font-semibold text-blue-900 mb-2">Password Requirements:</p>
-                    <ul className="text-xs text-blue-800 space-y-1">
-                      <li>• At least 6 characters long</li>
-                      <li>• Mix of letters and numbers recommended</li>
-                      <li>• Avoid common passwords</li>
-                    </ul>
-                  </div>
-
-                  <button
-                    onClick={handleChangePassword}
-                    disabled={isUpdatingPassword}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
-                  >
-                    {isUpdatingPassword ? 'Updating...' : 'Change Password'}
-                  </button>
-
-                </div>
+                      <div className="flex items-center gap-4 pt-2">
+                        <button
+                          type="submit"
+                          disabled={changingPassword}
+                          className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {changingPassword ? 'Changing Password...' : 'Change Password'}
+                        </button>
+                      </div>
+                </form>
               </div>
 
               {/* TEAM MEMBERS SECTION */}

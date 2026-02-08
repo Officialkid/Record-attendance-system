@@ -27,6 +27,8 @@ import {
 } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, startOfDay, endOfDay } from 'date-fns';
 
+export { updateOrganization };
+
 const isIndexRequiredError = (error: unknown) => {
   const err = error as { code?: string; message?: string };
   const message = err?.message?.toLowerCase() ?? '';
@@ -132,52 +134,32 @@ export interface OrganizationInvite {
 /**
  * Create a new organization
  */
-export async function createOrganization(data: {
-  name: string;
-  type: string;
-  country: string;
-  phone: string;
-  ownerId: string;
-  estimatedAttendance?: string;
-  howDidYouHear?: string;
-}): Promise<string> {
+export async function createOrganization(
+  userId: string,
+  orgData: {
+    name: string;
+    type: string;
+    country: string;
+    phone: string;
+  }
+) {
   try {
-    // Set currency based on country
-    const currency = data.country === 'Kenya' ? 'KES' : 'USD';
-
-    // Set timezone based on country (simplified - you can expand this)
-    const timezoneMap: { [key: string]: string } = {
-      'Kenya': 'Africa/Nairobi',
-      'Uganda': 'Africa/Kampala',
-      'Tanzania': 'Africa/Dar_es_Salaam',
-      'United States': 'America/New_York',
-      'United Kingdom': 'Europe/London',
-    };
-    const timezone = timezoneMap[data.country] || 'UTC';
-
-    const orgData = {
-      name: data.name,
-      type: data.type,
-      country: data.country,
-      phone: data.phone,
-      ownerId: data.ownerId,
-      members: [data.ownerId],
-      settings: {
-        currency,
-        timezone,
-      },
-      ...(data.estimatedAttendance && { estimatedAttendance: data.estimatedAttendance }),
-      ...(data.howDidYouHear && { howDidYouHear: data.howDidYouHear }),
+    const newOrg = await addDoc(collection(db, 'organizations'), {
+      name: orgData.name,
+      type: orgData.type,
+      country: orgData.country,
+      phone: orgData.phone,
+      ownerId: userId,
+      members: [userId],
+      plan: 'free',
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
-    };
+    });
 
-    const docRef = await addDoc(collection(db, 'organizations'), orgData);
-    console.log('Organization created:', docRef.id);
-    return docRef.id;
-  } catch (error) {
+    return { success: true, orgId: newOrg.id };
+  } catch (error: unknown) {
     console.error('Error creating organization:', error);
-    throw new Error('Failed to create organization');
+    return { success: false, error: (error as { message?: string }).message };
   }
 }
 
@@ -257,23 +239,55 @@ export async function getUserOrganizations(userId: string): Promise<Organization
 /**
  * Update organization details
  */
-export async function updateOrganization(
+async function updateOrganization(
   orgId: string,
-  updates: Partial<Omit<Organization, 'id' | 'createdAt'>>
-): Promise<boolean> {
+  updates: {
+    name?: string;
+    type?: string;
+    country?: string;
+    phone?: string;
+  }
+) {
   try {
-    const docRef = doc(db, 'organizations', orgId);
-    
-    await updateDoc(docRef, {
+    const orgRef = doc(db, 'organizations', orgId);
+
+    const updateData: Record<string, unknown> = {
+      updatedAt: Timestamp.now(),
+    };
+
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.type !== undefined) updateData.type = updates.type;
+    if (updates.country !== undefined) updateData.country = updates.country;
+    if (updates.phone !== undefined) updateData.phone = updates.phone;
+
+    await updateDoc(orgRef, updateData);
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('Error updating organization:', error);
+    return { success: false, error: (error as { message?: string }).message };
+  }
+}
+
+export async function updateUserProfile(
+  userId: string,
+  updates: {
+    photoURL?: string;
+    displayName?: string;
+  }
+) {
+  try {
+    const userRef = doc(db, 'users', userId);
+
+    await updateDoc(userRef, {
       ...updates,
       updatedAt: Timestamp.now(),
     });
 
-    console.log('Organization updated:', orgId);
-    return true;
-  } catch (error) {
-    console.error('Error updating organization:', error);
-    throw new Error('Failed to update organization');
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('Error updating user profile:', error);
+    return { success: false, error: (error as { message?: string }).message };
   }
 }
 
