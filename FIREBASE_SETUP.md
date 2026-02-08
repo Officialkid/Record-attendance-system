@@ -112,10 +112,10 @@ Complete step-by-step guide to set up Firebase for your attendance management sy
        
        // Services collection
        match /services/{serviceId} {
-         // Allow anyone to read service records
+         // Allow anyone to read event records
          allow read: if true;
          
-         // Allow anyone to create service records
+         // Allow anyone to create event records
          allow create: if true;
          
          // Allow update if the document exists
@@ -177,7 +177,7 @@ After adding test data, your Firestore should look like this:
 📁 services (collection)
   📄 auto-generated-id-1
     serviceDate: February 4, 2026 at 12:00:00 AM UTC
-    serviceType: "Saturday Fellowship"
+   eventType: "Saturday Fellowship"
     totalAttendance: 150
     createdAt: February 4, 2026 at 2:30:00 PM UTC
     updatedAt: February 4, 2026 at 2:30:00 PM UTC

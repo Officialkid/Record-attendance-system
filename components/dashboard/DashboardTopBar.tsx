@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
-import { Menu, Search, Bell, ChevronDown, MoreVertical } from 'lucide-react';
+import { Menu, Search, Bell, ChevronDown, MoreVertical, Eye } from 'lucide-react';
 import MobileDrawer from './MobileDrawer';
 
 interface DashboardTopBarProps {
@@ -12,7 +12,7 @@ interface DashboardTopBarProps {
 }
 
 export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTopBarProps) {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, terminology } = useOrganization();
   const { user, logout } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -64,10 +64,8 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
             </button>
 
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center lg:hidden">
-                <span className="text-white font-bold text-sm">
-                  {currentOrg?.name.charAt(0)}
-                </span>
+              <div className="w-8 h-8 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center lg:hidden">
+                <Eye className="w-5 h-5 text-black" />
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-gray-900 truncate">
@@ -85,7 +83,7 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search services, visitors..."
+              placeholder={`Search ${terminology.events.toLowerCase()}, ${terminology.visitors.toLowerCase()}...`}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               disabled
             />

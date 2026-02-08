@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { useOrganization } from '@/lib/OrganizationContext';
 
 interface Service {
   id: string;
@@ -16,6 +17,10 @@ interface MiniTrendChartProps {
 }
 
 export default function MiniTrendChart({ services }: MiniTrendChartProps) {
+  const { terminology } = useOrganization();
+  const eventPluralLower = terminology.events.toLowerCase();
+  const attendeesLower = terminology.attendees.toLowerCase();
+
   const chartData = services
     .slice()
     .reverse()
@@ -48,7 +53,7 @@ export default function MiniTrendChart({ services }: MiniTrendChartProps) {
         <div className="bg-white px-3 py-2 rounded-lg shadow-lg border border-gray-200">
           <p className="text-xs text-gray-600">{payload[0].payload.fullDate}</p>
           <p className="text-sm font-bold text-purple-600">
-            {payload[0].value} attendees
+            {payload[0].value} {attendeesLower}
           </p>
         </div>
       );
@@ -70,7 +75,7 @@ export default function MiniTrendChart({ services }: MiniTrendChartProps) {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Attendance Trend</h2>
-          <p className="text-sm text-gray-600 mt-1">Last {services.length} services</p>
+          <p className="text-sm text-gray-600 mt-1">Last {services.length} {eventPluralLower}</p>
         </div>
 
         {trend && (
@@ -135,10 +140,10 @@ export default function MiniTrendChart({ services }: MiniTrendChartProps) {
           <p className="text-sm text-purple-900">
             <span className="font-semibold">Insight:</span>{' '}
             {trend.direction === 'up'
-              ? `Attendance is up ${trend.percentage}% compared to ${services.length} services ago! 🎉`
+              ? `Attendance is up ${trend.percentage}% compared to ${services.length} ${eventPluralLower} ago! 🎉`
               : trend.direction === 'down'
-                ? `Attendance is down ${Math.abs(Number(trend.percentage))}% compared to ${services.length} services ago.`
-                : `Attendance has remained stable over the last ${services.length} services.`}
+                ? `Attendance is down ${Math.abs(Number(trend.percentage))}% compared to ${services.length} ${eventPluralLower} ago.`
+                : `Attendance has remained stable over the last ${services.length} ${eventPluralLower}.`}
           </p>
         </div>
       )}

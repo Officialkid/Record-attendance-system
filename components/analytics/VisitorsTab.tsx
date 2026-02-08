@@ -1,6 +1,7 @@
 'use client';
 
 import { Users } from 'lucide-react';
+import { useOrganization } from '@/lib/OrganizationContext';
 
 interface VisitorsTabProps {
   month: number;
@@ -8,6 +9,7 @@ interface VisitorsTabProps {
 }
 
 export default function VisitorsTab({ month, year }: VisitorsTabProps) {
+  const { terminology } = useOrganization();
   void month;
   void year;
   return (
@@ -17,10 +19,10 @@ export default function VisitorsTab({ month, year }: VisitorsTabProps) {
           <Users className="w-8 h-8 text-purple-600" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-          Visitor Insights Coming Soon
+          {terminology.visitor} Insights Coming Soon
         </h3>
         <p className="text-gray-600 mb-4">
-          Track visitor retention, conversion rates, follow-up status, and engagement metrics.
+          Track {terminology.visitor.toLowerCase()} retention, conversion rates, follow-up status, and engagement metrics.
         </p>
         <div className="inline-flex items-center gap-2 text-sm text-gray-500">
           <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>

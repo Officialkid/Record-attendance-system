@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function MonthlyAttendanceChart({ services, selectedMonth, selectedYear }: Props) {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, terminology } = useOrganization();
 
   // Transform data for chart
   const chartData = services.map((service) => ({
@@ -40,10 +40,10 @@ export default function MonthlyAttendanceChart({ services, selectedMonth, select
         <div className="bg-white p-4 rounded-lg shadow-lg border-2 border-purple-500">
           <p className="font-semibold text-gray-800">{payload[0].payload.fullDate}</p>
           <p className="text-blue-600 font-bold text-xl mt-2">
-            {payload[0].value.toLocaleString()} attendees
+            {payload[0].value.toLocaleString()} {terminology.attendees.toLowerCase()}
           </p>
           <p className="text-gray-600 mt-1">
-            {payload[0].payload.visitors} new visitors
+            {payload[0].payload.visitors} new {terminology.visitors.toLowerCase()}
           </p>
         </div>
       );
@@ -64,7 +64,7 @@ export default function MonthlyAttendanceChart({ services, selectedMonth, select
           No Data Available
         </h3>
         <p className="text-gray-500">
-          No services recorded for {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy')}
+          No {terminology.events.toLowerCase()} recorded for {format(new Date(selectedYear, selectedMonth - 1), 'MMMM yyyy')}
         </p>
       </motion.div>
     );
@@ -199,7 +199,7 @@ export default function MonthlyAttendanceChart({ services, selectedMonth, select
       <div className="mt-6 flex flex-wrap items-center justify-center gap-4 md:gap-6 text-xs md:text-sm">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: '#4b248c' }}></div>
-          <span className="text-gray-600">Regular Service</span>
+          <span className="text-gray-600">Regular {terminology.Event}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 rounded" style={{ backgroundColor: '#F3CC3C' }}></div>
@@ -215,7 +215,7 @@ export default function MonthlyAttendanceChart({ services, selectedMonth, select
           transition={{ delay: 0.2 }}
           className="text-center p-4 bg-purple-50 rounded-lg border border-purple-100"
         >
-          <p className="text-sm text-gray-600">Total Services</p>
+          <p className="text-sm text-gray-600">Total {terminology.Events}</p>
           <p className="text-2xl md:text-3xl font-bold text-purple-700">{services.length}</p>
         </motion.div>
         <motion.div 

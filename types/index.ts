@@ -1,8 +1,8 @@
 // Database Types
 export interface Service {
   id: string;
-  service_date: string;
-  service_type: string;
+  event_date: string;
+  event_type: string;
   total_attendance: number;
   created_at: string;
   updated_at: string;
@@ -19,8 +19,8 @@ export interface Visitor {
 
 // Form Types
 export interface AttendanceFormData {
-  service_date: string;
-  service_type: string;
+  event_date: string;
+  event_type: string;
   total_attendance: number;
   visitors: VisitorFormData[];
 }

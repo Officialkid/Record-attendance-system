@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { getUserOrganizations, Organization } from './firestore-multitenant';
+import { getDefaultEventTypes, getTerminology } from './terminology';
 import { toast } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 
@@ -16,6 +17,8 @@ interface OrganizationContextType {
   loading: boolean;
   switchOrganization: (orgId: string) => void;
   refreshOrganizations: () => Promise<void>;
+  terminology: ReturnType<typeof getTerminology>;
+  eventTypes: string[];
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -33,6 +36,14 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
   const [currentOrg, setCurrentOrg] = useState<Organization | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const terminology = currentOrg
+    ? getTerminology(currentOrg.type)
+    : getTerminology('Other');
+
+  const eventTypes = currentOrg
+    ? getDefaultEventTypes(currentOrg.type)
+    : [];
 
   /**
    * Load organizations for current user
@@ -169,6 +180,8 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
         loading,
         switchOrganization,
         refreshOrganizations,
+        terminology,
+        eventTypes,
       }}
     >
       {children}

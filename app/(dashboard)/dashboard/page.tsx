@@ -9,17 +9,22 @@ import StatCard from '@/components/dashboard/StatCard';
 import QuickActions from '@/components/dashboard/QuickActions';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import MiniTrendChart from '@/components/dashboard/MiniTrendChart';
+import EditEventModal from '@/components/modals/EditEventModal';
+import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
 import { StatCardSkeleton, QuickActionsSkeleton, TableSkeleton, ChartSkeleton, PageHeaderSkeleton } from '@/components/ui/LoadingSkeletons';
 import { Users, TrendingUp, Calendar, Sparkles, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DashboardPage() {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, terminology } = useOrganization();
   const { user } = useAuth();
   const [stats, setStats] = useState<MonthlyStats | null>(null);
   const [recentServices, setRecentServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [indexRequired, setIndexRequired] = useState(false);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
+  const [deletingServiceDate, setDeletingServiceDate] = useState('');
 
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth() + 1;
@@ -63,7 +68,20 @@ export default function DashboardPage() {
   const lastService = recentServices[0];
   const lastServiceDate = lastService
     ? `${format(new Date(lastService.serviceDate), 'MMM d, yyyy')} (${formatDistanceToNow(new Date(lastService.serviceDate), { addSuffix: true })})`
-    : 'No services yet';
+    : `No ${terminology.events.toLowerCase()} yet`;
+
+  const handleEdit = (service: Service) => {
+    setEditingService(service);
+  };
+
+  const handleDelete = (serviceId: string, serviceDate: Date) => {
+    setDeletingServiceId(serviceId);
+    setDeletingServiceDate(format(new Date(serviceDate), 'MMM d, yyyy'));
+  };
+
+  const handleSuccess = () => {
+    loadDashboardData();
+  };
 
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
   const firebaseIndexesUrl = projectId
@@ -104,7 +122,7 @@ export default function DashboardPage() {
             <div>
               <p className="text-sm font-semibold text-amber-900">Firestore index required</p>
               <p className="text-sm text-amber-800 mt-1">
-                Create the composite index for services on organizationId and serviceDate to load monthly stats.
+                Create the composite index for events on organizationId and serviceDate to load monthly stats.
               </p>
               <Link
                 href={firebaseIndexesUrl}
@@ -121,7 +139,7 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
-          title="Last Service"
+          title={`Last ${terminology.Event}`}
           value={lastService?.totalAttendance || 0}
           subtitle={lastServiceDate}
           icon={Users}
@@ -130,7 +148,7 @@ export default function DashboardPage() {
         />
 
         <StatCard
-          title="Total Services"
+          title={`Total ${terminology.Events}`}
           value={stats?.totalServices || 0}
           subtitle="This month"
           icon={Calendar}
@@ -148,7 +166,7 @@ export default function DashboardPage() {
         />
 
         <StatCard
-          title="New Visitors"
+          title={`New ${terminology.visitors}`}
           value={stats?.totalVisitors || 0}
           subtitle="This month"
           icon={Sparkles}
@@ -159,9 +177,36 @@ export default function DashboardPage() {
 
       <QuickActions />
 
-      <RecentActivity services={recentServices} />
+      <RecentActivity
+        services={recentServices}
+        onEdit={handleEdit}
+        onDelete={(id) => {
+          const service = recentServices.find((item) => item.id === id);
+          if (service) {
+            handleDelete(id, service.serviceDate);
+          }
+        }}
+      />
 
       <MiniTrendChart services={recentServices} />
+
+      <EditEventModal
+        isOpen={Boolean(editingService)}
+        onClose={() => setEditingService(null)}
+        service={editingService}
+        onSuccess={handleSuccess}
+      />
+
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingServiceId)}
+        onClose={() => {
+          setDeletingServiceId(null);
+          setDeletingServiceDate('');
+        }}
+        serviceId={deletingServiceId || ''}
+        serviceDate={deletingServiceDate}
+        onSuccess={handleSuccess}
+      />
     </div>
   );
 }

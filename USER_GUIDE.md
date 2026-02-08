@@ -4,29 +4,45 @@
 
 ### 1. First-Time Setup
 
-Before using the application, you need to set up your Supabase database:
+Before using the application, you need to set up your Firebase project:
 
-1. **Create a Supabase Account**
-   - Visit https://supabase.com and sign up
+1. **Create a Firebase Account**
+   - Visit https://console.firebase.google.com and sign up
    - Create a new project
 
-2. **Setup Database**
-   - In Supabase dashboard, go to SQL Editor
-   - Open the `supabase-schema.sql` file in your project
-   - Copy and paste the SQL code into the SQL Editor
-   - Click "Run" to create the tables
+2. **Enable Firestore Database**
+   - In Firebase Console, go to Build > Firestore Database
+   - Click "Create database"
+   - Choose production mode or test mode (test mode for development)
+   - Select your region
 
-3. **Get API Credentials**
-   - Go to Project Settings > API in Supabase
-   - Copy your "Project URL" and "anon public" key
+3. **Enable Firebase Authentication**
+   - Go to Build > Authentication
+   - Click "Get started"
+   - Enable "Email/Password" sign-in method
+
+4. **Setup Firestore Security Rules**
+   - Go to Firestore Database > Rules
+   - Copy contents from `firestore.rules` file in your project
+   - Paste and publish the rules
+
+5. **Get Firebase Credentials**
+   - Go to Project Settings (gear icon)
+   - Scroll to "Your apps" section
+   - Click the web icon (</>)
+   - Register your app and copy the config
    - Open `.env.local` in your project
-   - Replace the placeholder values:
+   - Add your credentials:
      ```
-     NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-     NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+     NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
+     NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
+     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+     NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
      ```
 
-4. **Start the Application**
+6. **Start the Application**
    ```bash
    npm install
    npm run dev
@@ -39,7 +55,7 @@ Before using the application, you need to set up your Supabase database:
 
 ### Home Page
 The home page displays three main sections:
-- **Add Attendance** - Record new service attendance
+- **Add Attendance** - Record new event attendance
 - **View Analytics** - See attendance statistics and trends
 - **Manage Visitors** - (Coming soon) Track visitor follow-ups
 
@@ -50,9 +66,9 @@ The home page displays three main sections:
 1. **Navigate to Add Attendance**
    - Click the "Add Attendance" card on the home page
 
-2. **Fill in Service Information**
-   - **Service Date**: Select the date of the service
-   - **Service Type**: Choose from:
+2. **Fill in Event Information**
+   - **Event Date**: Select the date of the event
+   - **Event Type**: Choose from:
      - Saturday Fellowship (default)
      - Sunday Service
      - Midweek Service
@@ -77,17 +93,17 @@ The home page displays three main sections:
 The Analytics page shows:
 
 #### Statistics Cards
-- **Total Services**: Number of services recorded
-- **Average Attendance**: Mean attendance across all services
+- **Total Events**: Number of events recorded
+- **Average Attendance**: Mean attendance across all events
 - **Total Visitors**: Number of unique visitors tracked
 - **Growth Rate**: Percentage change in attendance (last month vs. previous month)
 
-#### Recent Services Table
-Displays the 10 most recent services with:
-- Service date
-- Service type
+#### Recent Events Table
+Displays the 10 most recent events with:
+- Event date
+- Event type
 - Attendance count
-- Number of visitors for that service
+- Number of visitors for that event
 
 #### Recent Visitors Table
 Shows the 10 most recent visitors with:
@@ -99,10 +115,10 @@ Shows the 10 most recent visitors with:
 
 ## Understanding the Data
 
-### Services
-Each service record includes:
-- Date of the service
-- Type of service
+### Events
+Each event record includes:
+- Date of the event
+- Type of event
 - Total attendance count
 - Associated visitors (optional)
 
@@ -111,12 +127,12 @@ Each visitor record includes:
 - Name (optional)
 - Contact information (optional)
 - Date of visit
-- Linked to a specific service
+- Linked to a specific event
 
 ### Analytics Calculations
 
 **Average Attendance**
-- Sum of all attendance counts ÷ Number of services
+- Sum of all attendance counts ÷ Number of events
 
 **Growth Rate**
 - Compares average attendance from last month to previous month
@@ -132,8 +148,8 @@ Each visitor record includes:
    - Add attendance data on the same day or soon after
    - This ensures accurate analytics
 
-2. **Consistent Service Types**
-   - Use the same service type names for consistency
+2. **Consistent Event Types**
+   - Use the same event type names for consistency
    - This helps with trend analysis
 
 3. **Visitor Information**
@@ -151,38 +167,44 @@ Each visitor record includes:
 
 ### "Failed to save attendance"
 - Check your internet connection
-- Verify your `.env.local` has correct Supabase credentials
-- Ensure the database schema was created correctly
+- Verify your `.env.local` has correct Firebase credentials
+- Ensure Firestore rules are properly configured
+- Check Firebase Console for any service issues
 
 ### "Failed to load analytics data"
 - Check internet connection
-- Verify Supabase project is active
+- Verify Firebase project is active
 - Check browser console for specific errors
+- Ensure Firestore indexes are created (check Firebase Console)
 
 ### Data not showing
 - Refresh the page
-- Verify data was saved (check Supabase dashboard)
+- Verify data was saved (check Firebase Console > Firestore Database)
 - Clear browser cache
 
 ---
 
 ## Database Management
 
-### Viewing Data in Supabase
-1. Go to your Supabase project dashboard
-2. Click "Table Editor"
-3. Select "services" or "visitors" table
-4. View, edit, or delete records directly
+### Viewing Data in Firebase
+1. Go to Firebase Console (https://console.firebase.google.com)
+2. Select your project
+3. Navigate to Firestore Database
+4. Browse collections: `organizations`, `services`, `users`, `audit_logs`
+5. Click on documents to view details and sub-collections
+6. View visitor data in `services/{serviceId}/visitors`
 
 ### Backing Up Data
-1. In Supabase, go to Table Editor
-2. Select a table
-3. Click "..." menu > Export as CSV
-4. Save backup file regularly
+1. In Firebase Console, go to Firestore Database
+2. Click on the three dots menu > Export
+3. Choose your backup location (Cloud Storage bucket)
+4. For manual exports, use the Export CSV feature in the app (Visitors page)
 
 ### Deleting Records
-- Records can be deleted from Supabase Table Editor
-- Deleting a service will automatically delete associated visitors (cascade delete)
+- Use the Edit/Delete buttons in the Analytics page
+- Records can be deleted from Firebase Console > Firestore Database
+- Deleting an event will automatically delete associated visitors (sub-collection)
+- All deletions are logged in the `audit_logs` collection
 
 ---
 

@@ -14,6 +14,7 @@ import { doc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import confetti from 'canvas-confetti';
 import toast from 'react-hot-toast';
+import { getTerminology } from '@/lib/terminology';
 
 interface FormData {
   // Step 1
@@ -46,6 +47,17 @@ export default function SignUpPage() {
   });
   const { signUp } = useAuth();
   const router = useRouter();
+
+  const organizationTypes = [
+    { value: 'Church', label: 'Church' },
+    { value: 'Ministry', label: 'Ministry' },
+    { value: 'NGO', label: 'NGO / Non-Profit' },
+    { value: 'Corporate', label: 'Corporate' },
+    { value: 'Community Group', label: 'Community Group' },
+    { value: 'Event Organizer', label: 'Event Organizer' },
+    { value: 'Educational', label: 'Educational Institution' },
+    { value: 'Other', label: 'Other' },
+  ];
 
   const updateFormData = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -154,7 +166,8 @@ export default function SignUpPage() {
         colors: ['#4b248c', '#0047AB', '#F3CC3C'],
       });
 
-      toast.success("Welcome! Let's record your first service 🎉");
+      const orgTerminology = getTerminology(formData.organizationType);
+      toast.success(`Welcome! Let's record your first ${orgTerminology.event.toLowerCase()} 🎉`);
       
       // Redirect to dashboard
       setTimeout(() => {
@@ -177,8 +190,8 @@ export default function SignUpPage() {
           {/* Logo */}
           <Link href="/" className="inline-block mb-8">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#4b248c] to-[#0047AB] rounded-lg flex items-center justify-center">
-                <span className="text-white text-xl font-bold">C</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
+                <Eye className="w-6 h-6 text-black" />
               </div>
               <span className="text-xl font-bold text-gray-900">Insight Tracker</span>
             </div>
@@ -217,7 +230,7 @@ export default function SignUpPage() {
                 >
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Start for FREE</h2>
-                    <p className="text-gray-600">Create your account to begin tracking</p>
+                    <p className="text-gray-600">Turn attendance into actionable insights</p>
                   </div>
 
                   {/* Full Name */}
@@ -356,7 +369,7 @@ export default function SignUpPage() {
                 >
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Organization details</h2>
-                    <p className="text-gray-600">Tell us about your ministry</p>
+                    <p className="text-gray-600">Tell us about your organization</p>
                   </div>
 
                   {/* Organization Name */}
@@ -387,12 +400,11 @@ export default function SignUpPage() {
                       onChange={(e) => updateFormData('organizationType', e.target.value)}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-[#4b248c] focus:outline-none transition-colors"
                     >
-                      <option value="Church">Church</option>
-                      <option value="Ministry">Ministry</option>
-                      <option value="Community Group">Community Group</option>
-                      <option value="Non-Profit">Non-Profit</option>
-                      <option value="Event Organization">Event Organization</option>
-                      <option value="Other">Other</option>
+                      {organizationTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

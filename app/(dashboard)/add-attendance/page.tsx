@@ -21,12 +21,12 @@ interface Visitor {
 
 export default function AddAttendancePage() {
   const router = useRouter();
-  const { currentOrg } = useOrganization();
+  const { currentOrg, terminology, eventTypes } = useOrganization();
   const [loading, setLoading] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
   const [showSuccessActions, setShowSuccessActions] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [serviceType, setServiceType] = useState('Saturday Fellowship');
+  const [eventType, setEventType] = useState(eventTypes[0] || 'Event');
   const [totalAttendance, setTotalAttendance] = useState(1);
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [showBulkImport, setShowBulkImport] = useState(false);
@@ -61,6 +61,12 @@ export default function AddAttendancePage() {
       setPageLoading(false);
     }
   }, [currentOrg, loadLastService]);
+
+  useEffect(() => {
+    if (eventTypes.length > 0) {
+      setEventType(eventTypes[0]);
+    }
+  }, [eventTypes]);
 
   // Increment/Decrement functions
   const incrementAttendance = () => {
@@ -104,7 +110,7 @@ export default function AddAttendancePage() {
 
   const handleBulkImport = () => {
     if (!bulkImportText.trim()) {
-      alert('Please paste visitor data first');
+      alert(`Please paste ${terminology.visitor.toLowerCase()} data first`);
       return;
     }
 
@@ -148,12 +154,12 @@ export default function AddAttendancePage() {
       });
 
       if (newVisitors.length === 0) {
-        alert('No valid visitor data found. Make sure each line has a name.');
+        alert(`No valid ${terminology.visitor.toLowerCase()} data found. Make sure each line has a name.`);
         return;
       }
 
       if (newVisitors.length > 5000) {
-        alert(`Too many visitors (${newVisitors.length}). Maximum is 5000. First 5000 will be imported.`);
+        alert(`Too many ${terminology.visitors.toLowerCase()} (${newVisitors.length}). Maximum is 5000. First 5000 will be imported.`);
         setVisitors([...visitors, ...newVisitors.slice(0, 5000)]);
       } else {
         setVisitors([...visitors, ...newVisitors]);
@@ -162,10 +168,10 @@ export default function AddAttendancePage() {
       // Clear and close
       setBulkImportText('');
       setShowBulkImport(false);
-      alert(`Successfully imported ${Math.min(newVisitors.length, 5000)} visitors with all their details!`);
+      alert(`Successfully imported ${Math.min(newVisitors.length, 5000)} ${terminology.visitors.toLowerCase()} with all their details!`);
     } catch (error) {
       console.error('Error parsing bulk import:', error);
-      alert('Error parsing visitor data. Please check the format and try again.');
+      alert(`Error parsing ${terminology.visitor.toLowerCase()} data. Please check the format and try again.`);
     }
   };
 
@@ -184,7 +190,7 @@ export default function AddAttendancePage() {
 
     // Validation
     if (!selectedDate) {
-      toast.error('Please select a service date');
+      toast.error(`Please select a ${terminology.event.toLowerCase()} date`);
       return;
     }
     
@@ -199,7 +205,7 @@ export default function AddAttendancePage() {
     }
 
     if (selectedDate > new Date()) {
-      toast.error('Service date cannot be in the future');
+      toast.error(`${terminology.Event} date cannot be in the future`);
       return;
     }
 
@@ -220,6 +226,7 @@ export default function AddAttendancePage() {
       const result = await addAttendanceRecord(
         currentOrg.id,
         selectedDate,
+        eventType,
         totalAttendance,
         visitorsData
       );
@@ -262,7 +269,7 @@ export default function AddAttendancePage() {
       } else {
         // Handle specific errors
         if (result.error?.includes('already exists')) {
-          toast.error('⚠️ Attendance for this date already exists. Please choose a different date.', {
+          toast.error(`⚠️ Attendance for this ${terminology.event.toLowerCase()} date already exists. Please choose a different date.`, {
             duration: 6000,
           });
         } else if (result.error === 'INDEX_REQUIRED') {
@@ -291,7 +298,7 @@ export default function AddAttendancePage() {
 
   const handleAddAnother = () => {
     setSelectedDate(new Date());
-    setServiceType('Saturday Fellowship');
+    setEventType(eventTypes[0] || 'Event');
     setTotalAttendance(1);
     setVisitors([]);
     setShowSuccessActions(false);
@@ -319,15 +326,15 @@ export default function AddAttendancePage() {
         <nav className="text-sm text-gray-500 mb-2">
           <span>Dashboard</span>
           <span className="mx-2">/</span>
-          <span className="text-gray-900 font-medium">Add Attendance</span>
+          <span className="text-gray-900 font-medium">{terminology.add} Attendance</span>
         </nav>
 
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Record Service Attendance
+          Record {terminology.Event} Attendance
         </h1>
 
         <p className="text-gray-600">
-          Track attendance for today&apos;s service and add visitor information.
+          Track attendance for this {terminology.event.toLowerCase()} and add {terminology.visitor.toLowerCase()} information.
         </p>
 
         {indexRequired && (
@@ -337,7 +344,7 @@ export default function AddAttendancePage() {
               <div>
                 <p className="text-sm font-semibold text-amber-900">Firestore index required</p>
                 <p className="text-sm text-amber-800 mt-1">
-                  Create the composite index for services on organizationId and serviceDate to load recent data.
+                  Create the composite index for events on organizationId and serviceDate to load recent data.
                 </p>
                 <Link
                   href={firebaseIndexesUrl}
@@ -356,8 +363,8 @@ export default function AddAttendancePage() {
           <div className="mt-4 inline-flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">
             <Calendar className="w-4 h-4" />
             <span>
-              Last recorded: <strong>{format(new Date(lastService.serviceDate), 'MMM d, yyyy')}</strong>
-              {' '}({lastService.totalAttendance} attendees)
+              Last {terminology.event.toLowerCase()} recorded: <strong>{format(new Date(lastService.serviceDate), 'MMM d, yyyy')}</strong>
+              {' '}({lastService.totalAttendance} {terminology.attendees.toLowerCase()})
             </span>
           </div>
         )}
@@ -377,7 +384,7 @@ export default function AddAttendancePage() {
             transition={{ delay: 0.2 }}
             className="bg-gradient-to-r from-royal-purple to-primary-blue text-white p-6 rounded-xl text-center"
           >
-            <div className="text-sm font-medium mb-2">Selected Service Date</div>
+            <div className="text-sm font-medium mb-2">Selected {terminology.Event} Date</div>
             <div className="text-3xl font-bold">
               {selectedDate.toLocaleDateString('en-US', {
                 weekday: 'long',
@@ -396,13 +403,13 @@ export default function AddAttendancePage() {
           >
             <h2 className="text-2xl font-bold text-royal-purple mb-6 flex items-center">
               <Calendar className="w-6 h-6 mr-2" />
-              Service Information
+              {terminology.Event} Information
             </h2>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Service Date
+                  {terminology.Event} Date
                 </label>
                 <DatePicker
                   selected={selectedDate}
@@ -421,17 +428,18 @@ export default function AddAttendancePage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Service Type
+                  {terminology.Event} Type
                 </label>
                 <select
-                  value={serviceType}
-                  onChange={(e) => setServiceType(e.target.value)}
+                  value={eventType}
+                  onChange={(e) => setEventType(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 >
-                  <option value="Saturday Fellowship">Saturday Fellowship</option>
-                  <option value="Sunday Service">Sunday Service</option>
-                  <option value="Midweek Service">Midweek Service</option>
-                  <option value="Special Event">Special Event</option>
+                  {eventTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -491,7 +499,7 @@ export default function AddAttendancePage() {
               </motion.button>
             </div>
             <p className="text-center text-sm text-gray-500 mt-4">
-              Range: 1 to 1,000,000 people
+              Range: 1 to 1,000,000 {terminology.attendees.toLowerCase()}
             </p>
           </motion.div>
 
@@ -503,9 +511,9 @@ export default function AddAttendancePage() {
           >
             <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-royal-purple">Visitor Details</h2>
+                <h2 className="text-2xl font-bold text-royal-purple">{terminology.visitors} Details</h2>
                 <p className="text-sm text-gray-500 mt-1">
-                  Optional - For first-time visitors or event attendees
+                  Optional - For first-time {terminology.visitors.toLowerCase()} or {terminology.attendees.toLowerCase()}
                 </p>
               </div>
               <div className="flex gap-3">
@@ -528,7 +536,7 @@ export default function AddAttendancePage() {
                   className="flex items-center px-6 py-3 bg-gold-color text-black-color rounded-xl hover:bg-gold-color/90 transition-all shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-5 h-5 mr-2" />
-                  Add Single Visitor
+                  Add Single {terminology.visitor}
                 </motion.button>
               </div>
             </div>
@@ -546,10 +554,10 @@ export default function AddAttendancePage() {
                     <Upload className="w-6 h-6 text-primary-blue flex-shrink-0 mt-1" />
                     <div className="flex-1">
                       <h3 className="font-bold text-lg text-primary-blue mb-2">
-                        Bulk Import Visitors from Excel
+                        Bulk Import {terminology.visitors} from Excel
                       </h3>
                       <p className="text-sm text-gray-700 mb-3">
-                        Copy your visitor list from Excel and paste it below. All extra columns are preserved!
+                        Copy your {terminology.visitor.toLowerCase()} list from Excel and paste it below. All extra columns are preserved!
                       </p>
                       <ul className="text-sm text-gray-600 space-y-1 mb-4 list-disc list-inside">
                         <li><strong>Excel format (recommended):</strong> Name [TAB] Contact [TAB] Email [TAB] Location [TAB] ... (copy directly from Excel with any number of columns)</li>
@@ -581,7 +589,7 @@ export default function AddAttendancePage() {
                           onClick={handleBulkImport}
                           className="px-5 py-2 bg-primary-blue text-white rounded-lg hover:bg-primary-blue/90 transition-all font-medium shadow-lg"
                         >
-                          Import Visitors
+                          Import {terminology.visitors}
                         </motion.button>
                       </div>
                     </div>
@@ -599,10 +607,10 @@ export default function AddAttendancePage() {
                   className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300"
                 >
                   <p className="text-gray-500 text-lg">
-                    No visitors added yet
+                    No {terminology.visitors.toLowerCase()} added yet
                   </p>
                   <p className="text-gray-400 text-sm mt-2">
-                    Click &quot;Import from Excel&quot; for bulk import or &quot;Add Single Visitor&quot; for manual entry
+                    Click &quot;Import from Excel&quot; for bulk import or &quot;Add Single {terminology.visitor}&quot; for manual entry
                   </p>
                 </motion.div>
               ) : (
@@ -619,7 +627,7 @@ export default function AddAttendancePage() {
                       <div className="flex-1 grid md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-semibold text-gray-700 mb-2">
-                            Visitor Name
+                            {terminology.visitor} Name
                           </label>
                           <input
                             type="text"
@@ -629,7 +637,7 @@ export default function AddAttendancePage() {
                             }
                             maxLength={100}
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
-                            placeholder="Enter visitor name"
+                            placeholder={`Enter ${terminology.visitor.toLowerCase()} name`}
                           />
                         </div>
                         <div>
@@ -666,7 +674,7 @@ export default function AddAttendancePage() {
             {visitors.length > 0 && (
               <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
                 <p className="text-sm text-green-700 text-center font-medium">
-                  ✓ {visitors.length.toLocaleString()} visitor{visitors.length !== 1 ? 's' : ''} added
+                  ✓ {visitors.length.toLocaleString()} {visitors.length === 1 ? terminology.visitor.toLowerCase() : terminology.visitors.toLowerCase()} added
                   {visitors.length >= 5000 && ' (Maximum reached)'}
                 </p>
               </div>
@@ -703,7 +711,7 @@ export default function AddAttendancePage() {
                 Attendance Recorded!
               </h3>
               <p className="text-sm text-green-700 mb-4">
-                Your service attendance has been saved successfully.
+                Your {terminology.event.toLowerCase()} attendance has been saved successfully.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Link
@@ -725,7 +733,7 @@ export default function AddAttendancePage() {
                   onClick={handleAddAnother}
                   className="inline-flex items-center justify-center gap-2 px-4 py-2 text-green-700 hover:text-green-800 font-medium transition-colors"
                 >
-                  Add Another Service
+                  Add Another {terminology.Event}
                 </button>
               </div>
             </div>

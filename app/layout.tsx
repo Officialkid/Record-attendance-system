@@ -8,8 +8,14 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Insight Tracker - Attendance & Analytics',
-  description: 'Track attendance, visitors, and growth with real-time insights.',
+  title: 'Insight Tracker - Turn Attendance into Actionable Insights',
+  description: 'Track events, analyze trends, and grow your community with beautiful analytics. Perfect for churches, NGOs, corporate events, and more.',
+  keywords: 'attendance tracking, event analytics, church management, NGO tools, corporate events, visitor tracking',
+  openGraph: {
+    title: 'Insight Tracker',
+    description: 'Turn attendance into actionable insights',
+    type: 'website',
+  },
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',

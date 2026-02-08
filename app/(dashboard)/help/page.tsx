@@ -8,7 +8,7 @@ export default function HelpPage() {
           Help &amp; Support
         </h1>
         <p className="text-gray-600">
-          Get assistance with using AttendanceTracker
+          Get assistance with using Insight Tracker
         </p>
       </div>
 
@@ -26,10 +26,10 @@ export default function HelpPage() {
             Have a question? Send us an email and we&apos;ll get back to you within 24 hours.
           </p>
           <a
-            href="mailto:support@attendancetracker.com"
+            href="mailto:support@insighttracker.com"
             className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 font-medium"
           >
-            support@attendancetracker.com
+            support@insighttracker.com
             <ArrowRight className="w-4 h-4" />
           </a>
         </div>

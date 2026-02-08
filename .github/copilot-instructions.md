@@ -8,7 +8,7 @@
 - [x] Install required dependencies
 - [x] Create project structure
 - [x] Configure environment variables
-- [x] Setup Supabase client
+- [x] Setup Firebase client
 - [x] Configure Tailwind with custom colors
 - [x] Create database schema documentation
 - [x] Build core components and pages

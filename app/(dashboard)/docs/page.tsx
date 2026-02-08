@@ -8,7 +8,7 @@ export default function DocsPage() {
           Documentation
         </h1>
         <p className="text-gray-600">
-          Learn how to use AttendanceTracker effectively
+          Learn how to use Insight Tracker effectively
         </p>
       </div>
 
@@ -18,7 +18,7 @@ export default function DocsPage() {
           Documentation Coming Soon
         </h2>
         <p className="text-gray-600 max-w-md mx-auto">
-          We&apos;re working on comprehensive documentation to help you get the most out of AttendanceTracker.
+          We&apos;re working on comprehensive documentation to help you get the most out of Insight Tracker.
         </p>
       </div>
     </div>

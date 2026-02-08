@@ -22,6 +22,7 @@ import {
   writeBatch,
   updateDoc,
   arrayUnion,
+  deleteDoc,
   limit,
 } from 'firebase/firestore';
 import { startOfMonth, endOfMonth, startOfYear, endOfYear, startOfDay, endOfDay } from 'date-fns';
@@ -67,7 +68,7 @@ export interface Service {
   id: string;
   organizationId: string;
   serviceDate: Date;
-  serviceType: string;
+  eventType: string;
   totalAttendance: number;
   visitorCount?: number;
   createdAt: Date;
@@ -100,6 +101,17 @@ export interface YearComparison {
   month: string;
   [key: number]: number; // Dynamic year keys
   growth: number;
+}
+
+export interface AuditLog {
+  id: string;
+  orgId: string;
+  actorId: string;
+  action: 'service_update' | 'service_delete';
+  serviceId: string;
+  before?: Record<string, unknown>;
+  after?: Record<string, unknown>;
+  createdAt: Date;
 }
 
 export interface OrganizationInvite {
@@ -265,6 +277,151 @@ export async function updateOrganization(
   }
 }
 
+const addAuditLog = async (payload: Omit<AuditLog, 'id' | 'createdAt'>) => {
+  try {
+    await addDoc(collection(db, 'audit_logs'), {
+      ...payload,
+      createdAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('Error writing audit log:', error);
+  }
+};
+
+// DELETE EVENT/SERVICE
+export async function deleteService(serviceId: string, actorId?: string) {
+  try {
+    const serviceRef = doc(db, 'services', serviceId);
+    const serviceSnap = await getDoc(serviceRef);
+    const serviceData = serviceSnap.exists() ? serviceSnap.data() : null;
+
+    const visitorsSnapshot = await getDocs(
+      collection(db, `services/${serviceId}/visitors`)
+    );
+
+    const batch = writeBatch(db);
+
+    visitorsSnapshot.forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+
+    batch.delete(serviceRef);
+
+    await batch.commit();
+
+    if (serviceData) {
+      await addAuditLog({
+        orgId: serviceData.organizationId,
+        actorId: actorId || serviceData.lastUpdatedBy || serviceData.createdBy || 'unknown',
+        action: 'service_delete',
+        serviceId,
+        before: {
+          serviceDate: serviceData.serviceDate?.toDate?.() || null,
+          eventType: serviceData.eventType || serviceData.serviceType || null,
+          totalAttendance: serviceData.totalAttendance ?? null,
+        },
+      });
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('Error deleting service:', error);
+    return { success: false, error: (error as { message?: string }).message };
+  }
+}
+
+// UPDATE EVENT/SERVICE
+export async function updateService(
+  serviceId: string,
+  data: {
+    serviceDate?: Date;
+    totalAttendance?: number;
+    eventType?: string;
+  },
+  actorId?: string
+) {
+  try {
+    const serviceRef = doc(db, 'services', serviceId);
+    const serviceSnap = await getDoc(serviceRef);
+    const serviceData = serviceSnap.exists() ? serviceSnap.data() : null;
+
+    const updateData: Record<string, unknown> = {
+      updatedAt: Timestamp.now(),
+    };
+
+    if (data.serviceDate) {
+      updateData.serviceDate = Timestamp.fromDate(data.serviceDate);
+    }
+    if (data.totalAttendance !== undefined) {
+      updateData.totalAttendance = data.totalAttendance;
+    }
+    if (data.eventType) {
+      updateData.eventType = data.eventType;
+    }
+
+    if (actorId) {
+      updateData.lastUpdatedBy = actorId;
+    }
+
+    await updateDoc(serviceRef, updateData);
+
+    if (serviceData && actorId) {
+      await addAuditLog({
+        orgId: serviceData.organizationId,
+        actorId,
+        action: 'service_update',
+        serviceId,
+        before: {
+          serviceDate: serviceData.serviceDate?.toDate?.() || null,
+          eventType: serviceData.eventType || serviceData.serviceType || null,
+          totalAttendance: serviceData.totalAttendance ?? null,
+        },
+        after: {
+          serviceDate: updateData.serviceDate || null,
+          eventType: updateData.eventType || null,
+          totalAttendance: updateData.totalAttendance ?? serviceData.totalAttendance ?? null,
+        },
+      });
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('Error updating service:', error);
+    return { success: false, error: (error as { message?: string }).message };
+  }
+}
+
+// ADD VISITOR TO EXISTING SERVICE
+export async function addVisitorToService(
+  serviceId: string,
+  visitor: { name: string; contact: string }
+) {
+  try {
+    await addDoc(collection(db, `services/${serviceId}/visitors`), {
+      visitorName: visitor.name || null,
+      visitorContact: visitor.contact || null,
+      visitDate: Timestamp.now(),
+      createdAt: Timestamp.now(),
+    });
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('Error adding visitor:', error);
+    return { success: false, error: (error as { message?: string }).message };
+  }
+}
+
+// DELETE VISITOR
+export async function deleteVisitor(serviceId: string, visitorId: string) {
+  try {
+    await deleteDoc(doc(db, `services/${serviceId}/visitors`, visitorId));
+    return { success: true };
+  } catch (error: unknown) {
+    console.error('Error deleting visitor:', error);
+    return { success: false, error: (error as { message?: string }).message };
+  }
+}
+
 /**
  * Invite a new member to an organization
  */
@@ -322,6 +479,7 @@ export async function ensureUserOrgAccess(userId: string, organizationId: string
 export async function addAttendanceRecord(
   organizationId: string,
   serviceDate: Date,
+  eventType: string,
   totalAttendance: number,
   visitors: Array<{ name: string; contact: string }>
 ): Promise<{ success: boolean; serviceId?: string; error?: string }> {
@@ -350,7 +508,7 @@ export async function addAttendanceRecord(
     const serviceData = {
       organizationId, // KEY FIELD for multi-tenancy
       serviceDate: Timestamp.fromDate(serviceDate),
-      serviceType: 'Saturday Fellowship',
+      eventType,
       totalAttendance,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -438,7 +596,7 @@ export async function getServicesByMonth(
         id: docSnap.id,
         organizationId: data.organizationId,
         serviceDate: data.serviceDate.toDate(),
-        serviceType: data.serviceType,
+        eventType: data.eventType || data.serviceType || 'Event',
         totalAttendance: data.totalAttendance,
         visitorCount,
         createdAt: data.createdAt.toDate(),
@@ -486,7 +644,7 @@ export async function getRecentServices(
         id: docSnap.id,
         organizationId: data.organizationId,
         serviceDate: data.serviceDate.toDate(),
-        serviceType: data.serviceType,
+        eventType: data.eventType || data.serviceType || 'Event',
         totalAttendance: data.totalAttendance,
         visitorCount,
         createdAt: data.createdAt.toDate(),
@@ -595,7 +753,7 @@ export async function getServicesByYear(
         id: docSnap.id,
         organizationId: data.organizationId,
         serviceDate: data.serviceDate.toDate(),
-        serviceType: data.serviceType,
+        eventType: data.eventType || data.serviceType || 'Event',
         totalAttendance: data.totalAttendance,
         createdAt: data.createdAt.toDate(),
         updatedAt: data.updatedAt.toDate(),

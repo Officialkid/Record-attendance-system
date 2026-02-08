@@ -3,12 +3,14 @@
 import Link from 'next/link';
 import { Plus, BarChart3, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useOrganization } from '@/lib/OrganizationContext';
 
 export default function QuickActions() {
+  const { terminology } = useOrganization();
   const actions = [
     {
       title: 'Record Attendance',
-      description: "Add this week's service attendance",
+      description: `Add this week's ${terminology.event.toLowerCase()} attendance`,
       href: '/add-attendance',
       icon: Plus,
       color: 'gold',

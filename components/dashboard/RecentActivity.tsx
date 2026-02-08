@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import {
@@ -10,9 +11,13 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowRight,
+  Edit2,
+  Trash2,
+  MoreVertical,
 } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 import type { Service as FirestoreService } from '@/lib/firestore-multitenant';
+import { useOrganization } from '@/lib/OrganizationContext';
 
 type Service = FirestoreService & {
   visitorCount?: number;
@@ -20,9 +25,14 @@ type Service = FirestoreService & {
 
 interface RecentActivityProps {
   services: Service[];
+  onEdit: (service: Service) => void;
+  onDelete: (serviceId: string) => void;
 }
 
-export default function RecentActivity({ services }: RecentActivityProps) {
+export default function RecentActivity({ services, onEdit, onDelete }: RecentActivityProps) {
+  const { terminology } = useOrganization();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
   const getGrowth = (current: number, index: number) => {
     if (index >= services.length - 1) return null;
     const previous = services[index + 1].totalAttendance;
@@ -32,18 +42,18 @@ export default function RecentActivity({ services }: RecentActivityProps) {
   if (services.length === 0) {
     return (
       <div>
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Recent Activity</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-4">Recent {terminology.Events}</h2>
         <EmptyState
           icon={Calendar}
-          title="No services recorded yet"
-          description="Start tracking your attendance to see recent activity here."
+          title={`No ${terminology.events.toLowerCase()} recorded yet`}
+          description={`Start tracking your attendance to see recent ${terminology.events.toLowerCase()} here.`}
           action={
             <Link
               href="/add-attendance"
               className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black font-semibold rounded-lg transition-colors"
             >
               <UserPlus className="w-4 h-4" />
-              Add Your First Service
+              Add Your First {terminology.Event}
             </Link>
           }
         />
@@ -54,7 +64,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-900">Recent Services</h2>
+        <h2 className="text-xl font-bold text-gray-900">Recent {terminology.Events}</h2>
         <Link
           href="/view-analytics"
           className="flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
@@ -73,16 +83,19 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                   Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Service Type
+                  {terminology.Event} Type
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Attendance
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Visitors
+                  {terminology.visitors}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                   Growth
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -90,6 +103,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
               {services.map((service, index) => {
                 const growth = getGrowth(service.totalAttendance, index);
                 const isPositive = growth && growth > 0;
+                const isMenuOpen = openMenuId === service.id;
 
                 return (
                   <motion.tr
@@ -117,7 +131,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
 
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
-                        {service.serviceType}
+                        {service.eventType}
                       </span>
                     </td>
 
@@ -127,7 +141,9 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                         <span className="text-sm font-semibold text-gray-900">
                           {service.totalAttendance}
                         </span>
-                        <span className="text-xs text-gray-500">people</span>
+                        <span className="text-xs text-gray-500">
+                          {terminology.attendees.toLowerCase()}
+                        </span>
                       </div>
                     </td>
 
@@ -160,6 +176,46 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                         <span className="text-xs text-gray-400">—</span>
                       )}
                     </td>
+
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="relative inline-block text-left">
+                        <button
+                          onClick={() => setOpenMenuId(isMenuOpen ? null : service.id)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                          aria-label={`${terminology.Event} actions`}
+                        >
+                          <MoreVertical className="w-4 h-4 text-gray-500" />
+                        </button>
+
+                        {isMenuOpen && (
+                          <div
+                            className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+                            onMouseLeave={() => setOpenMenuId(null)}
+                          >
+                            <button
+                              onClick={() => {
+                                onEdit(service);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                              Edit {terminology.Event}
+                            </button>
+                            <button
+                              onClick={() => {
+                                onDelete(service.id);
+                                setOpenMenuId(null);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete {terminology.Event}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                   </motion.tr>
                 );
               })}
@@ -171,6 +227,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
           {services.map((service, index) => {
             const growth = getGrowth(service.totalAttendance, index);
             const isPositive = growth && growth > 0;
+            const isMenuOpen = openMenuId === service.id;
 
             return (
               <motion.div
@@ -193,7 +250,7 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                     </div>
                     <div className="mt-1">
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
-                        {service.serviceType}
+                        {service.eventType}
                       </span>
                     </div>
                   </div>
@@ -232,6 +289,46 @@ export default function RecentActivity({ services }: RecentActivityProps) {
                       </span>
                     </div>
                   )}
+                </div>
+
+                <div className="mt-3 flex items-center justify-end">
+                  <div className="relative inline-block text-left">
+                    <button
+                      onClick={() => setOpenMenuId(isMenuOpen ? null : service.id)}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                      aria-label={`${terminology.Event} actions`}
+                    >
+                      <MoreVertical className="w-4 h-4 text-gray-500" />
+                    </button>
+
+                    {isMenuOpen && (
+                      <div
+                        className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+                        onMouseLeave={() => setOpenMenuId(null)}
+                      >
+                        <button
+                          onClick={() => {
+                            onEdit(service);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                          Edit {terminology.Event}
+                        </button>
+                        <button
+                          onClick={() => {
+                            onDelete(service.id);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete {terminology.Event}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );

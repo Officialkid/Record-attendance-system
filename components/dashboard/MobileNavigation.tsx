@@ -2,10 +2,12 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LayoutDashboard, Plus, BarChart3, Settings } from 'lucide-react';
+import { useOrganization } from '@/lib/OrganizationContext';
+import { LayoutDashboard, Plus, BarChart3, Settings, UserPlus } from 'lucide-react';
 
 export default function MobileNavigation() {
   const pathname = usePathname();
+  const { terminology } = useOrganization();
 
   const navItems = [
     {
@@ -14,7 +16,7 @@ export default function MobileNavigation() {
       icon: LayoutDashboard,
     },
     {
-      name: 'Add',
+      name: terminology.add,
       href: '/add-attendance',
       icon: Plus,
       highlight: true,
@@ -23,6 +25,11 @@ export default function MobileNavigation() {
       name: 'Analytics',
       href: '/view-analytics',
       icon: BarChart3,
+    },
+    {
+      name: terminology.visitors,
+      href: '/visitors',
+      icon: UserPlus,
     },
     {
       name: 'Settings',

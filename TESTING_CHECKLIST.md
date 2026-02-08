@@ -1,4 +1,4 @@
-# AttendanceTracker Testing Checklist
+# Insight Tracker Testing Checklist
 
 Complete this checklist before launching the application to ensure all features work correctly.
 

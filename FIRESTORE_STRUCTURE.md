@@ -10,14 +10,14 @@ This document outlines the Firestore database structure for the attendance manag
 ### 1. **services** (Root Collection)
 Path: `/services/{serviceId}`
 
-Stores all church service records.
+Stores all event records.
 
 #### Document Fields:
 ```typescript
 {
   id: string;                    // Auto-generated document ID
-  serviceDate: Timestamp;        // Date of the service
-  serviceType: string;           // Type of service (default: 'Saturday Fellowship')
+  serviceDate: Timestamp;        // Date of the event
+  eventType: string;             // Type of event (default: 'Saturday Fellowship')
   totalAttendance: number;       // Total number of people present
   createdAt: Timestamp;          // Document creation timestamp
   updatedAt: Timestamp;          // Last update timestamp
@@ -28,14 +28,14 @@ Stores all church service records.
 ```json
 {
   "serviceDate": Timestamp("2026-02-04T00:00:00Z"),
-  "serviceType": "Saturday Fellowship",
+  "eventType": "Saturday Fellowship",
   "totalAttendance": 150,
   "createdAt": Timestamp("2026-02-04T14:30:00Z"),
   "updatedAt": Timestamp("2026-02-04T14:30:00Z")
 }
 ```
 
-#### Service Type Options:
+#### Event Type Options:
 - `Saturday Fellowship` (default)
 - `Sunday Service`
 - `Midweek Service`
@@ -46,7 +46,7 @@ Stores all church service records.
 ### 2. **visitors** (Sub-collection)
 Path: `/services/{serviceId}/visitors/{visitorId}`
 
-Stores visitor information for each service as a sub-collection.
+Stores visitor information for each event as a sub-collection.
 
 #### Document Fields:
 ```typescript
@@ -54,7 +54,7 @@ Stores visitor information for each service as a sub-collection.
   id: string;                    // Auto-generated document ID
   visitorName: string | null;    // Visitor's name (optional)
   visitorContact: string | null; // Phone number or email (optional)
-  visitDate: Timestamp;          // Date of visit (same as service date)
+  visitDate: Timestamp;          // Date of visit (same as event date)
   createdAt: Timestamp;          // Document creation timestamp
 }
 ```
@@ -77,7 +77,7 @@ Stores visitor information for each service as a sub-collection.
 services (Collection)
 ├── {serviceId-1} (Document)
 │   ├── serviceDate: Timestamp
-│   ├── serviceType: string
+│   ├── eventType: string
 │   ├── totalAttendance: number
 │   ├── createdAt: Timestamp
 │   ├── updatedAt: Timestamp
@@ -106,10 +106,10 @@ service cloud.firestore {
     
     // Services collection
     match /services/{serviceId} {
-      // Allow anyone to read service records
+      // Allow anyone to read event records
       allow read: if true;
       
-      // Allow anyone to create service records
+      // Allow anyone to create event records
       allow create: if true;
       
       // Allow update if the document exists
@@ -166,7 +166,7 @@ Firestore will prompt you to create any additional indexes if needed when querie
 
 ## Query Examples
 
-### Get All Services (Latest First)
+### Get All Events (Latest First)
 ```typescript
 const q = query(
   collection(db, 'services'),
@@ -175,7 +175,7 @@ const q = query(
 const snapshot = await getDocs(q);
 ```
 
-### Get Services for a Specific Month
+### Get Events for a Specific Month
 ```typescript
 const startOfMonth = Timestamp.fromDate(new Date('2026-02-01'));
 const endOfMonth = Timestamp.fromDate(new Date('2026-02-28'));
@@ -189,18 +189,18 @@ const q = query(
 const snapshot = await getDocs(q);
 ```
 
-### Get Visitors for a Specific Service
+### Get Visitors for a Specific Event
 ```typescript
 const visitorsRef = collection(db, `services/${serviceId}/visitors`);
 const snapshot = await getDocs(visitorsRef);
 ```
 
-### Add a Service with Visitors
+### Add an Event with Visitors
 ```typescript
 // Add service
 const serviceRef = await addDoc(collection(db, 'services'), {
   serviceDate: Timestamp.fromDate(new Date()),
-  serviceType: 'Saturday Fellowship',
+  eventType: 'Saturday Fellowship',
   totalAttendance: 150,
   createdAt: serverTimestamp(),
   updatedAt: serverTimestamp()
@@ -214,24 +214,6 @@ await addDoc(visitorsRef, {
   visitDate: Timestamp.fromDate(new Date()),
   createdAt: serverTimestamp()
 });
-```
-
----
-
-## Data Migration from Supabase
-
-If migrating from Supabase, use the following mapping:
-
-| Supabase Table | Firestore Collection | Notes |
-|----------------|---------------------|--------|
-| `services` | `services` | Convert DATE to Timestamp |
-| `visitors` | `services/{id}/visitors` | Now a sub-collection |
-
-### Timestamp Conversion:
-```typescript
-// Supabase DATE to Firestore Timestamp
-const date = new Date('2026-02-04');
-const timestamp = Timestamp.fromDate(date);
 ```
 
 ---

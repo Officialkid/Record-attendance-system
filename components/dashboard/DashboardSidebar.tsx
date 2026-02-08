@@ -8,23 +8,26 @@ import {
   LayoutDashboard,
   Plus,
   BarChart3,
+  UserPlus,
   Settings,
   HelpCircle,
   FileText,
   LogOut,
   Building2,
   ChevronDown,
+  Eye,
 } from 'lucide-react';
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  const { currentOrg, organizations } = useOrganization();
+  const { currentOrg, organizations, terminology } = useOrganization();
   const { user, logout } = useAuth();
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Add Attendance', href: '/add-attendance', icon: Plus },
+    { name: `${terminology.add} Attendance`, href: '/add-attendance', icon: Plus },
     { name: 'Analytics', href: '/view-analytics', icon: BarChart3 },
+    { name: terminology.visitors, href: '/visitors', icon: UserPlus },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -38,11 +41,11 @@ export default function DashboardSidebar() {
   return (
     <div className="flex flex-col w-64 bg-white border-r border-gray-200 h-full">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-gray-200">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-          <Building2 className="w-6 h-6 text-white" />
+        <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg flex items-center justify-center">
+          <Eye className="w-6 h-6 text-black" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-gray-900">AttendanceTracker</h1>
+          <h1 className="text-lg font-bold text-gray-900">Insight Tracker</h1>
           <p className="text-xs text-gray-500">Track your growth</p>
         </div>
       </div>

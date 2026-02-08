@@ -17,7 +17,7 @@ import ReportsTab from '@/components/analytics/ReportsTab';
 import { toast } from 'react-hot-toast';
 
 export default function ViewAnalyticsPage() {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, terminology } = useOrganization();
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
@@ -33,7 +33,7 @@ export default function ViewAnalyticsPage() {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: BarChart3 },
     { id: 'trends', label: 'Trends', icon: TrendingUp },
-    { id: 'visitors', label: 'Visitors', icon: Users },
+    { id: 'visitors', label: terminology.visitors, icon: Users },
     { id: 'reports', label: 'Reports', icon: FileText },
   ];
 
@@ -143,16 +143,16 @@ export default function ViewAnalyticsPage() {
             </select>
           </div>
 
-          {/* Service Type Filter (Future) */}
+          {/* Event Type Filter (Future) */}
           <div className="flex-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Service Type
+              {terminology.Event} Type
             </label>
             <select
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm text-gray-500"
             >
-              <option>All Services</option>
+              <option>All {terminology.Events}</option>
             </select>
           </div>
 

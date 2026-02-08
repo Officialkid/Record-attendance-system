@@ -5,10 +5,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { getServicesByMonth, getMonthlyStats } from '@/lib/firestore-multitenant';
 import MonthlyAttendanceChart from '@/components/charts/MonthlyAttendanceChart';
 import { StatCardSkeleton, ChartSkeleton, TableSkeleton } from '@/components/ui/LoadingSkeletons';
-import { Calendar, Users, TrendingUp, Sparkles, CalendarX, AlertTriangle } from 'lucide-react';
+import { Calendar, Users, TrendingUp, Sparkles, CalendarX, AlertTriangle, Edit2, Trash2, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { toast } from 'react-hot-toast';
+import EditEventModal from '@/components/modals/EditEventModal';
+import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
 
 interface Stats {
   totalServices: number;
@@ -19,10 +21,13 @@ interface Stats {
 
 interface Service {
   id: string;
+  organizationId: string;
   serviceDate: Date;
-  serviceType: string;
+  eventType: string;
   totalAttendance: number;
   visitorCount: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface OverviewTabProps {
@@ -31,11 +36,15 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ month, year }: OverviewTabProps) {
-  const { currentOrg } = useOrganization();
+  const { currentOrg, terminology } = useOrganization();
   const [stats, setStats] = useState<Stats | null>(null);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [indexRequired, setIndexRequired] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editingService, setEditingService] = useState<Service | null>(null);
+  const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
+  const [deletingServiceDate, setDeletingServiceDate] = useState('');
 
   const loadData = useCallback(async () => {
     if (!currentOrg) return;
@@ -52,7 +61,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
       const normalizedServices: Service[] = servicesData.map((service) => ({
         id: service.id,
         serviceDate: service.serviceDate,
-        serviceType: service.serviceType,
+        eventType: service.eventType,
         totalAttendance: service.totalAttendance,
         visitorCount: service.visitorCount ?? 0,
       }));
@@ -78,6 +87,19 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
       loadData();
     }
   }, [currentOrg, loadData]);
+
+  const handleEdit = (service: Service) => {
+    setEditingService(service);
+  };
+
+  const handleDelete = (serviceId: string, serviceDate: Date) => {
+    setDeletingServiceId(serviceId);
+    setDeletingServiceDate(format(new Date(serviceDate), 'MMM d, yyyy'));
+  };
+
+  const handleSuccess = () => {
+    loadData();
+  };
 
   if (loading) {
     return (
@@ -105,7 +127,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
             <div>
               <p className="text-sm font-semibold text-amber-900">Firestore index required</p>
               <p className="text-sm text-amber-800 mt-1">
-                Create the composite index for services on organizationId and serviceDate to load analytics.
+                Create the composite index for events on organizationId and serviceDate to load analytics.
               </p>
               <Link
                 href={firebaseIndexesUrl}
@@ -133,7 +155,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
           <div className="text-3xl font-bold text-gray-900 mb-1">
             {stats?.totalServices || 0}
           </div>
-          <div className="text-sm text-gray-600">Total Services</div>
+          <div className="text-sm text-gray-600">Total {terminology.Events}</div>
         </div>
 
         {/* Total Attendance */}
@@ -159,7 +181,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
           <div className="text-3xl font-bold text-gray-900 mb-1">
             {stats?.avgAttendance || 0}
           </div>
-          <div className="text-sm text-gray-600">Average per Service</div>
+          <div className="text-sm text-gray-600">Average per {terminology.Event}</div>
         </div>
 
         {/* New Visitors */}
@@ -172,7 +194,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
           <div className="text-3xl font-bold text-gray-900 mb-1">
             {stats?.totalVisitors || 0}
           </div>
-          <div className="text-sm text-gray-600">New Visitors</div>
+          <div className="text-sm text-gray-600">New {terminology.visitors}</div>
         </div>
 
       </div>
@@ -189,9 +211,9 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
       {/* SERVICE LIST */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Recent Services</h3>
+          <h3 className="text-lg font-semibold text-gray-900">Recent {terminology.Events}</h3>
           <p className="text-sm text-gray-600 mt-1">
-            Service records for this period
+            {terminology.Event} records for this period
           </p>
         </div>
 
@@ -200,7 +222,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
           <div className="p-12 text-center">
             <CalendarX className="w-16 h-16 mx-auto text-gray-300 mb-4" />
             <h4 className="text-lg font-semibold text-gray-900 mb-2">
-              No Services Recorded
+              No {terminology.Events} Recorded
             </h4>
             <p className="text-gray-600 mb-6">
               No attendance records found for this period.
@@ -210,7 +232,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
             >
               <Calendar className="w-4 h-4" />
-              Add First Service
+              Add First {terminology.Event}
             </Link>
           </div>
         ) : (
@@ -224,19 +246,25 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                       Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Service Type
+                      {terminology.Event} Type
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Attendance
                     </th>
                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Visitors
+                      {terminology.visitors}
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {services.map((service) => (
-                    <tr key={service.id} className="hover:bg-gray-50 transition-colors">
+                  {services.map((service) => {
+                    const isMenuOpen = openMenuId === service.id;
+
+                    return (
+                      <tr key={service.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="font-medium text-gray-900">
                           {format(service.serviceDate, 'EEEE, MMM d')}
@@ -247,7 +275,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                       </td>
                       <td className="px-6 py-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                          {service.serviceType}
+                          {service.eventType}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
@@ -260,15 +288,58 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                           {service.visitorCount}
                         </span>
                       </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="relative inline-block text-left">
+                          <button
+                            onClick={() => setOpenMenuId(isMenuOpen ? null : service.id)}
+                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            aria-label={`${terminology.Event} actions`}
+                          >
+                            <MoreVertical className="w-4 h-4 text-gray-500" />
+                          </button>
+
+                          {isMenuOpen && (
+                            <div
+                              className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+                              onMouseLeave={() => setOpenMenuId(null)}
+                            >
+                              <button
+                                onClick={() => {
+                                  handleEdit(service);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                                Edit {terminology.Event}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  handleDelete(service.id, service.serviceDate);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete {terminology.Event}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
                     </tr>
-                  ))}
+                  );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Cards */}
             <div className="md:hidden p-4 space-y-4">
-              {services.map((service) => (
+              {services.map((service) => {
+                const isMenuOpen = openMenuId === service.id;
+
+                return (
                 <div
                   key={service.id}
                   className="bg-gray-50 rounded-lg p-4 space-y-3"
@@ -283,7 +354,7 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                       </div>
                     </div>
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                      {service.serviceType}
+                      {service.eventType}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t border-gray-200">
@@ -294,18 +365,76 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-gray-600 mb-1">Visitors</div>
+                      <div className="text-xs text-gray-600 mb-1">{terminology.visitors}</div>
                       <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
                         {service.visitorCount}
                       </span>
                     </div>
                   </div>
+                  <div className="flex justify-end">
+                    <div className="relative inline-block text-left">
+                      <button
+                        onClick={() => setOpenMenuId(isMenuOpen ? null : service.id)}
+                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        aria-label={`${terminology.Event} actions`}
+                      >
+                        <MoreVertical className="w-4 h-4 text-gray-500" />
+                      </button>
+
+                      {isMenuOpen && (
+                        <div
+                          className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+                          onMouseLeave={() => setOpenMenuId(null)}
+                        >
+                          <button
+                            onClick={() => {
+                              handleEdit(service);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                            Edit {terminology.Event}
+                          </button>
+                          <button
+                            onClick={() => {
+                              handleDelete(service.id, service.serviceDate);
+                              setOpenMenuId(null);
+                            }}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete {terminology.Event}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           </>
         )}
       </div>
+
+      <EditEventModal
+        isOpen={Boolean(editingService)}
+        onClose={() => setEditingService(null)}
+        service={editingService}
+        onSuccess={handleSuccess}
+      />
+
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingServiceId)}
+        onClose={() => {
+          setDeletingServiceId(null);
+          setDeletingServiceDate('');
+        }}
+        serviceId={deletingServiceId || ''}
+        serviceDate={deletingServiceDate}
+        onSuccess={handleSuccess}
+      />
 
     </div>
   );

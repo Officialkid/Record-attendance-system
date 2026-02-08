@@ -140,11 +140,11 @@ export default function SignInPage() {
           >
             {/* Brand Logo */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-br from-[#4b248c] to-[#0047AB] rounded-full mx-auto mb-4 flex items-center justify-center">
-                <span className="text-white text-2xl font-bold">IT</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-lg mx-auto mb-4 flex items-center justify-center">
+                <Eye className="w-9 h-9 text-black" />
               </div>
               <h1 className="text-[2rem] font-bold text-gray-900 mb-2">Welcome Back</h1>
-              <p className="text-base text-gray-600">Sign in to your account</p>
+              <p className="text-base text-gray-600">Sign in to Insight Tracker</p>
             </div>
 
             {/* Form */}

@@ -22,7 +22,7 @@ export const servicesCollection = collection(db, 'services');
  */
 export async function addAttendanceRecord(
   serviceDate: Date,
-  serviceType: string,
+  eventType: string,
   totalAttendance: number,
   visitors: Array<{ name: string; contact: string }>
 ) {
@@ -48,7 +48,7 @@ export async function addAttendanceRecord(
     // 2. Create service document
     const serviceRef = await addDoc(servicesCollection, {
       serviceDate: Timestamp.fromDate(serviceDate),
-      serviceType: serviceType,
+      eventType: eventType,
       totalAttendance: totalAttendance,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -88,16 +88,16 @@ export async function addAttendanceRecord(
 }
 
 /**
- * Add a new service record (legacy - kept for compatibility)
+ * Add a new event record (legacy - kept for compatibility)
  */
 export async function addService(data: {
   serviceDate: Date;
-  serviceType: string;
+  eventType: string;
   totalAttendance: number;
 }) {
   const docRef = await addDoc(servicesCollection, {
     serviceDate: Timestamp.fromDate(data.serviceDate),
-    serviceType: data.serviceType,
+    eventType: data.eventType,
     totalAttendance: data.totalAttendance,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
@@ -137,8 +137,8 @@ export async function getServices(): Promise<Service[]> {
     const data = doc.data();
     return {
       id: doc.id,
-      service_date: data.serviceDate?.toDate().toISOString().split('T')[0] || '',
-      service_type: data.serviceType || '',
+      event_date: data.serviceDate?.toDate().toISOString().split('T')[0] || '',
+      event_type: data.eventType || data.serviceType || '',
       total_attendance: data.totalAttendance || 0,
       created_at: data.createdAt?.toDate().toISOString() || '',
       updated_at: data.updatedAt?.toDate().toISOString() || '',
@@ -202,7 +202,7 @@ export async function getVisitorsByService(serviceId: string): Promise<Visitor[]
 type MonthlyService = {
   id: string;
   serviceDate: Date;
-  serviceType: string;
+  eventType: string;
   totalAttendance: number;
   visitorCount: number;
 };
@@ -234,7 +234,7 @@ export async function getServicesByMonth(month: number, year: number): Promise<M
         return {
           id: serviceDoc.id,
           serviceDate: data.serviceDate?.toDate() || new Date(),
-          serviceType: data.serviceType || '',
+          eventType: data.eventType || data.serviceType || '',
           totalAttendance,
           visitorCount: visitorsSnapshot.size,
         };
