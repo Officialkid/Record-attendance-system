@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, BarChart3, CalendarPlus, Home, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -88,12 +89,13 @@ export default function Navigation() {
                 <div className="flex items-center gap-3 px-3 py-2 text-sm text-gray-700">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-royal-purple to-primary-blue text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
                     {avatarUrl ? (
-                      <img
+                      <Image
                         src={avatarUrl}
                         alt={displayName}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        referrerPolicy="no-referrer"
+                        width={32}
+                        height={32}
+                        className="w-full h-full object-cover rounded-full"
+                        unoptimized
                       />
                     ) : (
                       <span>{avatarLetter}</span>
@@ -183,12 +185,13 @@ export default function Navigation() {
                     <div className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-br from-royal-purple to-primary-blue text-white flex items-center justify-center text-xs font-semibold overflow-hidden">
                         {avatarUrl ? (
-                          <img
+                          <Image
                             src={avatarUrl}
                             alt={displayName}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
+                            width={32}
+                            height={32}
+                            className="w-full h-full object-cover rounded-full"
+                            unoptimized
                           />
                         ) : (
                           <span>{avatarLetter}</span>

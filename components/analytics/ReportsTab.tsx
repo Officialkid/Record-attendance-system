@@ -240,7 +240,7 @@ export default function ReportsTab() {
               Need a Custom Report?
             </h3>
             <p className="text-gray-700 text-sm mb-4">
-              Have specific reporting needs? We can create custom reports tailored to your organization's requirements. 
+              Have specific reporting needs? We can create custom reports tailored to your organization&apos;s requirements. 
               Contact us and let us know what you need.
             </p>
             <a
