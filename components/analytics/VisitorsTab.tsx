@@ -158,7 +158,7 @@ export default function VisitorsTab({ month, year }: VisitorsTabProps) {
             visitDate: visitor.visitDate,
             serviceId: service.id,
             serviceDate: service.serviceDate,
-            eventType: service.eventType || service.serviceType || 'Event',
+            eventType: service.eventType || 'Event',
           });
         });
       }
