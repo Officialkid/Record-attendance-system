@@ -42,7 +42,7 @@ export default function Navigation() {
               <div className="absolute -inset-1 bg-gradient-to-r from-royal-purple to-primary-blue rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-300"></div>
               <div className="relative bg-white px-2 py-2 rounded-lg flex items-center gap-2">
                 <Image
-                  src="/icons/Logo.svg"
+                  src="/icons/Logo.png"
                   alt="Insight Tracker"
                   width={28}
                   height={28}

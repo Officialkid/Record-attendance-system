@@ -143,7 +143,7 @@ export default function SignInPage() {
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-md">
                 <Image
-                  src="/icons/Logo.svg"
+                  src="/icons/Logo.png"
                   alt="Insight Tracker"
                   width={48}
                   height={48}

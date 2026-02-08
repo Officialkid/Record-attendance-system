@@ -66,7 +66,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Image
-                  src="/icons/Logo.svg"
+                  src="/icons/Logo.png"
                   alt="Insight Tracker"
                   width={32}
                   height={32}

@@ -193,7 +193,7 @@ export default function SignUpPage() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
                 <Image
-                  src="/icons/Logo.svg"
+                  src="/icons/Logo.png"
                   alt="Insight Tracker"
                   width={32}
                   height={32}
