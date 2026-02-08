@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useOrganization } from '@/lib/OrganizationContext';
 import { useAuth } from '@/lib/AuthContext';
 import { Menu, Search, Bell, ChevronDown, MoreVertical, Eye } from 'lucide-react';
+import Link from 'next/link';
 import MobileDrawer from './MobileDrawer';
 
 interface DashboardTopBarProps {
@@ -123,31 +124,34 @@ export default function DashboardTopBar({ onMenuClick, isMenuOpen }: DashboardTo
                 </span>
               </div>
 
-              <span className="hidden sm:block text-sm font-medium text-gray-700">
-                {user?.email?.split('@')[0]}
-              </span>
+              <div className="hidden sm:block text-left">
+                <p className="text-sm font-medium text-gray-700">{currentOrg?.name || 'Organization'}</p>
+                <p className="text-xs text-gray-500">{user?.email?.split('@')[0]}</p>
+              </div>
 
               <ChevronDown className="w-4 h-4 text-gray-400" />
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
                 <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">{user?.email}</p>
-                  <p className="text-xs text-gray-500">Free Plan</p>
+                  <p className="text-sm font-medium text-gray-900">{currentOrg?.name || 'Organization'}</p>
+                  <p className="text-xs text-gray-500">{user?.email}</p>
                 </div>
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  type="button"
+                <Link
+                  href="/settings"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex"
+                  onClick={() => setShowUserMenu(false)}
                 >
                   Account Settings
-                </button>
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  type="button"
+                </Link>
+                <Link
+                  href="/help"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex"
+                  onClick={() => setShowUserMenu(false)}
                 >
                   Help & Support
-                </button>
+                </Link>
                 <div className="border-t border-gray-100 mt-1 pt-1">
                   <button
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"

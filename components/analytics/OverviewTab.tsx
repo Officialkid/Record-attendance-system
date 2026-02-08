@@ -60,10 +60,13 @@ export default function OverviewTab({ month, year }: OverviewTabProps) {
       // Ensure visitorCount is always a number
       const normalizedServices: Service[] = servicesData.map((service) => ({
         id: service.id,
+        organizationId: service.organizationId,
         serviceDate: service.serviceDate,
         eventType: service.eventType,
         totalAttendance: service.totalAttendance,
         visitorCount: service.visitorCount ?? 0,
+        createdAt: service.createdAt,
+        updatedAt: service.updatedAt,
       }));
       setServices(normalizedServices);
     } catch (error) {

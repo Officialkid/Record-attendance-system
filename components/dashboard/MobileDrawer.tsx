@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, HelpCircle, FileText, LogOut, Building2, Eye } from 'lucide-react';
+import { X, HelpCircle, FileText, LogOut, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/AuthContext';
 import { useOrganization } from '@/lib/OrganizationContext';

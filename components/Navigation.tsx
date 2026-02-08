@@ -6,14 +6,16 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, BarChart3, CalendarPlus, Home, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
+import { useOrganization } from '@/lib/OrganizationContext';
 import OrganizationSwitcher from '@/components/OrganizationSwitcher';
 
 export default function Navigation() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
-  const avatarLetter = displayName.charAt(0).toUpperCase();
+  const { currentOrg } = useOrganization();
+  const displayName = currentOrg?.name || user?.displayName || user?.email?.split('@')[0] || 'User';
+  const avatarLetter = (currentOrg?.name || displayName).charAt(0).toUpperCase();
   const avatarUrl = user?.photoURL && /^https?:\/\//i.test(user.photoURL) ? user.photoURL : null;
 
   const navLinks = [
@@ -98,7 +100,7 @@ export default function Navigation() {
                     )}
                   </div>
                   <div className="hidden lg:block">
-                    <div className="text-xs font-semibold text-gray-900">{displayName}</div>
+                    <div className="text-xs font-semibold text-gray-900">{currentOrg?.name || displayName}</div>
                     <div className="text-[11px] text-gray-500">{user.email}</div>
                   </div>
                 </div>
@@ -193,7 +195,7 @@ export default function Navigation() {
                         )}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-gray-900 truncate">{displayName}</div>
+                        <div className="text-xs font-semibold text-gray-900 truncate">{currentOrg?.name || displayName}</div>
                         <div className="text-[11px] text-gray-500 truncate">{user.email}</div>
                       </div>
                     </div>
