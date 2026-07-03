@@ -16,6 +16,7 @@ export function LoginForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  const resetComplete = searchParams.get('reset') === '1';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -62,6 +63,12 @@ export function LoginForm({
           session stays active so you do not have to keep signing in again and again.
         </p>
       </div>
+
+      {resetComplete ? (
+        <p className="rounded-2xl border border-[#d9ead7] bg-[#f3fbf2] px-4 py-3 text-sm text-[#2d6a2d]">
+          Your browser session was cleared. You can try signing in again now.
+        </p>
+      ) : null}
 
       {googleEnabled ? (
         <button
@@ -150,6 +157,14 @@ export function LoginForm({
         Need access to CAP?{' '}
         <Link href="/sign-up" className="font-semibold text-[#4B248C]">
           See how invite-only access works
+        </Link>
+        .
+      </p>
+
+      <p className="text-sm text-[#5f5673]">
+        Seeing a redirect loop?{' '}
+        <Link href="/api/auth/reset" className="font-semibold text-[#4B248C]">
+          Reset this browser session
         </Link>
         .
       </p>
