@@ -62,8 +62,8 @@ export function PortalNav({
     systemRole === 'main_admin' || systemRole === 'chief_admin' || role === 'admin' || role === 'leader';
 
   return (
-    <aside className="flex h-full flex-col justify-between border-r border-[#3d1f72] bg-[linear-gradient(180deg,#341765_0%,#4B248C_62%,#5b32a3_100%)] px-3 py-5 text-white">
-      <div>
+    <aside className="flex h-full min-h-0 flex-col border-r border-[#3d1f72] bg-[linear-gradient(180deg,#341765_0%,#4B248C_62%,#5b32a3_100%)] px-3 py-5 text-white">
+      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         <div className={cn('mb-6 rounded-3xl border border-[#ffffff1f] bg-[#ffffff12] backdrop-blur-sm', collapsed ? 'px-3 py-4' : 'p-4')}>
           <p className="text-[10px] uppercase tracking-[0.3em] text-[#C9A461]">C.I.O.M.</p>
           <h1 className="mt-2 text-xl font-semibold">CAP</h1>
@@ -145,7 +145,7 @@ export function PortalNav({
         type="button"
         onClick={() => signOut({ callbackUrl: '/login' })}
         className={cn(
-          'flex items-center gap-3 rounded-2xl border border-[#ffffff26] px-3 py-3 text-sm text-white transition-colors hover:bg-[#ffffff14]',
+          'mt-4 flex shrink-0 items-center gap-3 rounded-2xl border border-[#ffffff26] px-3 py-3 text-sm text-white transition-colors hover:bg-[#ffffff14]',
           collapsed && 'justify-center'
         )}
         title={collapsed ? 'Sign out' : undefined}

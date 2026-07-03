@@ -108,7 +108,7 @@ export function PortalShell({
 
         {mobileOpen ? (
           <div className="fixed inset-0 z-50 bg-[#1e103d]/55 backdrop-blur-sm">
-            <div className="absolute left-0 top-0 h-full w-[86vw] max-w-[320px]">
+            <div className="absolute left-0 top-0 h-full w-[86vw] max-w-[320px] overflow-hidden">
               <PortalNav
                 role={role}
                 systemRole={systemRole}

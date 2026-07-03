@@ -77,29 +77,24 @@ export default async function RecordsPage({
             No records match the current filter. Clear the dates to load the full archive, or add a new weekly record to start the history for this department.
           </div>
         ) : (
-        <table className="min-w-full divide-y divide-[#ece4f8] text-sm">
-          <thead className="bg-[#fbf9fe] text-left text-[#5f5673]">
-            <tr>
-              <th className="px-5 py-4">Date</th>
-              <th className="px-5 py-4">Department</th>
-              <th className="px-5 py-4">Handled by</th>
-              <th className="px-5 py-4">Metrics</th>
-              <th className="px-5 py-4">Visitors</th>
-              <th className="px-5 py-4">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#f4effb]">
-            {records.map((record) => {
-              const values = record.values as Record<string, number | string | null | undefined>;
+          <>
+            <div className="divide-y divide-[#f4effb] md:hidden">
+              {records.map((record) => {
+                const values = record.values as Record<string, number | string | null | undefined>;
 
-              return (
-                <tr key={record.id}>
-                  <td className="px-5 py-4 font-medium text-[#241c33]">
-                    {formatDisplayDate(record.recordDate)}
-                  </td>
-                  <td className="px-5 py-4 text-[#5f5673]">{record.departmentName}</td>
-                  <td className="px-5 py-4 text-[#5f5673]">{record.handledByName}</td>
-                  <td className="px-5 py-4">
+                return (
+                  <article key={record.id} className="space-y-4 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-base font-semibold text-[#241c33]">{record.departmentName}</p>
+                        <p className="mt-1 text-sm text-[#5f5673]">{formatDisplayDate(record.recordDate)}</p>
+                        <p className="mt-1 text-sm text-[#7a7190]">Handled by {record.handledByName}</p>
+                      </div>
+                      <span className="rounded-full bg-[#fff8eb] px-3 py-1 text-xs font-semibold text-[#b6841a]">
+                        {record.visitorCount} visitors
+                      </span>
+                    </div>
+
                     <div className="flex flex-wrap gap-2">
                       {fieldDefinitions.map((field) => {
                         const rawValue = values[field.fieldKey];
@@ -108,7 +103,7 @@ export default async function RecordsPage({
                             ? formatCurrency(Number(rawValue || 0))
                             : Array.isArray(rawValue)
                               ? rawValue.join(', ')
-                            : rawValue ?? '-';
+                              : rawValue ?? '-';
 
                         return (
                           <span
@@ -120,24 +115,85 @@ export default async function RecordsPage({
                         );
                       })}
                     </div>
-                  </td>
-                  <td className="px-5 py-4 text-[#5f5673]">{record.visitorCount}</td>
-                  <td className="px-5 py-4">
+
                     <div className="flex flex-wrap gap-2">
                       <Link
                         href={`/records/${record.id}/edit`}
                         className="rounded-xl bg-[#ede7f7] px-3 py-2 text-xs font-medium text-[#4B248C]"
                       >
-                        Edit
+                        Edit record
                       </Link>
                       <DeleteRecordButton recordId={record.id} />
                     </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full divide-y divide-[#ece4f8] text-sm">
+                <thead className="bg-[#fbf9fe] text-left text-[#5f5673]">
+                  <tr>
+                    <th className="px-5 py-4">Date</th>
+                    <th className="px-5 py-4">Department</th>
+                    <th className="px-5 py-4">Handled by</th>
+                    <th className="px-5 py-4">Metrics</th>
+                    <th className="px-5 py-4">Visitors</th>
+                    <th className="px-5 py-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f4effb]">
+                  {records.map((record) => {
+                    const values = record.values as Record<string, number | string | null | undefined>;
+
+                    return (
+                      <tr key={record.id}>
+                        <td className="px-5 py-4 font-medium text-[#241c33]">
+                          {formatDisplayDate(record.recordDate)}
+                        </td>
+                        <td className="px-5 py-4 text-[#5f5673]">{record.departmentName}</td>
+                        <td className="px-5 py-4 text-[#5f5673]">{record.handledByName}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            {fieldDefinitions.map((field) => {
+                              const rawValue = values[field.fieldKey];
+                              const displayValue =
+                                field.fieldType === 'currency'
+                                  ? formatCurrency(Number(rawValue || 0))
+                                  : Array.isArray(rawValue)
+                                    ? rawValue.join(', ')
+                                    : rawValue ?? '-';
+
+                              return (
+                                <span
+                                  key={`${record.id}-${field.fieldKey}`}
+                                  className="rounded-full bg-[#f4effb] px-3 py-1 text-xs text-[#4B248C]"
+                                >
+                                  {field.label}: {displayValue}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 text-[#5f5673]">{record.visitorCount}</td>
+                        <td className="px-5 py-4">
+                          <div className="flex flex-wrap gap-2">
+                            <Link
+                              href={`/records/${record.id}/edit`}
+                              className="rounded-xl bg-[#ede7f7] px-3 py-2 text-xs font-medium text-[#4B248C]"
+                            >
+                              Edit
+                            </Link>
+                            <DeleteRecordButton recordId={record.id} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </section>
