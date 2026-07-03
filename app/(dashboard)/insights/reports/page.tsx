@@ -28,7 +28,7 @@ export default async function ReportArchivePage({
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Report archive</p>
           <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Generated leadership reports</h2>
           <p className="mt-2 text-sm text-[#5f5673]">
-            Review every persisted executive summary generated from the CAP insights engine.
+            Review every persisted executive summary generated from the CIOM Portal insights engine.
           </p>
         </div>
 
@@ -79,7 +79,7 @@ export default async function ReportArchivePage({
                   </td>
                   <td className="px-4 py-4 capitalize text-[#5f5673]">{report.periodType}</td>
                   <td className="px-4 py-4 text-[#5f5673]">{report.generatedAt.slice(0, 10)}</td>
-                  <td className="px-4 py-4 text-[#5f5673]">{report.generatedByName || 'CAP workflow'}</td>
+                  <td className="px-4 py-4 text-[#5f5673]">{report.generatedByName || 'CIOM Portal workflow'}</td>
                   <td className="px-4 py-4 text-[#5f5673]">{report.dataSnapshot.recordCount}</td>
                   <td className="px-4 py-4 text-[#5f5673]">{report.dataSnapshot.totalVisitors}</td>
                   <td className="px-4 py-4 text-[#5f5673]">{report.dataSnapshot.anomalyCount}</td>

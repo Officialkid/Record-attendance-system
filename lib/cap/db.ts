@@ -632,7 +632,7 @@ async function ensureDatabase(database: CapDatabase) {
 
 async function seedDatabase(database: CapDatabase) {
   const adminEmail = (getEnvValue('CAP_ADMIN_EMAIL', 'MAIN_ADMIN_EMAIL') || 'danielmwalili1@gmail.com').toLowerCase();
-  const adminName = process.env.CAP_ADMIN_NAME || 'CAP Administrator';
+  const adminName = process.env.CAP_ADMIN_NAME || 'CIOM Portal Administrator';
   const adminPassword = process.env.CAP_ADMIN_PASSWORD || 'ChangeMe123!';
 
   const existingAdmin = (await database
@@ -686,7 +686,7 @@ async function seedDatabase(database: CapDatabase) {
   }
 
   if (!adminId) {
-    throw new Error('Failed to seed the initial CAP admin user.');
+    throw new Error('Failed to seed the initial CIOM Portal admin user.');
   }
 
   await database

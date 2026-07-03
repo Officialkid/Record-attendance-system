@@ -60,7 +60,7 @@ function buildCalendarPayload(input: {
   const description = [
     input.agenda ? `Agenda:\n${input.agenda}` : null,
     input.decisions ? `Decisions:\n${input.decisions}` : null,
-    input.actionUrl ? `Open CAP: ${input.actionUrl}` : null,
+    input.actionUrl ? `Open CIOM Portal: ${input.actionUrl}` : null,
   ]
     .filter(Boolean)
     .join('\n\n');

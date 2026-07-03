@@ -3,7 +3,7 @@ import { getCapHealthSnapshot } from '@/lib/cap/health';
 const setupSections = [
   {
     title: 'Core boot requirements',
-    description: 'These values are needed before CAP can be proven against a real Neon-backed environment.',
+    description: 'These values are needed before CIOM Portal can be proven against a real Neon-backed environment.',
     items: ['CAP_DATABASE_DRIVER=postgres', 'DATABASE_URL', 'NEXTAUTH_SECRET', 'AUTH_SECRET', 'CAP_ADMIN_EMAIL', 'CRON_SECRET'],
   },
   {
@@ -19,7 +19,7 @@ const setupSections = [
   {
     title: 'Calendar sync',
     description:
-      'Optional. CAP already falls back to GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET unless you want a separate Google app just for calendar sync. If your Google OAuth app is still in testing mode, add the intended account as a test user before trying the calendar scope.',
+      'Optional. CIOM Portal already falls back to GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET unless you want a separate Google app just for calendar sync. If your Google OAuth app is still in testing mode, add the intended account as a test user before trying the calendar scope.',
     items: ['Optional: GOOGLE_CALENDAR_CLIENT_ID', 'Optional: GOOGLE_CALENDAR_CLIENT_SECRET'],
   },
 ];
@@ -31,7 +31,7 @@ export default async function DocsPage() {
     <section className="space-y-6">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Setup guide</p>
-        <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">CAP environment and launch handoff</h2>
+        <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">CIOM Portal environment and launch handoff</h2>
         <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
           This page turns the Neon-first handoff into an in-app checklist. Fill the real values in your local
           `.env.local`, then use the health snapshot to confirm each capability is ready.
@@ -106,7 +106,7 @@ export default async function DocsPage() {
           <li>4. Add Google OAuth, then prove sign-in.</li>
           <li>5. If Google Calendar consent is still in testing mode, add the real account under Google Auth Platform test users before verifying calendar sync.</li>
           <li>6. Add Resend, Groq, R2, and Calendar credentials one service at a time, verifying each after setup.</li>
-          <li>7. Re-run the final live proof pass before calling CAP fully finished.</li>
+          <li>7. Re-run the final live proof pass before calling CIOM Portal fully finished.</li>
         </ol>
       </article>
     </section>

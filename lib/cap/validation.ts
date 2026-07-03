@@ -163,7 +163,7 @@ export const updateMeetingSchema = createMeetingSchema.extend({
 });
 
 export const processMeetingMinutesSchema = z.object({
-  notes: z.string().min(20, 'Paste enough meeting notes for CAP to extract useful suggestions.'),
+  notes: z.string().min(20, 'Paste enough meeting notes for CIOM Portal to extract useful suggestions.'),
 });
 
 export const updateOwnProfileSchema = z.object({

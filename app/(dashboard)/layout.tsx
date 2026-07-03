@@ -30,7 +30,7 @@ export default async function PortalLayout({ children }: { children: React.React
       {session.user.status === 'pending' && session.user.departmentIds.length === 0 && session.user.systemRole === 'none' ? (
         <div className="mb-6 rounded-[24px] border border-[#eadfb8] bg-[#fffbf0] px-5 py-4 text-sm text-[#5f5673]">
           Your account is signed in, but your ministry workspace is still locked until a department invite is claimed.
-          Open your profile for the next steps, or ask a department admin to send you a one-time CAP invite link.
+          Open your profile for the next steps, or ask a department admin to send you a one-time CIOM Portal invite link.
         </div>
       ) : null}
       {children}

@@ -85,7 +85,7 @@ export async function sendDepartmentAccessRequestNotification(input: {
     subject: `${input.requesterName} has requested to join ${input.departmentName}`,
     html: `
       <p>${input.requesterName} (${input.requesterEmail}) has requested access to <strong>${input.departmentName}</strong>.</p>
-      <p>Sign in to CAP to review and approve or reject this request.</p>
+      <p>Sign in to CIOM Portal to review and approve or reject this request.</p>
     `,
   });
 }
@@ -108,7 +108,7 @@ export async function sendDepartmentMembershipDecisionNotification(input: {
     html: `
       <p>Your request for <strong>${input.departmentName}</strong> was <strong>${decisionText}</strong>.</p>
       ${roleLine}
-      <p>Sign in to CAP to continue.</p>
+      <p>Sign in to CIOM Portal to continue.</p>
     `,
   });
 }
@@ -127,9 +127,9 @@ export async function sendAdminAddedUserInviteNotification(input: {
 
   return sendEmail({
     to: [input.recipient],
-    subject: 'You have been added to Christhood Accountability Platform',
+    subject: 'You have been added to CIOM Portal',
     html: `
-      <p>You have been added to <strong>Christhood Accountability Platform (CAP)</strong>.</p>
+      <p>You have been added to <strong>CIOM Portal</strong>.</p>
       <p>System role: <strong>${input.systemRole}</strong></p>
       ${departmentList}
       <p>Sign in with Google once your credentials are connected in the target environment.</p>
@@ -146,8 +146,8 @@ export async function sendMeetingReminderNotification(input: {
   actionUrl?: string;
 }) {
   const actionLine = input.actionUrl
-    ? `<p><a href="${input.actionUrl}">Open CAP to review the meeting</a></p>`
-    : '<p>Open CAP to review the meeting details.</p>';
+    ? `<p><a href="${input.actionUrl}">Open CIOM Portal to review the meeting</a></p>`
+    : '<p>Open CIOM Portal to review the meeting details.</p>';
 
   return sendEmail({
     to: [input.recipient],

@@ -162,7 +162,9 @@ async function syncGoogleUser({
   const googleSub = typeof account?.providerAccountId === 'string' ? account.providerAccountId : '';
   const avatarUrl = typeof googleProfile.picture === 'string' ? googleProfile.picture : null;
   const displayName =
-    typeof profile?.name === 'string' && profile.name.trim().length > 0 ? profile.name.trim() : email || 'CAP User';
+    typeof profile?.name === 'string' && profile.name.trim().length > 0
+      ? profile.name.trim()
+      : email || 'CIOM Portal user';
 
   if (!email || !googleSub) {
     return null;

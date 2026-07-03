@@ -125,7 +125,7 @@ function buildFallbackMinutesSuggestion(notes: string): MeetingMinutesSuggestion
     }));
 
   return {
-    summary: summary || 'CAP could not extract a concise summary from the provided notes yet.',
+    summary: summary || 'CIOM Portal could not extract a concise summary from the provided notes yet.',
     decisions: decisionLines.join('\n'),
     actionItems,
   };
