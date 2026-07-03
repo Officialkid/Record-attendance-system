@@ -1062,8 +1062,11 @@ async function getInviteRowByToken(token: string) {
 }
 
 export async function getDepartmentInviteByToken(token: string) {
-  const parsed = acceptDepartmentInviteSchema.parse({ token });
-  const row = await getInviteRowByToken(parsed.token);
+  const parsed = acceptDepartmentInviteSchema.safeParse({ token });
+  if (!parsed.success) {
+    return null;
+  }
+  const row = await getInviteRowByToken(parsed.data.token);
 
   if (!row) {
     return null;
@@ -1078,7 +1081,7 @@ export async function getDepartmentInviteByToken(token: string) {
       created_by_user_id: null,
       created_by_name: null,
     }),
-    inviteUrl: buildInviteUrl(parsed.token),
+    inviteUrl: buildInviteUrl(parsed.data.token),
     createdAt: '',
   };
 }
