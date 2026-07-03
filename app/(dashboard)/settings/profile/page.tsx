@@ -26,7 +26,7 @@ export default async function ProfilePage() {
       <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
         <h2 className="text-2xl font-semibold text-[#241c33]">Profile not available</h2>
         <p className="mt-2 text-sm text-[#5f5673]">
-          CAP could not load your profile yet. Refresh the page or sign in again if the issue continues.
+          CIOM Portal could not load your profile yet. Refresh the page or sign in again if the issue continues.
         </p>
       </section>
     );
@@ -39,7 +39,7 @@ export default async function ProfilePage() {
       {user.status === 'pending' && assignedDepartments.length === 0 ? (
         <div className="rounded-2xl border border-[#eadfb8] bg-[#fffbf0] p-4 text-sm text-[#5f5673]">
           Your account is signed in successfully, but your ministry workspace still needs a department invite link.
-          Ask the relevant department head, chief admin, or main admin to generate your one-time CAP invite so your
+          Ask the relevant department head, chief admin, or main admin to generate your one-time CIOM Portal invite so your
           tools open automatically.
         </div>
       ) : null}

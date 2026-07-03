@@ -31,7 +31,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
               The invite may have expired, already been used, or been copied incorrectly. Ask the department admin for a fresh one-time link.
             </p>
             <Link href="/login" className="mt-6 inline-flex rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white">
-              Open CAP login
+              Open CIOM Portal login
             </Link>
           </section>
         )}

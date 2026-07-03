@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { signOut } from 'next-auth/react';
 import { Bell, ChevronLeft, ChevronRight, Menu, ShieldCheck, X } from 'lucide-react';
 
 import { PortalNav } from '@/components/cap/portal-nav';
@@ -93,22 +94,31 @@ export function PortalShell({
             <p className="text-sm font-semibold text-[#241c33]">{name}</p>
           </div>
 
-          <Link
-            href="/notifications"
-            className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[#ddd3f0] bg-[#fbf9fe] text-[#341765]"
-          >
-            <Bell className="h-5 w-5" />
-            {unreadNotificationsCount > 0 ? (
-              <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fff3d6] px-1.5 text-[10px] font-semibold text-[#7a5a12]">
-                {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
-              </span>
-            ) : null}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/notifications"
+              className="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-[#ddd3f0] bg-[#fbf9fe] text-[#341765]"
+            >
+              <Bell className="h-5 w-5" />
+              {unreadNotificationsCount > 0 ? (
+                <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#fff3d6] px-1.5 text-[10px] font-semibold text-[#7a5a12]">
+                  {unreadNotificationsCount > 9 ? '9+' : unreadNotificationsCount}
+                </span>
+              ) : null}
+            </Link>
+            <button
+              type="button"
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="rounded-2xl border border-[#ddd3f0] bg-[#fbf9fe] px-3 py-2 text-sm font-medium text-[#341765]"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
 
         {mobileOpen ? (
           <div className="fixed inset-0 z-50 bg-[#1e103d]/55 backdrop-blur-sm">
-            <div className="absolute left-0 top-0 h-full w-[86vw] max-w-[320px] overflow-hidden">
+            <div className="absolute left-0 top-0 h-full w-[86vw] max-w-[320px] overflow-y-auto">
               <PortalNav
                 role={role}
                 systemRole={systemRole}
@@ -172,6 +182,14 @@ export function PortalShell({
                     </span>
                   </Link>
                 ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  className="inline-flex items-center rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
+                >
+                  Sign out
+                </button>
 
                 <Link href="/settings/profile" className="inline-flex items-center gap-3 rounded-2xl border border-[#e6def4] bg-white px-4 py-3">
                   {avatarUrl ? (

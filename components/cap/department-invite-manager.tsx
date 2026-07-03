@@ -164,7 +164,7 @@ export function DepartmentInviteManager({
           <div className="rounded-3xl border border-[#e6def4] bg-[#fbf9fe] p-4">
             <p className="text-sm font-medium text-[#241c33]">How this helps</p>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Share the invite with a new user, let them sign in with Google or email/password, and CAP will approve the target department immediately after they claim it.
+              Share the invite with a new user, let them sign in with Google or email/password, and CIOM Portal will approve the target department immediately after they claim it.
             </p>
           </div>
 

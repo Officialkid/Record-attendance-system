@@ -14,6 +14,11 @@ export function DeleteRecordButton({ recordId }: { recordId: number }) {
       type="button"
       disabled={pending}
       onClick={() => {
+        const confirmed = window.confirm('Delete this record permanently? This removes the saved figures and visitors from the archive.');
+        if (!confirmed) {
+          return;
+        }
+
         startTransition(async () => {
           const result = await deleteDepartmentRecordAction(recordId);
           if (!result.success) {

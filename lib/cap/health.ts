@@ -99,7 +99,7 @@ export async function getCapHealthSnapshot() {
 
   return {
     app: {
-      name: 'Christhood Accountability Platform',
+      name: 'CIOM Portal',
       status: reachable ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
     },
@@ -197,10 +197,10 @@ export async function getCapHealthSnapshot() {
             : ['NEXTAUTH_SECRET', 'AUTH_SECRET', 'CAP_ADMIN_EMAIL', 'CRON_SECRET'],
       note:
         configuredDriver === 'postgres'
-          ? 'CAP is configured for the Postgres/Neon runtime path. Live proof still requires a working DATABASE_URL.'
+          ? 'CIOM Portal is configured for the Postgres/Neon runtime path. Live proof still requires a working DATABASE_URL.'
           : configuredDriver === 'd1-remote'
-            ? 'CAP is configured for the D1 runtime path. Live proof still requires working Cloudflare credentials.'
-            : 'CAP is using the local SQLite development fallback.',
+            ? 'CIOM Portal is configured for the D1 runtime path. Live proof still requires working Cloudflare credentials.'
+            : 'CIOM Portal is using the local SQLite development fallback.',
     },
   };
 }

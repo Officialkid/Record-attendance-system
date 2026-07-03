@@ -59,7 +59,7 @@ export function NotificationsCenter({
           <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">No notifications yet</h3>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Meeting reminders, invite follow-through, and workflow alerts will appear here once CAP starts delivering them.
+              Meeting reminders, invite follow-through, and workflow alerts will appear here once CIOM Portal starts delivering them.
             </p>
           </article>
         ) : (

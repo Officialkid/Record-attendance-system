@@ -37,44 +37,49 @@ export default async function RecordsPage({
           </p>
           <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Weekly record history</h2>
           <p className="mt-2 text-sm text-[#5f5673]">
-            This archive is separate from Weekly Record. Leave the date filters empty to see every saved record for the selected department.
+            Review saved submissions, then edit or remove anything that needs cleaning before your ministry data grows.
           </p>
         </div>
 
-        <form className="flex flex-wrap gap-3 rounded-2xl border border-[#ddd3f0] bg-white p-3 shadow-sm">
-          <select
-            name="departmentId"
-            defaultValue={String(selectedDepartmentId)}
-            className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
-          >
-            {departments.map((department) => (
-              <option key={department.id} value={department.id}>
-                {department.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="date"
-            name="start"
-            defaultValue={params.start}
-            className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
-          />
-          <input
-            type="date"
-            name="end"
-            defaultValue={params.end}
-            className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
-          />
-          <button type="submit" className="rounded-xl bg-[#4B248C] px-4 py-2 text-sm font-medium text-white">
-            Filter
-          </button>
-        </form>
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <Link href="/records/new" className="rounded-xl bg-[#4B248C] px-4 py-2 text-sm font-medium text-white">
+            Add weekly record
+          </Link>
+          <form className="flex flex-wrap gap-3 rounded-2xl border border-[#ddd3f0] bg-white p-3 shadow-sm">
+            <select
+              name="departmentId"
+              defaultValue={String(selectedDepartmentId)}
+              className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
+            >
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="date"
+              name="start"
+              defaultValue={params.start}
+              className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
+            />
+            <input
+              type="date"
+              name="end"
+              defaultValue={params.end}
+              className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
+            />
+            <button type="submit" className="rounded-xl bg-[#ede7f7] px-4 py-2 text-sm font-medium text-[#4B248C]">
+              Filter
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-[28px] border border-[#ddd3f0] bg-white shadow-sm">
         {records.length === 0 ? (
           <div className="p-6 text-sm text-[#5f5673]">
-            No records match the current filter. Clear the dates to load the full archive, or add a new weekly record to start the history for this department.
+            No records match this filter yet. Clear the dates or add a new weekly record to start the archive.
           </div>
         ) : (
           <>
@@ -95,7 +100,7 @@ export default async function RecordsPage({
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid gap-2 sm:grid-cols-2">
                       {fieldDefinitions.map((field) => {
                         const rawValue = values[field.fieldKey];
                         const displayValue =
@@ -106,12 +111,13 @@ export default async function RecordsPage({
                               : rawValue ?? '-';
 
                         return (
-                          <span
+                          <div
                             key={`${record.id}-${field.fieldKey}`}
-                            className="rounded-full bg-[#f4effb] px-3 py-1 text-xs text-[#4B248C]"
+                            className="rounded-2xl border border-[#ede6f9] bg-[#fbf9fe] px-3 py-2"
                           >
-                            {field.label}: {displayValue}
-                          </span>
+                            <p className="text-[11px] uppercase tracking-[0.18em] text-[#8a7ca7]">{field.label}</p>
+                            <p className="mt-1 text-sm font-semibold text-[#241c33]">{displayValue}</p>
+                          </div>
                         );
                       })}
                     </div>
@@ -137,7 +143,7 @@ export default async function RecordsPage({
                     <th className="px-5 py-4">Date</th>
                     <th className="px-5 py-4">Department</th>
                     <th className="px-5 py-4">Handled by</th>
-                    <th className="px-5 py-4">Metrics</th>
+                    <th className="px-5 py-4">Details</th>
                     <th className="px-5 py-4">Visitors</th>
                     <th className="px-5 py-4">Actions</th>
                   </tr>

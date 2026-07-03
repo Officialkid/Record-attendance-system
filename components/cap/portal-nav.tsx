@@ -62,8 +62,8 @@ export function PortalNav({
     systemRole === 'main_admin' || systemRole === 'chief_admin' || role === 'admin' || role === 'leader';
 
   return (
-    <aside className="flex h-full min-h-0 flex-col border-r border-[#3d1f72] bg-[linear-gradient(180deg,#341765_0%,#4B248C_62%,#5b32a3_100%)] px-3 py-5 text-white">
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-[#3d1f72] bg-[linear-gradient(180deg,#341765_0%,#4B248C_62%,#5b32a3_100%)] px-3 py-5 text-white">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
         <div className={cn('mb-6 rounded-3xl border border-[#ffffff1f] bg-[#ffffff12] backdrop-blur-sm', collapsed ? 'px-3 py-4' : 'p-4')}>
           <p className="text-[10px] uppercase tracking-[0.3em] text-[#C9A461]">C.I.O.M.</p>
           <h1 className="mt-2 text-xl font-semibold">CIOM Portal</h1>
@@ -74,7 +74,7 @@ export function PortalNav({
           ) : null}
         </div>
 
-        <nav className="space-y-2">
+        <nav className="space-y-2 pb-4">
           {links.map((link) => {
             if (link.href === '/admin' && !canAccessAdmin) {
               return null;

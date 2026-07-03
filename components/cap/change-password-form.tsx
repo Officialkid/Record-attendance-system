@@ -18,7 +18,7 @@ export function ChangePasswordForm({ mustChangePassword }: { mustChangePassword:
       <div>
         <h3 className="text-xl font-semibold text-[#241c33]">Change password</h3>
         <p className="mt-2 text-sm text-[#5f5673]">
-          Update your password for this invite-only CAP account.
+          Update your password for this invite-only CIOM Portal account.
         </p>
       </div>
 

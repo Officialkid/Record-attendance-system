@@ -42,7 +42,7 @@ export default async function NewRecordPage({
 
       {params.invite === 'claimed' ? (
         <div className="rounded-2xl border border-[#d8e8c9] bg-[#f7fff0] p-4 text-sm text-[#46612b]">
-          Your department invite was claimed successfully. CAP has opened the weekly workflow for the invited
+          Your department invite was claimed successfully. CIOM Portal has opened the weekly workflow for the invited
           department so you can start working immediately.
         </div>
       ) : null}

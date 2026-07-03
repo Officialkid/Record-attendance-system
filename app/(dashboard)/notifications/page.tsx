@@ -16,7 +16,7 @@ export default async function NotificationsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Notifications</p>
         <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Ministry reminders and alerts</h2>
         <p className="mt-2 text-sm text-[#5f5673]">
-          CAP stores in-app reminders here so department members can follow upcoming meetings and accountability actions.
+          CIOM Portal stores in-app reminders here so department members can follow upcoming meetings and accountability actions.
         </p>
       </div>
 

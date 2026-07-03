@@ -331,7 +331,7 @@ export function MeetingForm({
           <div>
             <h3 className="text-base font-semibold text-[#241c33]">AI minutes assistant</h3>
             <p className="text-sm text-[#5f5673]">
-              Paste meeting notes and CAP will suggest a summary, decisions, and action items.
+              Paste meeting notes and CIOM Portal will suggest a summary, decisions, and action items.
             </p>
           </div>
           <button
@@ -357,7 +357,7 @@ export function MeetingForm({
             <div>
               <p className="text-sm font-medium text-[#241c33]">Upload minutes file</p>
               <p className="mt-1 text-xs text-[#5f5673]">
-                Supported: .txt, .docx, .pdf. CAP uploads the source file and extracts text for review.
+                Supported: .txt, .docx, .pdf. CIOM Portal uploads the source file and extracts text for review.
               </p>
             </div>
             <button
