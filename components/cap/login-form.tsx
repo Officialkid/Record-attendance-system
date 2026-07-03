@@ -57,10 +57,10 @@ export function LoginForm({
     <div className="w-full space-y-5 rounded-[28px] border border-[#ddd3f0] bg-white p-8 shadow-[0_24px_80px_rgba(75,36,140,0.10)]">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.35em] text-[#4B248C]">Welcome back</p>
-        <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Sign in to CAP</h2>
+        <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Sign in to CIOM Portal</h2>
         <p className="mt-2 text-sm text-[#5f5673]">
-          Use Google or your email and password. CAP is invite-only, and once your department link is claimed your
-          session stays active so you do not have to keep signing in again and again.
+          Use Google or your email and password. CIOM Portal is invite-only, and once your department link is claimed
+          your session stays active so you do not have to keep signing in again and again.
         </p>
       </div>
 
@@ -148,13 +148,13 @@ export function LoginForm({
       <div className="rounded-2xl border border-[#eadfb8] bg-[#fffbf0] p-4 text-sm text-[#5f5673]">
         <p className="font-medium text-[#241c33]">First time here?</p>
         <p className="mt-2">
-          Ask your department admin for a one-time invite link. Open that link, sign in, and CAP will place you
+          Ask your department admin for a one-time invite link. Open that link, sign in, and CIOM Portal will place you
           directly into the right ministry department.
         </p>
       </div>
 
       <p className="text-sm text-[#5f5673]">
-        Need access to CAP?{' '}
+        Need access to CIOM Portal?{' '}
         <Link href="/sign-up" className="font-semibold text-[#4B248C]">
           See how invite-only access works
         </Link>

@@ -12,14 +12,14 @@ const bodyFont = Inter({ subsets: ['latin'] });
 const headingFont = Playfair_Display({ subsets: ['latin'], variable: '--font-heading' });
 
 export const metadata: Metadata = {
-  applicationName: 'Christhood Accountability Platform',
-  title: 'Christhood Accountability Platform',
-  description: 'Invite-only accountability, records, insights, and meetings portal for Christhood Outfield Ministries International.',
+  applicationName: 'CIOM Portal',
+  title: 'CIOM Portal',
+  description: 'CIOM Portal helps every department know what to do next, from first-time sign-in to weekly records, meetings, and ministry trends.',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'CAP Portal',
+    title: 'CIOM Portal',
   },
   icons: {
     apple: '/icons/icon-192x192.png',

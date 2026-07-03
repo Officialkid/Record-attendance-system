@@ -65,7 +65,7 @@ export function InviteClaimPanel({
         Join {invite.departmentName} as a {invite.role === 'department_admin' ? 'department admin' : 'member'}.
       </h2>
       <p className="mt-3 text-sm text-[#5f5673]">
-        This secure link is single-use. Once claimed, CAP will approve your access to the target department immediately.
+        This secure link is single-use. Once claimed, CIOM Portal will approve your access to the target department immediately.
       </p>
 
       {invite.note ? (
@@ -89,7 +89,7 @@ export function InviteClaimPanel({
           <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
             <p className="text-sm font-medium text-[#241c33]">Signed in as</p>
             <p className="mt-2 text-base font-semibold text-[#4B248C]">
-              {signedInUser.name || 'CAP user'}{signedInUser.email ? ` - ${signedInUser.email}` : ''}
+              {signedInUser.name || 'CIOM Portal user'}{signedInUser.email ? ` - ${signedInUser.email}` : ''}
             </p>
           </div>
 
@@ -131,7 +131,7 @@ export function InviteClaimPanel({
           <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
             <p className="text-sm font-medium text-[#241c33]">Or create your invited account</p>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Use email and password if you prefer not to use Google. CAP will approve this department automatically after signup.
+              Use email and password if you prefer not to use Google. CIOM Portal will approve this department automatically after signup.
             </p>
           </div>
 
@@ -239,7 +239,7 @@ export function InviteClaimPanel({
       ) : null}
 
       <div className="mt-6 text-sm text-[#5f5673]">
-        This is an invite-only ministry portal. If you do not have a valid invite link, ask your department admin for one. You can still <Link href="/login" className="font-semibold text-[#4B248C]">open CAP login</Link> if you already have an account.
+        This is an invite-only ministry portal. If you do not have a valid invite link, ask your department admin for one. You can still <Link href="/login" className="font-semibold text-[#4B248C]">open CIOM Portal login</Link> if you already have an account.
       </div>
     </section>
   );

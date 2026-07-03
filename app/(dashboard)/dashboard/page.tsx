@@ -30,7 +30,7 @@ export default async function DashboardPage() {
         <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_45%,#f4ecff_100%)] p-7 shadow-sm">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Onboarding dashboard</p>
           <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">
-            Welcome to CAP, {session!.user.name || 'friend'}.
+            Welcome to CIOM Portal, {session!.user.name || 'friend'}.
           </h2>
           <p className="mt-3 max-w-3xl text-sm text-[#5f5673]">
             Your account is signed in, but your ministry workspace is not unlocked yet. Use the steps below to get a
@@ -41,11 +41,11 @@ export default async function DashboardPage() {
             {[
               {
                 title: '1. Contact your department lead',
-                body: 'Ask the head of department, chief admin, or main admin to generate your one-time CAP invite link.',
+                body: 'Ask the head of department, chief admin, or main admin to generate your one-time CIOM Portal invite link.',
               },
               {
                 title: '2. Open the shared link',
-                body: 'Sign in from that invite link with Google or email/password so CAP can bind you to the right department.',
+                body: 'Sign in from that invite link with Google or email/password so CIOM Portal can bind you to the right department.',
               },
               {
                 title: '3. Start guided onboarding',

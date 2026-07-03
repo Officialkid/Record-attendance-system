@@ -2,10 +2,10 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Christhood Accountability Platform',
-    short_name: 'CAP Portal',
+    name: 'CIOM Portal',
+    short_name: 'CIOM Portal',
     description:
-      'Invite-only accountability, records, meetings, notifications, and onboarding for Christhood Outfield Ministries International.',
+      'A calmer way to run every department in one place, from onboarding and weekly records to meetings and ministry follow-through.',
     start_url: '/login',
     scope: '/',
     display: 'standalone',

@@ -105,7 +105,7 @@ export function ProfileCard({
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Profile</p>
             <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Signed-in user details</h2>
             <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
-              Review your CAP access level, update your name or photo, and keep your account easy to recognize across invites, records, and meetings.
+              Review your CIOM Portal access level, update your name or photo, and keep your account easy to recognize across invites, records, and meetings.
             </p>
           </div>
         </div>

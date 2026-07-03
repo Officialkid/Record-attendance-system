@@ -66,10 +66,10 @@ export function PortalNav({
       <div className="min-h-0 flex-1 overflow-y-auto pr-1">
         <div className={cn('mb-6 rounded-3xl border border-[#ffffff1f] bg-[#ffffff12] backdrop-blur-sm', collapsed ? 'px-3 py-4' : 'p-4')}>
           <p className="text-[10px] uppercase tracking-[0.3em] text-[#C9A461]">C.I.O.M.</p>
-          <h1 className="mt-2 text-xl font-semibold">CAP</h1>
+          <h1 className="mt-2 text-xl font-semibold">CIOM Portal</h1>
           {!collapsed ? (
             <p className="mt-2 text-sm text-[#efe7ff]">
-              Christhood Accountability Platform for ministry-wide records, meetings, invites, and oversight.
+              One place for ministry-wide records, meetings, invites, and oversight.
             </p>
           ) : null}
         </div>

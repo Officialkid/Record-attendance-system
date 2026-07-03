@@ -61,7 +61,7 @@ export function PwaInstallPrompt() {
           <Download className="h-5 w-5" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-[#241c33]">Install CAP on this device</p>
+          <p className="text-sm font-semibold text-[#241c33]">Install CIOM Portal on this device</p>
           <p className="mt-1 text-xs leading-5 text-[#5f5673]">
             Add the ministry portal to your phone or desktop for faster access and an app-like experience.
           </p>

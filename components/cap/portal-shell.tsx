@@ -89,7 +89,7 @@ export function PortalShell({
           </button>
 
           <div className="text-center">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#C9A461]">CAP</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#C9A461]">CIOM Portal</p>
             <p className="text-sm font-semibold text-[#241c33]">{name}</p>
           </div>
 
@@ -135,7 +135,7 @@ export function PortalShell({
           <header className="mb-8 rounded-[28px] border border-[#ddd3f0] bg-white px-5 py-5 shadow-sm sm:px-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Christhood Accountability Platform</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">CIOM Portal</p>
                 <h1 className="mt-2 text-3xl font-semibold text-[#241c33]">{greeting}, {name}.</h1>
                 <p className="mt-3 text-sm text-[#5f5673]">
                   You&apos;re inside the ministry operations portal with{' '}

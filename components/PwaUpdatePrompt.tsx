@@ -63,7 +63,7 @@ export default function PwaUpdatePrompt() {
     <div className="fixed bottom-4 left-1/2 z-[60] w-[92%] max-w-xl -translate-x-1/2 rounded-[24px] border border-[#ddd3f0] bg-white/95 p-4 shadow-[0_20px_60px_rgba(75,36,140,0.18)] backdrop-blur">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-[#241c33]">CAP update available</p>
+          <p className="text-sm font-semibold text-[#241c33]">CIOM Portal update available</p>
           <p className="text-xs text-[#5f5673]">
             Refresh to load the latest portal changes and ministry tools.
           </p>
