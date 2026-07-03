@@ -1,212 +1,281 @@
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
-import { useOrganization } from '@/lib/OrganizationContext';
-import { useAuth } from '@/lib/AuthContext';
-import { getRecentServices, getMonthlyStats, type Service, type MonthlyStats } from '@/lib/firestore-multitenant';
-import { format, formatDistanceToNow } from 'date-fns';
-import StatCard from '@/components/dashboard/StatCard';
-import QuickActions from '@/components/dashboard/QuickActions';
-import RecentActivity from '@/components/dashboard/RecentActivity';
-import MiniTrendChart from '@/components/dashboard/MiniTrendChart';
-import EditEventModal from '@/components/modals/EditEventModal';
-import DeleteConfirmModal from '@/components/modals/DeleteConfirmModal';
-import { StatCardSkeleton, QuickActionsSkeleton, TableSkeleton, ChartSkeleton, PageHeaderSkeleton } from '@/components/ui/LoadingSkeletons';
-import { Users, TrendingUp, Calendar, Sparkles, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import {
+  ArrowRight,
+  BookCopy,
+  CalendarDays,
+  ClipboardList,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
 
-export default function DashboardPage() {
-  const { currentOrg, terminology } = useOrganization();
-  const { user } = useAuth();
-  const [stats, setStats] = useState<MonthlyStats | null>(null);
-  const [recentServices, setRecentServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [indexRequired, setIndexRequired] = useState(false);
-  const [editingService, setEditingService] = useState<Service | null>(null);
-  const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
-  const [deletingServiceDate, setDeletingServiceDate] = useState('');
+import { InviteAccessGuidanceCard } from '@/components/cap/invite-access-guidance-card';
+import { getSession } from '@/lib/cap/auth';
+import {
+  getDashboardSummary,
+  getDepartmentFieldDefinitions,
+} from '@/lib/cap/services';
+import type { DepartmentFieldDefinition } from '@/lib/cap/types';
+import { formatCurrency, formatDisplayDate } from '@/lib/cap/utils';
 
-  const currentDate = new Date();
-  const currentMonth = currentDate.getMonth() + 1;
-  const currentYear = currentDate.getFullYear();
+export default async function DashboardPage() {
+  const session = await getSession();
+  const isPendingOnly =
+    session!.user.status === 'pending' &&
+    session!.user.departmentIds.length === 0 &&
+    session!.user.systemRole === 'none';
 
-  const loadDashboardData = useCallback(async () => {
-    if (!currentOrg) return;
-
-    setLoading(true);
-    try {
-      const [monthStats, services] = await Promise.all([
-        getMonthlyStats(currentOrg.id, currentMonth, currentYear),
-        getRecentServices(currentOrg.id, 5),
-      ]);
-
-      setStats(monthStats);
-      setRecentServices(services);
-    } catch (error) {
-      console.error('Error loading dashboard data:', error);
-      if ((error as { message?: string }).message === 'INDEX_REQUIRED') {
-        setIndexRequired(true);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [currentOrg, currentMonth, currentYear]);
-
-  useEffect(() => {
-    if (currentOrg) {
-      loadDashboardData();
-    }
-  }, [currentOrg, loadDashboardData]);
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  };
-
-  const lastService = recentServices[0];
-  const lastServiceDate = lastService
-    ? `${format(new Date(lastService.serviceDate), 'MMM d, yyyy')} (${formatDistanceToNow(new Date(lastService.serviceDate), { addSuffix: true })})`
-    : `No ${terminology.events.toLowerCase()} yet`;
-
-  const handleEdit = (service: Service) => {
-    setEditingService(service);
-  };
-
-  const handleDelete = (serviceId: string, serviceDate: Date) => {
-    setDeletingServiceId(serviceId);
-    setDeletingServiceDate(format(new Date(serviceDate), 'MMM d, yyyy'));
-  };
-
-  const handleSuccess = () => {
-    loadDashboardData();
-  };
-
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-  const firebaseIndexesUrl = projectId
-    ? `https://console.firebase.google.com/project/${projectId}/firestore/indexes`
-    : 'https://console.firebase.google.com/';
-
-  if (loading) {
+  if (isPendingOnly) {
     return (
-      <div className="space-y-8">
-        <PageHeaderSkeleton />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map((i) => (
-            <StatCardSkeleton key={i} />
-          ))}
-        </div>
-        <QuickActionsSkeleton />
-        <TableSkeleton />
-        <ChartSkeleton />
+      <div className="space-y-6">
+        <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_45%,#f4ecff_100%)] p-7 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Onboarding dashboard</p>
+          <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">
+            Welcome to CAP, {session!.user.name || 'friend'}.
+          </h2>
+          <p className="mt-3 max-w-3xl text-sm text-[#5f5673]">
+            Your account is signed in, but your ministry workspace is not unlocked yet. Use the steps below to get a
+            one-time invite link from the correct department lead and claim access directly.
+          </p>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            {[
+              {
+                title: '1. Contact your department lead',
+                body: 'Ask the head of department, chief admin, or main admin to generate your one-time CAP invite link.',
+              },
+              {
+                title: '2. Open the shared link',
+                body: 'Sign in from that invite link with Google or email/password so CAP can bind you to the right department.',
+              },
+              {
+                title: '3. Start guided onboarding',
+                body: 'Once the invite is claimed, this dashboard turns into your working ministry homepage automatically.',
+              },
+            ].map((step) => (
+              <article key={step.title} className="rounded-3xl border border-[#e6def4] bg-white p-5">
+                <h3 className="text-lg font-semibold text-[#241c33]">{step.title}</h3>
+                <p className="mt-2 text-sm text-[#5f5673]">{step.body}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <InviteAccessGuidanceCard email={session!.user.email} />
+
+          <article className="space-y-4 rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">What happens next</p>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">After you claim the department invite</h3>
+            </div>
+
+            {[
+              'Weekly Record opens for fresh ministry submissions.',
+              'Records becomes the separate archive for history and edits.',
+              'Meetings, Notifications, and Insights appear as your team starts using the platform.',
+            ].map((item) => (
+              <div key={item} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+                {item}
+              </div>
+            ))}
+          </article>
+        </section>
       </div>
     );
   }
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
-          {getGreeting()}, {user?.displayName || user?.email?.split('@')[0]}! 👋
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Here&apos;s what&apos;s happening with {currentOrg?.name}
-        </p>
-      </div>
+  const summary = await getDashboardSummary(session!.user);
+  const fieldDefinitionsByDepartment = Object.fromEntries(
+    await Promise.all(
+      summary.latestRecords.map(async (record) => [
+        record.departmentId,
+        await getDepartmentFieldDefinitions(record.departmentId),
+      ])
+    )
+  ) as Record<number, DepartmentFieldDefinition[]>;
 
-      {indexRequired && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-amber-900">Firestore index required</p>
-              <p className="text-sm text-amber-800 mt-1">
-                Create the composite index for events on organizationId and serviceDate to load monthly stats.
-              </p>
-              <Link
-                href={firebaseIndexesUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center mt-3 text-sm font-semibold text-amber-900 hover:text-amber-700"
-              >
-                Open Firebase Indexes
-              </Link>
-            </div>
+  const cards = [
+    { label: 'Departments', value: summary.departmentCount, icon: Users },
+    { label: 'Weekly records', value: summary.recordCount, icon: ClipboardList },
+    { label: 'Open action items', value: summary.openActionItemCount, icon: CalendarDays },
+    { label: 'Visitors logged', value: summary.visitorCount, icon: TrendingUp },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_58%,#f2ebff_100%)] p-7 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Daily focus</p>
+            <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">Today&apos;s ministry workflow</h2>
+            <p className="mt-3 text-sm text-[#5f5673]">
+              Keep weekly submissions current, review older records without confusion, and move from raw ministry data
+              into trends and follow-up with less friction.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
+            Signed in as <span className="font-semibold text-[#241c33]">{session!.user.email}</span>
           </div>
         </div>
-      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title={`Last ${terminology.Event}`}
-          value={lastService?.totalAttendance || 0}
-          subtitle={lastServiceDate}
-          icon={Users}
-          trend={null}
-          color="purple"
-        />
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <Link
+            href="/records/new"
+            className="group rounded-3xl border border-[#eadfb8] bg-[#fff8eb] p-5 transition-transform hover:-translate-y-0.5"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#b6841a]">Weekly record</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Submit this week&apos;s figures</h3>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  Open the entry form for today&apos;s or the latest service record, visitors, and accountability figures.
+                </p>
+              </div>
+              <ClipboardList className="h-6 w-6 text-[#b6841a]" />
+            </div>
+          </Link>
 
-        <StatCard
-          title={`Total ${terminology.Events}`}
-          value={stats?.totalServices || 0}
-          subtitle="This month"
-          icon={Calendar}
-          trend={null}
-          color="blue"
-        />
+          <Link
+            href="/records"
+            className="group rounded-3xl border border-[#ddd3f0] bg-[#f8f5fd] p-5 transition-transform hover:-translate-y-0.5"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4B248C]">Records archive</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Review previous submissions</h3>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  Browse the full history, check visitor counts, and edit older records without mixing that screen up
+                  with the weekly entry form.
+                </p>
+              </div>
+              <BookCopy className="h-6 w-6 text-[#4B248C]" />
+            </div>
+          </Link>
+        </div>
+      </section>
 
-        <StatCard
-          title="Monthly Average"
-          value={stats?.avgAttendance || 0}
-          subtitle="Average attendance"
-          icon={TrendingUp}
-          trend={null}
-          color="green"
-        />
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <article key={card.label} className="rounded-[28px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-[#5f5673]">{card.label}</p>
+                <div className="rounded-2xl bg-[#ede7f7] p-3 text-[#4B248C]">
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
+              <p className="mt-6 text-4xl font-semibold text-[#241c33]">{card.value}</p>
+            </article>
+          );
+        })}
+      </section>
 
-        <StatCard
-          title={`New ${terminology.visitors}`}
-          value={stats?.totalVisitors || 0}
-          subtitle="This month"
-          icon={Sparkles}
-          trend={null}
-          color="gold"
-        />
-      </div>
+      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">
+                Recent accountability
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Latest submitted records</h2>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                This card is your latest snapshot. The full archive lives in Records, while the new submission flow
+                stays under Weekly Record.
+              </p>
+            </div>
+            <Link href="/records" className="inline-flex items-center gap-2 text-sm font-medium text-[#4B248C]">
+              <span>View all</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
 
-      <QuickActions />
+          <div className="mt-5 space-y-3">
+            {summary.latestRecords.length === 0 ? (
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+                No records have been submitted yet. Use Weekly Record to capture this week&apos;s figures, then the archive will appear here automatically.
+              </div>
+            ) : summary.latestRecords.map((record) => {
+              const values = record.values as Record<string, number | string | string[]>;
+              const fieldDefinitions = fieldDefinitionsByDepartment[record.departmentId] || [];
+              const previewFields = fieldDefinitions.slice(0, 4);
 
-      <RecentActivity
-        services={recentServices}
-        onEdit={handleEdit}
-        onDelete={(id) => {
-          const service = recentServices.find((item) => item.id === id);
-          if (service) {
-            handleDelete(id, service.serviceDate);
-          }
-        }}
-      />
+              return (
+                <div key={record.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#241c33]">{record.departmentName}</h3>
+                      <p className="text-sm text-[#5f5673]">
+                        {formatDisplayDate(record.recordDate)} - handled by {record.handledByName}
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461]">
+                      {record.visitorCount} visitors
+                    </div>
+                  </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {previewFields.map((field) => {
+                      const rawValue = values[field.fieldKey];
+                      const displayValue =
+                        field.fieldType === 'currency'
+                          ? formatCurrency(Number(rawValue || 0))
+                          : Array.isArray(rawValue)
+                            ? rawValue.join(', ')
+                            : rawValue ?? '-';
 
-      <MiniTrendChart services={recentServices} />
+                      return (
+                        <div key={`${record.id}-${field.fieldKey}`} className="rounded-2xl bg-white p-3">
+                          <p className="text-xs text-[#5f5673]">{field.label}</p>
+                          <p className="mt-1 text-lg font-semibold text-[#241c33]">{String(displayValue)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </article>
 
-      <EditEventModal
-        isOpen={Boolean(editingService)}
-        onClose={() => setEditingService(null)}
-        service={editingService}
-        onSuccess={handleSuccess}
-      />
+        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Coordination</p>
+              <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Meetings and follow-up</h2>
+            </div>
+            <Link href="/meetings" className="inline-flex items-center gap-2 text-sm font-medium text-[#4B248C]">
+              <span>Open meetings</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
 
-      <DeleteConfirmModal
-        isOpen={Boolean(deletingServiceId)}
-        onClose={() => {
-          setDeletingServiceId(null);
-          setDeletingServiceDate('');
-        }}
-        serviceId={deletingServiceId || ''}
-        serviceDate={deletingServiceDate}
-        onSuccess={handleSuccess}
-      />
+          <div className="mt-5 space-y-3">
+            {summary.upcomingMeetings.length === 0 ? (
+              <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-4 text-sm text-[#5f5673]">
+                No meetings recorded yet. Use the meetings page to document ministry decisions and action items.
+              </p>
+            ) : (
+              summary.upcomingMeetings.map((meeting) => (
+                <div key={meeting.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#241c33]">{meeting.title}</h3>
+                      <p className="text-sm text-[#5f5673]">
+                        {formatDisplayDate(meeting.meetingDate)}
+                        {meeting.departmentName ? ` - ${meeting.departmentName}` : ' - Cross-department'}
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461]">
+                      {meeting.actionItems.filter((item) => item.status === 'open').length} open actions
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </article>
+      </section>
     </div>
   );
 }

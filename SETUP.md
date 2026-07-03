@@ -1,128 +1,61 @@
-# Insight Tracker Attendance Management System - Setup Instructions
+# CAP Setup
 
-## Database Setup (Firebase)
+This repository now runs as the Christhood Accountability Platform using Auth.js, Neon/Postgres, Cloudflare R2, Resend, and Groq. Firebase is not part of the current setup.
 
-1. **Create a Firebase account** at https://console.firebase.google.com if you don't have one
+## 1. Create your local environment file
 
-2. **Create a new Firebase project**
+Copy:
 
-3. **Enable Firestore Database**:
-   - In your Firebase project, go to Build > Firestore Database
-   - Click "Create database"
-   - Choose "Start in production mode" or "Test mode" (for development)
-   - Select your region
-
-4. **Enable Firebase Authentication**:
-   - Go to Build > Authentication
-   - Click "Get started"
-   - Enable Email/Password sign-in method
-
-5. **Get your Firebase credentials**:
-   - Go to Project Settings (gear icon)
-   - Scroll down to "Your apps" and click the web icon (</>
-   - Register your app and copy the config
-   - Add credentials to `.env.local`:
-     ```
-     NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_auth_domain
-     NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-     NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-     ```
-
-6. **Setup Firestore Rules**:
-   - Copy the contents of `firestore.rules`
-   - Go to Firestore Database > Rules
-   - Paste and publish the rules
-
-## Installation
-
-1. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-2. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-3. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Features
-
-- ✅ Add attendance records for services
-- ✅ Track visitor information
-- ✅ View analytics and statistics
-- ✅ Responsive design
-- ✅ Insight Tracker branding
-
-## Usage
-
-### Adding Attendance
-1. Navigate to "Add Attendance"
-2. Select service date and type
-3. Enter total attendance count
-4. Add visitor information (optional)
-5. Save the record
-
-### Viewing Analytics
-1. Navigate to "View Analytics"
-2. See statistics: total services, average attendance, growth rate
-3. View recent services and visitors
-
-## Project Structure
-
-```
-/app
-  /(dashboard)
-    /add-attendance     - Form to add new attendance records
-    /view-analytics     - Analytics dashboard
-    /dashboard          - Main dashboard
-    /visitors           - Visitors directory
-  /(auth)
-    /sign-in            - Sign in page
-    /sign-up            - Sign up page
-  /layout.tsx           - Root layout
-  /page.tsx             - Landing page
-  /globals.css          - Global styles
-/components
-  /ui                   - Reusable UI components
-  /charts               - Chart components
-  /modals               - Modal components
-  /dashboard            - Dashboard components
-/lib
-  /firebase.ts          - Firebase client configuration
-  /firestore-multitenant.ts - Firestore operations (multi-tenant)
-  /terminology.ts       - Dynamic terminology helper
-  /AuthContext.tsx      - Authentication context
-  /OrganizationContext.tsx - Organization context
-/types
-  /index.ts             - TypeScript types
+```bash
+.env.local.example -> .env.local
 ```
 
-## Color Scheme
+Then populate the real values for:
 
-The application uses Insight Tracker's brand colors:
-- Royal Purple: #4b248c
-- Primary Blue: #0047AB
-- Gold: #F3CC3C
-- Background: #f9f9f9
+- `DATABASE_URL`
+- `NEXTAUTH_URL`
+- `NEXTAUTH_SECRET`
+- `AUTH_SECRET`
+- `CAP_ADMIN_EMAIL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `CRON_SECRET`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `GROQ_API_KEY`
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID`
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET`
 
-## Technologies
+## 2. Install dependencies
 
-- Next.js 14 with App Router
-- TypeScript
-- Tailwind CSS
-- Firebase Firestore (Database)
-- Firebase Authentication
-- Firebase Storage
-- Lucide React (icons)
-- Framer Motion (animations)
-- date-fns (date formatting)
-- recharts (charts)
+```bash
+npm install
+```
 
-## Support
+## 3. Start the app
 
-For issues or questions, contact the Insight Tracker team.
+```bash
+npm run dev
+```
+
+If you use a custom local port, make sure `NEXTAUTH_URL` matches it exactly and that the same callback URL is present in Google Cloud Console.
+
+## 4. Sign in
+
+Open the app in your browser and sign in with the Google account that should become CAP's main admin. In this project, the intended seeded main admin is controlled by `CAP_ADMIN_EMAIL`.
+
+## 5. Verify readiness
+
+Check:
+
+- `/api/health` for environment readiness
+- `/settings/profile` to confirm the signed-in account and role
+- `/docs` for the in-app handoff checklist
+
+## Supporting docs
+
+- `docs/CAP_NEON_ENV_SETUP.md`
+- `docs/CAP_PHASE2_ENV_CHECKLIST.md`
+- `docs/CAP_ENV_HANDOFF.md`

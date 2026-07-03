@@ -1,143 +1,114 @@
-import {
-  BookOpen,
-  CheckCircle2,
-  ClipboardList,
-  BarChart3,
-  Users,
-  Bell,
-  Settings,
-  Shield,
-  Download,
-  Smartphone,
-} from 'lucide-react';
+import { getCapHealthSnapshot } from '@/lib/cap/health';
 
-export default function DocsPage() {
+const setupSections = [
+  {
+    title: 'Core boot requirements',
+    description: 'These values are needed before CAP can be proven against a real Neon-backed environment.',
+    items: ['CAP_DATABASE_DRIVER=postgres', 'DATABASE_URL', 'NEXTAUTH_SECRET', 'AUTH_SECRET', 'CAP_ADMIN_EMAIL', 'CRON_SECRET'],
+  },
+  {
+    title: 'Google authentication',
+    description: 'Required for the intended Phase 2 Google-first sign-in flow.',
+    items: ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET'],
+  },
+  {
+    title: 'Reporting, email, and files',
+    description: 'These unlock leadership summaries, emails, and attachments in live conditions.',
+    items: ['RESEND_API_KEY', 'RESEND_FROM_EMAIL', 'GROQ_API_KEY', 'R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY', 'R2_BUCKET'],
+  },
+  {
+    title: 'Calendar sync',
+    description:
+      'Optional. CAP already falls back to GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET unless you want a separate Google app just for calendar sync. If your Google OAuth app is still in testing mode, add the intended account as a test user before trying the calendar scope.',
+    items: ['Optional: GOOGLE_CALENDAR_CLIENT_ID', 'Optional: GOOGLE_CALENDAR_CLIENT_SECRET'],
+  },
+];
+
+export default async function DocsPage() {
+  const health = await getCapHealthSnapshot();
+
   return (
-    <div className="space-y-8">
+    <section className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Documentation
-        </h1>
-        <p className="text-gray-600">
-          Everything you need to start tracking attendance and getting insights.
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Setup guide</p>
+        <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">CAP environment and launch handoff</h2>
+        <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
+          This page turns the Neon-first handoff into an in-app checklist. Fill the real values in your local
+          `.env.local`, then use the health snapshot to confirm each capability is ready.
         </p>
       </div>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-purple-700" />
+      <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-semibold text-[#241c33]">Current readiness snapshot</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">{health.guidance.note}</p>
+          </div>
+          <span className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+            {health.readiness.totalMissingVars.length} env values still needed
+          </span>
+        </div>
+
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-sm font-semibold text-[#241c33]">Configured driver</p>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              {health.database.configuredDriver} with active driver <span className="font-medium text-[#241c33]">{health.database.activeDriver}</span>
+            </p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-sm font-semibold text-[#241c33]">Recommended next values</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {health.guidance.recommendedSetupOrder.map((item) => (
+                <span key={item} className="rounded-full bg-white px-3 py-2 text-xs font-medium text-[#4B248C]">
+                  {item}
+                </span>
+              ))}
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Quick Start</h2>
           </div>
-          <ol className="space-y-3 text-sm text-gray-700">
-            <li className="flex gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Create your organization and finish the setup wizard.
-            </li>
-            <li className="flex gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Add your first attendance record from the Add Attendance page.
-            </li>
-            <li className="flex gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Open Analytics to see charts and growth metrics instantly.
-            </li>
-            <li className="flex gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600" />
-              Track visitors and export contact details if needed.
-            </li>
-          </ol>
         </div>
+      </article>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-              <ClipboardList className="w-5 h-5 text-blue-700" />
+      <div className="grid gap-6 xl:grid-cols-2">
+        {setupSections.map((section) => (
+          <article key={section.title} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-[#241c33]">{section.title}</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">{section.description}</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {section.items.map((item) => {
+                const missing = health.readiness.totalMissingVars.includes(item) || health.guidance.recommendedSetupOrder.includes(item);
+                return (
+                  <span
+                    key={item}
+                    className={`rounded-full px-3 py-2 text-xs font-medium ${
+                      health.readiness.totalMissingVars.includes(item)
+                        ? 'bg-[#fff8eb] text-[#8a5a00]'
+                        : missing
+                          ? 'bg-[#ede7f7] text-[#4B248C]'
+                          : 'bg-[#eef8f1] text-[#257942]'
+                    }`}
+                  >
+                    {item}
+                  </span>
+                );
+              })}
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Core Workflow</h2>
-          </div>
-          <div className="space-y-3 text-sm text-gray-700">
-            <p>1) Select an event date and type.</p>
-            <p>2) Enter total attendance and optional visitor details.</p>
-            <p>3) Save the record. It appears immediately on the dashboard.</p>
-            <p>4) Use Analytics to review trends and growth.</p>
-          </div>
-        </div>
-      </section>
+          </article>
+        ))}
+      </div>
 
-      <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <BarChart3 className="w-5 h-5 text-indigo-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Analytics</h3>
-          </div>
-          <p className="text-sm text-gray-700">
-            View monthly charts, year-over-year comparisons, and growth metrics. Use date filters to focus on specific periods.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Users className="w-5 h-5 text-emerald-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Visitors</h3>
-          </div>
-          <p className="text-sm text-gray-700">
-            Add visitor details per event. Export contacts from the Visitors page when you need follow-ups.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Bell className="w-5 h-5 text-amber-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
-          </div>
-          <p className="text-sm text-gray-700">
-            Product updates appear in Notifications and Help & Support. Enable the PWA for faster access.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Settings className="w-5 h-5 text-slate-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Settings</h3>
-          </div>
-          <p className="text-sm text-gray-700">
-            Update your organization profile, manage account details, and change your password from Settings.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Download className="w-5 h-5 text-sky-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Exports</h3>
-          </div>
-          <p className="text-sm text-gray-700">
-            Export visitor contacts as CSV for outreach or reporting.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Smartphone className="w-5 h-5 text-purple-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Install the PWA</h3>
-          </div>
-          <p className="text-sm text-gray-700">
-            On Chrome or Edge, use the Install button in the address bar. The app opens directly on sign-in.
-          </p>
-        </div>
-      </section>
-
-      <section className="bg-white rounded-2xl border border-gray-200 p-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Shield className="w-5 h-5 text-green-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Security & Access</h2>
-        </div>
-        <p className="text-sm text-gray-700">
-          Each organization has its own data and settings. Only members you add can access your organization&apos;s data.
-        </p>
-      </section>
-    </div>
+      <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <h3 className="text-xl font-semibold text-[#241c33]">Launch sequence</h3>
+        <ol className="mt-4 space-y-3 text-sm text-[#5f5673]">
+          <li>1. Set the Neon connection and auth secrets in `.env.local`.</li>
+          <li>2. Set the seeded `CAP_ADMIN_EMAIL` to the real Google account that should hold `main_admin` access.</li>
+          <li>3. Confirm `/api/health` shows the intended driver and no core boot values missing.</li>
+          <li>4. Add Google OAuth, then prove sign-in.</li>
+          <li>5. If Google Calendar consent is still in testing mode, add the real account under Google Auth Platform test users before verifying calendar sync.</li>
+          <li>6. Add Resend, Groq, R2, and Calendar credentials one service at a time, verifying each after setup.</li>
+          <li>7. Re-run the final live proof pass before calling CAP fully finished.</li>
+        </ol>
+      </article>
+    </section>
   );
 }

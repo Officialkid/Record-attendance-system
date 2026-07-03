@@ -1,110 +1,39 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import { OrganizationProvider } from '@/lib/OrganizationContext';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import DashboardSidebar from '@/components/dashboard/DashboardSidebar';
-import DashboardTopBar from '@/components/dashboard/DashboardTopBar';
-import MobileNavigation from '@/components/dashboard/MobileNavigation';
+import { PortalShell } from '@/components/cap/portal-shell';
+import { getSession } from '@/lib/cap/auth';
+import { countUnreadNotificationsForUser } from '@/lib/cap/services';
+import { getTimeBasedGreeting } from '@/lib/cap/utils';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const pathname = usePathname();
-  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    document.body.style.overflow = isMobileNavOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMobileNavOpen]);
+export default async function PortalLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  if (!session?.user) {
+    redirect('/login');
+  }
 
-  useEffect(() => {
-    if (!isMobileNavOpen) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsMobileNavOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isMobileNavOpen]);
+  const unreadNotificationsCount = await countUnreadNotificationsForUser(session.user);
 
   return (
-    <ProtectedRoute>
-      <OrganizationProvider>
-        <div className="min-h-screen bg-gray-50">
-          {isMobileNavOpen && (
-            <button
-              type="button"
-              className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-              aria-label="Close menu"
-              onClick={() => setIsMobileNavOpen(false)}
-            />
-          )}
-
-          <div
-            id="mobile-dashboard-drawer"
-            className={`fixed inset-y-0 left-0 z-50 w-[280px] bg-white border-r border-gray-200 transform transition-transform duration-200 lg:hidden ${
-              isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
-            role="dialog"
-            aria-modal="true"
-            aria-hidden={!isMobileNavOpen}
-          >
-            <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
-              <span className="text-sm font-semibold text-gray-900">Menu</span>
-              <button
-                type="button"
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                aria-label="Close menu"
-                onClick={() => setIsMobileNavOpen(false)}
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            <DashboardSidebar onNavigate={() => setIsMobileNavOpen(false)} />
-          </div>
-
-          <div className="flex h-screen overflow-hidden">
-            <aside className="hidden lg:flex lg:flex-shrink-0">
-              <DashboardSidebar />
-            </aside>
-
-            <div className="flex flex-col flex-1 overflow-hidden">
-              <DashboardTopBar
-                onMenuClick={() => setIsMobileNavOpen(true)}
-                isMenuOpen={isMobileNavOpen}
-              />
-
-              <main className="flex-1 overflow-y-auto bg-gray-50 p-4 lg:p-8 pb-20 lg:pb-8">
-                <div className="max-w-7xl mx-auto">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={pathname}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -20 }}
-                      transition={{ duration: 0.3, ease: 'easeOut' }}
-                    >
-                      {children}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-              </main>
-            </div>
-          </div>
-
-          <MobileNavigation />
+    <PortalShell
+      role={session.user.role}
+      systemRole={session.user.systemRole}
+      greeting={getTimeBasedGreeting()}
+      name={session.user.name || 'friend'}
+      email={session.user.email || 'Unknown email'}
+      departmentCount={session.user.departmentIds.length}
+      unreadNotificationsCount={unreadNotificationsCount}
+      pendingApprovalsCount={0}
+      avatarUrl={session.user.avatarUrl}
+    >
+      {session.user.status === 'pending' && session.user.departmentIds.length === 0 && session.user.systemRole === 'none' ? (
+        <div className="mb-6 rounded-[24px] border border-[#eadfb8] bg-[#fffbf0] px-5 py-4 text-sm text-[#5f5673]">
+          Your account is signed in, but your ministry workspace is still locked until a department invite is claimed.
+          Open your profile for the next steps, or ask a department admin to send you a one-time CAP invite link.
         </div>
-      </OrganizationProvider>
-    </ProtectedRoute>
+      ) : null}
+      {children}
+    </PortalShell>
   );
 }

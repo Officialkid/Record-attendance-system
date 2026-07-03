@@ -10,6 +10,7 @@
 
 # next.js
 /.next/
+/.next-build/
 /out/
 
 # next-pwa
@@ -33,6 +34,11 @@ yarn-error.log*
 # local env files
 .env*.local
 .env
+data/
+.tmp-dev-*.log
+.tmp-build-*.log
+.tmp-start-*.log
+.tmp-service-run/
 
 # vercel
 .vercel
