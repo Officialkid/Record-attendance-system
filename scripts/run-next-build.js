@@ -33,7 +33,6 @@ function run(command, args, extraEnv = {}) {
 async function main() {
   await run(process.execPath, [nextBin, 'build'], {
     NODE_OPTIONS: '--max-old-space-size=6144',
-    NEXT_DIST_DIR: '.next-build',
   });
 }
 
