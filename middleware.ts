@@ -44,6 +44,8 @@ export const config = {
     '/records/:path*',
     '/insights/:path*',
     '/meetings/:path*',
+    '/programs/:path*',
+    '/leadership/:path*',
     '/admin/:path*',
     '/settings/:path*',
     '/add-attendance/:path*',
