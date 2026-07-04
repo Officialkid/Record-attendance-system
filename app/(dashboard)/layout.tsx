@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 
 import { PortalShell } from '@/components/cap/portal-shell';
 import { getSession } from '@/lib/cap/auth';
-import { getActiveUserContext, listUserContextOptions } from '@/lib/cap/phase3';
 import {
   countOpenDepartmentInvitesForUser,
   countUnreadNotificationsForUser,
@@ -19,22 +18,6 @@ export default async function PortalLayout({ children }: { children: React.React
 
   const unreadNotificationsCount = await countUnreadNotificationsForUser(session.user);
   const openInviteCount = await countOpenDepartmentInvitesForUser(session.user);
-  let activeContext = {
-    contextType: 'department' as const,
-    targetId: null,
-    label: 'Workspace',
-    href: '/dashboard',
-  };
-  let contextOptions = [] as Awaited<ReturnType<typeof listUserContextOptions>>;
-
-  try {
-    [activeContext, contextOptions] = await Promise.all([
-      getActiveUserContext(session.user),
-      listUserContextOptions(session.user),
-    ]);
-  } catch (error) {
-    console.error('Portal context loading failed; falling back to the default dashboard context.', error);
-  }
 
   return (
     <PortalShell
@@ -47,9 +30,12 @@ export default async function PortalLayout({ children }: { children: React.React
       unreadNotificationsCount={unreadNotificationsCount}
       pendingApprovalsCount={openInviteCount}
       avatarUrl={session.user.avatarUrl}
-      activeContextLabel={activeContext.label}
-      contextOptions={contextOptions}
-      hasLeadershipAccess={contextOptions.some((option) => option.contextType === 'leadership')}
+      hasLeadershipAccess={
+        session.user.systemRole === 'main_admin' ||
+        session.user.systemRole === 'chief_admin' ||
+        session.user.role === 'admin' ||
+        session.user.role === 'leader'
+      }
     >
       {session.user.status === 'pending' && session.user.departmentIds.length === 0 && session.user.systemRole === 'none' ? (
         <div className="mb-6 rounded-[24px] border border-[#eadfb8] bg-[#fffbf0] px-5 py-4 text-sm text-[#5f5673]">
