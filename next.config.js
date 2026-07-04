@@ -11,15 +11,6 @@ const nextConfig = {
     },
   },
   outputFileTracingRoot: __dirname,
-  async redirects() {
-    return [
-      {
-        source: '/leadership',
-        destination: '/admin',
-        permanent: false,
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;
