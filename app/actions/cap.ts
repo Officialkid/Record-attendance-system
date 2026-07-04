@@ -5,6 +5,19 @@ import { revalidatePath } from 'next/cache';
 import { createAttachmentUploadUrl, createAvatarUploadUrl } from '@/lib/cap/r2';
 import { getSession } from '@/lib/cap/auth';
 import {
+  addContributionParticipant,
+  addEventMembership,
+  addExpenseCategory,
+  addExpenseItem,
+  createEvent,
+  createStandaloneContributionLedger,
+  createStandaloneExpenseLedger,
+  endEvent,
+  recordContributionPayment,
+  setActiveUserContext,
+  setEventVisibility,
+} from '@/lib/cap/phase3';
+import {
   acceptDepartmentInvite,
   acceptDepartmentInviteWithSignup,
   assignDepartmentMembers,
@@ -623,6 +636,171 @@ export async function disconnectCalendarConnectionAction() {
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Failed to disconnect Google Calendar.',
+    };
+  }
+}
+
+export async function setActiveUserContextAction(input: Parameters<typeof setActiveUserContext>[1]) {
+  try {
+    const user = await requireSessionUser();
+    await setActiveUserContext(user, input);
+    revalidatePath('/dashboard');
+    revalidatePath('/programs');
+    revalidatePath('/leadership');
+    return { success: true, message: 'Context switched successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to switch context.',
+    };
+  }
+}
+
+export async function createEventAction(input: Parameters<typeof createEvent>[1]) {
+  try {
+    const user = await requireSessionUser();
+    const eventId = await createEvent(user, input);
+    revalidatePath('/programs');
+    revalidatePath('/dashboard');
+    return { success: true, message: 'Event created successfully.', eventId };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to create event.',
+    };
+  }
+}
+
+export async function addEventMembershipAction(input: Parameters<typeof addEventMembership>[1]) {
+  try {
+    const user = await requireSessionUser();
+    await addEventMembership(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Event access updated successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to update event access.',
+    };
+  }
+}
+
+export async function addContributionParticipantAction(
+  input: Parameters<typeof addContributionParticipant>[1]
+) {
+  try {
+    const user = await requireSessionUser();
+    await addContributionParticipant(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Participant added successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to add participant.',
+    };
+  }
+}
+
+export async function recordContributionPaymentAction(
+  input: Parameters<typeof recordContributionPayment>[1]
+) {
+  try {
+    const user = await requireSessionUser();
+    await recordContributionPayment(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Payment recorded successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to record payment.',
+    };
+  }
+}
+
+export async function addExpenseCategoryAction(input: Parameters<typeof addExpenseCategory>[1]) {
+  try {
+    const user = await requireSessionUser();
+    await addExpenseCategory(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Expense category added successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to add expense category.',
+    };
+  }
+}
+
+export async function addExpenseItemAction(input: Parameters<typeof addExpenseItem>[1]) {
+  try {
+    const user = await requireSessionUser();
+    await addExpenseItem(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Expense item added successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to add expense item.',
+    };
+  }
+}
+
+export async function endEventAction(eventId: number) {
+  try {
+    const user = await requireSessionUser();
+    await endEvent(user, eventId);
+    revalidatePath('/programs');
+    return { success: true, message: 'Event ended and locked successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to end event.',
+    };
+  }
+}
+
+export async function setEventVisibilityAction(input: Parameters<typeof setEventVisibility>[1]) {
+  try {
+    const user = await requireSessionUser();
+    await setEventVisibility(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Event dashboard visibility updated.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to update event visibility.',
+    };
+  }
+}
+
+export async function createStandaloneContributionLedgerAction(
+  input: Parameters<typeof createStandaloneContributionLedger>[1]
+) {
+  try {
+    const user = await requireSessionUser();
+    await createStandaloneContributionLedger(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Standalone contribution ledger created successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to create contribution ledger.',
+    };
+  }
+}
+
+export async function createStandaloneExpenseLedgerAction(
+  input: Parameters<typeof createStandaloneExpenseLedger>[1]
+) {
+  try {
+    const user = await requireSessionUser();
+    await createStandaloneExpenseLedger(user, input);
+    revalidatePath('/programs');
+    return { success: true, message: 'Standalone expense ledger created successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to create expense ledger.',
     };
   }
 }
