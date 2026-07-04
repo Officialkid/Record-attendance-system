@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import { createHash, randomBytes } from 'crypto';
 import {
   addDays,
-  addHours,
   differenceInCalendarDays,
   endOfMonth,
   endOfQuarter,
@@ -19,6 +18,7 @@ import { getDb, type SqlValue } from './db';
 import {
   extractMeetingMinutesWithGroq,
   generateExecutiveSummaryWithGroq,
+  generateMeetingSummaryWithGroq,
 } from './groq';
 import {
   deleteGoogleCalendarEvent,
@@ -31,7 +31,18 @@ import {
   sendDepartmentMembershipDecisionNotification,
   sendMeetingReminderNotification,
 } from './notifications';
-import { deleteAttachmentObject } from './r2';
+import {
+  deleteAttachmentObject,
+  getAttachmentPublicUrl,
+  isR2Configured,
+  uploadPrivateObjectToR2,
+} from './r2';
+import {
+  buildMeetingMinutesDocx,
+  buildMeetingMinutesFilename,
+  buildMeetingSummaryDocumentDocx,
+  buildMeetingSummaryDocumentFilename,
+} from './report-export';
 import {
   createDepartmentSchema,
   createDepartmentInviteSchema,
@@ -61,14 +72,17 @@ import {
   DepartmentRecordDetail,
   CalendarConnection,
   DashboardSummary,
+  GeneratedMeetingDocument,
   InsightsPayload,
   MeetingMinutesSuggestion,
+  MeetingPeriodSummarySnapshot,
   MeetingSummary,
   UserNotification,
   UserRecord,
   CreateDepartmentInput,
   CreateDepartmentInviteInput,
   GenerateDepartmentReportInput,
+  GenerateMeetingSummaryDocumentInput,
   GeneratedReport,
   GeneratedReportSnapshot,
   DepartmentAccessRequestInput,
@@ -588,6 +602,107 @@ async function mapMeetingRows(): Promise<MeetingSummary[]> {
   );
 }
 
+function buildGeneratedMeetingMinutesKey(meetingId: number, filename: string) {
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '-');
+  return `generated/meeting-minutes/meeting-${meetingId}/${Date.now()}-${safeName}`;
+}
+
+function buildGeneratedMeetingSummaryKey(
+  departmentId: number,
+  periodStart: string,
+  periodEnd: string,
+  filename: string
+) {
+  const safeName = filename.replace(/[^a-zA-Z0-9._-]/g, '-');
+  return `generated/meeting-summaries/department-${departmentId}/${periodStart}-to-${periodEnd}/${Date.now()}-${safeName}`;
+}
+
+async function replaceGeneratedMeetingMinutesAttachment(
+  meeting: MeetingSummary,
+  uploadedByUserId: number
+) {
+  if (!isR2Configured()) {
+    return null;
+  }
+
+  const filename = buildMeetingMinutesFilename(meeting);
+  const key = buildGeneratedMeetingMinutesKey(meeting.id, filename);
+  const buffer = await buildMeetingMinutesDocx(meeting);
+  const uploaded = await uploadPrivateObjectToR2(
+    key,
+    buffer,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  );
+
+  if (!uploaded) {
+    return null;
+  }
+
+  const existingGeneratedAttachments = await allRows<{ id: number; r2_key: string }>(
+    `SELECT id, r2_key
+     FROM attachments
+     WHERE meeting_id = ?
+       AND r2_key LIKE 'generated/meeting-minutes/%'`,
+    meeting.id
+  );
+
+  for (const attachment of existingGeneratedAttachments) {
+    await deleteAttachmentObject(attachment.r2_key);
+    await runStatement('DELETE FROM attachments WHERE id = ?', attachment.id);
+  }
+
+  const result = await runStatement(
+    `INSERT INTO attachments (meeting_id, record_id, r2_key, filename, uploaded_by_user_id)
+     VALUES (?, NULL, ?, ?, ?)`,
+    meeting.id,
+    uploaded.key,
+    filename,
+    uploadedByUserId
+  );
+
+  return {
+    id: Number(result.lastInsertRowid),
+    filename,
+    r2Key: uploaded.key,
+    publicUrl: uploaded.publicUrl,
+  };
+}
+
+function buildMeetingPeriodSummarySnapshot(input: {
+  departmentId: number;
+  departmentName: string;
+  periodStart: string;
+  periodEnd: string;
+  meetings: MeetingSummary[];
+}): MeetingPeriodSummarySnapshot {
+  return {
+    departmentId: input.departmentId,
+    departmentName: input.departmentName,
+    periodStart: input.periodStart,
+    periodEnd: input.periodEnd,
+    generatedAt: new Date().toISOString(),
+    meetingCount: input.meetings.length,
+    meetings: input.meetings.map((meeting) => ({
+      id: meeting.id,
+      title: meeting.title,
+      meetingDate: meeting.meetingDate,
+      agenda: meeting.agenda,
+      decisions: meeting.decisions,
+      aiSummary: meeting.aiSummary,
+      nextMeetingDate: meeting.nextMeetingDate,
+      attendeeNames: meeting.attendees.map((attendee) => attendee.name),
+      openActionItemCount: meeting.actionItems.filter((item) => item.status === 'open').length,
+      actionItems: meeting.actionItems.map((item) => ({
+        description: item.description,
+        ownerName: item.ownerName,
+        status: item.status,
+        dueDate: item.dueDate,
+      })),
+      attachmentFilenames: meeting.attachments.map((attachment) => attachment.filename),
+    })),
+  };
+}
+
 async function writeAuditLog(
   userId: number | null,
   action: string,
@@ -617,6 +732,14 @@ export function assertAdmin(user: SessionLikeUser | null | undefined) {
 
   if (user.systemRole !== 'main_admin' && user.systemRole !== 'chief_admin' && user.role !== 'admin') {
     throw new Error('Only admins can perform this action.');
+  }
+}
+
+export function assertMainAdmin(user: SessionLikeUser | null | undefined) {
+  assertAuthenticated(user);
+
+  if (user.systemRole !== 'main_admin') {
+    throw new Error('Only the main admin can perform this action.');
   }
 }
 
@@ -697,9 +820,9 @@ function resolvePreviousReportRange(start: string, end: string) {
   };
 }
 
-function getMeetingReminderHours() {
-  const parsed = Number(process.env.CAP_MEETING_REMINDER_HOURS || '24');
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 24;
+function getMeetingReminderLeadDays() {
+  const parsed = Number(process.env.CAP_MEETING_REMINDER_DAYS || '7');
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 7;
 }
 
 function getAppBaseUrl() {
@@ -832,6 +955,18 @@ export async function markNotificationRead(currentUser: SessionLikeUser, notific
   );
 }
 
+export async function markNotificationUnread(currentUser: SessionLikeUser, notificationId: number) {
+  assertAuthenticated(currentUser);
+
+  await runStatement(
+    `UPDATE user_notifications
+     SET read_at = NULL
+     WHERE id = ? AND user_id = ?`,
+    notificationId,
+    Number(currentUser.id)
+  );
+}
+
 export async function getDepartmentFieldDefinitions(departmentId: number) {
   const rows = await allRows<{
     id: number;
@@ -869,6 +1004,53 @@ export async function listUsers() {
     `SELECT id, name, email, role, system_role, status, avatar_url, must_change_password, created_at, updated_at
      FROM users
      ORDER BY name ASC`
+  );
+
+  return Promise.all(rows.map(mapUser));
+}
+
+export async function listUsersVisibleTo(currentUser: SessionLikeUser) {
+  assertAuthenticated(currentUser);
+
+  if (currentUser.systemRole === 'main_admin' || currentUser.systemRole === 'chief_admin') {
+    return listUsers();
+  }
+
+  if (currentUser.departmentIds.length === 0) {
+    return [] as UserRecord[];
+  }
+
+  const placeholders = currentUser.departmentIds.map(() => '?').join(', ');
+  const rows = await allRows<{
+    id: number;
+    name: string;
+    email: string;
+    role: GlobalRole;
+    system_role?: SystemRole;
+    status?: 'pending' | 'approved' | 'rejected' | 'active';
+    avatar_url?: string | null;
+    must_change_password: number;
+    created_at: string;
+    updated_at: string;
+  }>(
+    `SELECT DISTINCT
+      users.id,
+      users.name,
+      users.email,
+      users.role,
+      users.system_role,
+      users.status,
+      users.avatar_url,
+      users.must_change_password,
+      users.created_at,
+      users.updated_at
+     FROM users
+     INNER JOIN department_memberships
+       ON department_memberships.user_id = users.id
+      AND department_memberships.status = 'approved'
+     WHERE department_memberships.department_id IN (${placeholders})
+     ORDER BY users.name ASC`,
+    ...currentUser.departmentIds
   );
 
   return Promise.all(rows.map(mapUser));
@@ -978,6 +1160,13 @@ export async function countUnreadNotificationsForUser(currentUser: SessionLikeUs
   return row?.total || 0;
 }
 
+export async function countOpenDepartmentInvitesForUser(currentUser: SessionLikeUser) {
+  const invites = await listDepartmentInvites(currentUser);
+  return invites.filter(
+    (invite) => !invite.usedAt && new Date(invite.expiresAt).getTime() >= Date.now()
+  ).length;
+}
+
 export async function listDepartmentInvites(currentUser: SessionLikeUser, departmentId?: number) {
   assertAuthenticated(currentUser);
 
@@ -1035,6 +1224,79 @@ export async function listDepartmentInvites(currentUser: SessionLikeUser, depart
     .map(mapDepartmentInvite);
 }
 
+export async function listGeneratedMeetingSummaryDocuments(
+  currentUser: SessionLikeUser,
+  departmentId?: number
+): Promise<GeneratedMeetingDocument[]> {
+  assertAuthenticated(currentUser);
+
+  if (departmentId) {
+    assertDepartmentAdminAccess(currentUser, departmentId);
+  }
+
+  const rows = await allRows<{
+    id: number;
+    meeting_id: number | null;
+    record_id: number | null;
+    r2_key: string;
+    filename: string;
+    uploaded_by_user_id: number | null;
+    uploaded_at: string;
+    uploaded_by_name: string | null;
+  }>(
+    `SELECT
+      attachments.id,
+      attachments.meeting_id,
+      attachments.record_id,
+      attachments.r2_key,
+      attachments.filename,
+      attachments.uploaded_by_user_id,
+      attachments.uploaded_at,
+      users.name AS uploaded_by_name
+     FROM attachments
+     LEFT JOIN users ON users.id = attachments.uploaded_by_user_id
+     WHERE attachments.meeting_id IS NULL
+       AND attachments.record_id IS NULL
+       AND attachments.r2_key LIKE 'generated/meeting-summaries/%'
+     ORDER BY attachments.uploaded_at DESC, attachments.id DESC`
+  );
+
+  const departmentMap = new Map((await listAllDepartments()).map((department) => [department.id, department]));
+  const allowedDepartmentIds =
+    currentUser.systemRole === 'main_admin' || currentUser.systemRole === 'chief_admin'
+      ? null
+      : new Set(currentUser.departmentIds);
+
+  return rows
+    .map((row) => {
+      const match = row.r2_key.match(/generated\/meeting-summaries\/department-(\d+)\//);
+      const keyDepartmentId = match ? Number(match[1]) : null;
+      const department = keyDepartmentId ? departmentMap.get(keyDepartmentId) || null : null;
+      return {
+        id: row.id,
+        filename: row.filename,
+        r2Key: row.r2_key,
+        publicUrl: getAttachmentPublicUrl(row.r2_key),
+        uploadedAt: row.uploaded_at,
+        uploadedByUserId: row.uploaded_by_user_id,
+        uploadedByName: row.uploaded_by_name,
+        departmentId: keyDepartmentId,
+        departmentName: department?.name || null,
+      } satisfies GeneratedMeetingDocument;
+    })
+    .filter((document) => {
+      if (departmentId && document.departmentId !== departmentId) {
+        return false;
+      }
+
+      if (!allowedDepartmentIds) {
+        return true;
+      }
+
+      return document.departmentId !== null && allowedDepartmentIds.has(document.departmentId);
+    });
+}
+
 async function getInviteRowByToken(token: string) {
   const tokenHash = hashInviteToken(token);
   return firstRow<{
@@ -1045,6 +1307,7 @@ async function getInviteRowByToken(token: string) {
     note: string | null;
     expires_at: string;
     used_at: string | null;
+    created_by_user_id: number | null;
   }>(
     `SELECT
       department_invites.id,
@@ -1053,7 +1316,8 @@ async function getInviteRowByToken(token: string) {
       department_invites.role,
       department_invites.note,
       department_invites.expires_at,
-      department_invites.used_at
+      department_invites.used_at,
+      department_invites.created_by_user_id
      FROM department_invites
      INNER JOIN departments ON departments.id = department_invites.department_id
      WHERE department_invites.token_hash = ?`,
@@ -1793,8 +2057,101 @@ export async function generateDepartmentReport(
   } satisfies GeneratedReport;
 }
 
+export async function generateMeetingSummaryDocument(
+  currentUser: SessionLikeUser,
+  input: GenerateMeetingSummaryDocumentInput
+) {
+  assertAuthenticated(currentUser);
+  assertDepartmentAdminAccess(currentUser, input.departmentId);
+
+  if (!isIsoDateString(input.start) || !isIsoDateString(input.end)) {
+    throw new Error('Choose a valid start and end date for the meeting summary.');
+  }
+
+  if (input.start > input.end) {
+    throw new Error('Meeting summary start date must be before the end date.');
+  }
+
+  if (!isR2Configured()) {
+    throw new Error('R2 is not configured yet, so generated meeting documents cannot be stored.');
+  }
+
+  const department = await getDepartmentById(input.departmentId);
+  if (!department) {
+    throw new Error('Department not found.');
+  }
+
+  const meetings = (await listMeetings(currentUser)).filter(
+    (meeting) =>
+      meeting.departmentId === input.departmentId &&
+      meeting.meetingDate >= input.start &&
+      meeting.meetingDate <= input.end
+  );
+
+  if (meetings.length === 0) {
+    throw new Error('No meetings were found in that period for this department.');
+  }
+
+  const snapshot = buildMeetingPeriodSummarySnapshot({
+    departmentId: input.departmentId,
+    departmentName: department.name,
+    periodStart: input.start,
+    periodEnd: input.end,
+    meetings,
+  });
+  const summaryText = await generateMeetingSummaryWithGroq(snapshot);
+  const filename = buildMeetingSummaryDocumentFilename(snapshot);
+  const key = buildGeneratedMeetingSummaryKey(
+    input.departmentId,
+    input.start,
+    input.end,
+    filename
+  );
+  const buffer = await buildMeetingSummaryDocumentDocx({ snapshot, summaryText });
+  const uploaded = await uploadPrivateObjectToR2(
+    key,
+    buffer,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  );
+
+  if (!uploaded) {
+    throw new Error('Failed to store the generated meeting summary document in R2.');
+  }
+
+  const result = await runStatement(
+    `INSERT INTO attachments (meeting_id, record_id, r2_key, filename, uploaded_by_user_id)
+     VALUES (NULL, NULL, ?, ?, ?)`,
+    uploaded.key,
+    filename,
+    Number(currentUser.id)
+  );
+  const documentId = Number(result.lastInsertRowid);
+
+  await writeAuditLog(Number(currentUser.id), 'create', 'meeting_summary_document', documentId, {
+    departmentId: input.departmentId,
+    periodStart: input.start,
+    periodEnd: input.end,
+    meetingCount: snapshot.meetingCount,
+    r2Key: uploaded.key,
+  });
+
+  return {
+    id: documentId,
+    filename,
+    r2Key: uploaded.key,
+    publicUrl: uploaded.publicUrl,
+    uploadedAt: snapshot.generatedAt,
+    uploadedByUserId: Number(currentUser.id),
+    uploadedByName: currentUser.name || null,
+    departmentId: input.departmentId,
+    departmentName: department.name,
+    summaryText,
+    meetingCount: snapshot.meetingCount,
+  };
+}
+
 export async function createDepartment(currentUser: SessionLikeUser, input: CreateDepartmentInput) {
-  assertAdmin(currentUser);
+  assertMainAdmin(currentUser);
   const parsed = createDepartmentSchema.parse({
     ...input,
     slug: normalizeSlug(input.slug || input.name),
@@ -1994,6 +2351,17 @@ async function applyDepartmentInviteToUser(userId: number, currentUserId: number
     userId,
     role: invite.role,
   });
+
+  if (invite.created_by_user_id && invite.created_by_user_id !== userId) {
+    await createUserNotification({
+      userId: invite.created_by_user_id,
+      notificationType: 'invite_claimed',
+      title: `${invite.department_name} invite claimed`,
+      message: `A one-time invite for ${invite.department_name} has now been claimed successfully.`,
+      actionUrl: '/admin',
+      dedupeKey: `invite-claimed:${invite.id}:${userId}`,
+    });
+  }
 
   return {
     departmentId: invite.department_id,
@@ -2723,7 +3091,8 @@ async function syncMeetingCalendarEvents(input: {
 }
 
 export async function sendDueMeetingReminders(referenceDate = new Date()) {
-  const reminderTargetDate = toIsoDate(addHours(referenceDate, getMeetingReminderHours()));
+  const reminderLeadDays = getMeetingReminderLeadDays();
+  const reminderTargetDate = toIsoDate(addDays(referenceDate, reminderLeadDays));
   const meetings = await allRows<{
     id: number;
     department_id: number | null;
@@ -2761,7 +3130,7 @@ export async function sendDueMeetingReminders(referenceDate = new Date()) {
         userId: recipient.id,
         notificationType: 'meeting_reminder',
         title: `Upcoming ${meeting.department_name || 'department'} meeting`,
-        message: `${meeting.title} has a next meeting date of ${meeting.next_meeting_date}.`,
+        message: `${meeting.title} is scheduled for ${meeting.next_meeting_date}. This is your ${reminderLeadDays}-day reminder to prepare early.`,
         actionUrl: `/meetings`,
         dedupeKey,
       });
@@ -2790,6 +3159,7 @@ export async function sendDueMeetingReminders(referenceDate = new Date()) {
       nextMeetingDate: meeting.next_meeting_date,
       recipientCount: recipients.length,
       reminderTargetDate,
+      reminderLeadDays,
     });
   }
 
@@ -2812,6 +3182,14 @@ export async function listMeetings(currentUser: SessionLikeUser) {
       ? currentUser.role === 'leader'
       : currentUser.departmentIds.includes(meeting.departmentId)
   );
+}
+
+async function syncGeneratedMeetingMinutesDocumentForMeeting(
+  currentUser: SessionLikeUser,
+  meetingId: number
+) {
+  const meeting = await getMeetingById(currentUser, meetingId);
+  return replaceGeneratedMeetingMinutesAttachment(meeting, Number(currentUser.id));
 }
 
 export async function processMeetingMinutes(
@@ -2896,6 +3274,7 @@ export async function createMeeting(currentUser: SessionLikeUser, input: CreateM
   });
 
   await writeAuditLog(Number(currentUser.id), 'create', 'meeting', meetingId, parsed);
+  await syncGeneratedMeetingMinutesDocumentForMeeting(currentUser, meetingId);
   return meetingId;
 }
 
@@ -3008,6 +3387,7 @@ export async function updateMeeting(currentUser: SessionLikeUser, input: UpdateM
     },
     after: parsed,
   });
+  await syncGeneratedMeetingMinutesDocumentForMeeting(currentUser, parsed.meetingId);
   return parsed.meetingId;
 }
 
@@ -3030,6 +3410,12 @@ export async function deleteMeeting(currentUser: SessionLikeUser, meetingId: num
   }
 
   const existingMappings = await getStoredCalendarMeetingEvents(meetingId);
+  const existingAttachments = await allRows<{ id: number; r2_key: string }>(
+    `SELECT id, r2_key
+     FROM attachments
+     WHERE meeting_id = ?`,
+    meetingId
+  );
   for (const existingMapping of existingMappings) {
     const recipient = await firstRow<{ google_refresh_token: string }>(
       'SELECT google_refresh_token FROM calendar_connections WHERE user_id = ?',
@@ -3045,6 +3431,14 @@ export async function deleteMeeting(currentUser: SessionLikeUser, meetingId: num
       } catch {
         // Calendar cleanup should not block meeting deletion.
       }
+    }
+  }
+
+  for (const attachment of existingAttachments) {
+    try {
+      await deleteAttachmentObject(attachment.r2_key);
+    } catch {
+      // Attachment cleanup should not block meeting deletion.
     }
   }
 
