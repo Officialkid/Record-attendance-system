@@ -23,7 +23,7 @@ export function InviteAccessGuidanceCard({
 
       <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
         {[
-          'Ask the head of department or CIOM Portal admin to generate a one-time invite link from the Admin page.',
+          'Ask the head of department or CIOM Portal admin to share the department access link from the Admin page.',
           'Open that link and sign in with Google or your email/password.',
           'CIOM Portal will place you directly into the correct department workflow instead of keeping you in a waiting queue.',
         ].map((item) => (
