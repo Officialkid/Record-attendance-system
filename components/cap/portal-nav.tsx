@@ -25,7 +25,7 @@ const links = [
   { href: '/insights', label: 'Insights', description: 'See trends and anomalies', icon: BarChart3 },
   { href: '/meetings', label: 'Meetings', description: 'Track decisions and follow-up', icon: CalendarDays },
   { href: '/programs', label: 'Programs', description: 'Events, ledgers, and reconciliation', icon: CalendarDays },
-  { href: '/admin?view=leadership', label: 'Leadership', description: 'Read-only cross-platform visibility', icon: BarChart3 },
+  { href: '/oversight', label: 'Leadership', description: 'Read-only cross-platform visibility', icon: BarChart3 },
   { href: '/notifications', label: 'Notifications', description: 'Reminders and updates', icon: Bell },
   { href: '/docs', label: 'Setup Docs', description: 'Environment and launch notes', icon: BookOpenText },
   { href: '/admin', label: 'Admin', description: 'Users, roles, and departments', icon: ShieldCheck },
