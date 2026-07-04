@@ -13,7 +13,12 @@ import {
   WidthType,
 } from 'docx';
 
-import type { GeneratedReport } from './types';
+import type {
+  GeneratedMeetingDocument,
+  GeneratedReport,
+  MeetingPeriodSummarySnapshot,
+  MeetingSummary,
+} from './types';
 import { formatCurrency, formatDisplayDate, normalizeSlug } from './utils';
 
 function formatMetricValue(value: number) {
@@ -155,6 +160,176 @@ export async function buildGeneratedReportDocx(report: GeneratedReport) {
                 new Paragraph(snapshot.anomalyFields.join(', ')),
               ]
             : []),
+        ],
+      },
+    ],
+  });
+
+  return Packer.toBuffer(document);
+}
+
+export function buildMeetingMinutesFilename(meeting: MeetingSummary) {
+  return `${normalizeSlug(meeting.departmentName || 'cross-department')}-meeting-minutes-${meeting.meetingDate}-${normalizeSlug(meeting.title)}.docx`;
+}
+
+export async function buildMeetingMinutesDocx(meeting: MeetingSummary) {
+  const actionRows = meeting.actionItems.map(
+    (item) =>
+      new TableRow({
+        children: [
+          new TableCell({ children: [new Paragraph(item.description)] }),
+          new TableCell({ children: [new Paragraph(item.ownerName || 'Unassigned')] }),
+          new TableCell({ children: [new Paragraph(item.status)] }),
+          new TableCell({ children: [new Paragraph(item.dueDate || 'No due date')] }),
+        ],
+      })
+  );
+
+  const document = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            text: 'CIOM Portal',
+            heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: 'Meeting Minutes', bold: true })],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            text: `${meeting.departmentName || 'Cross-department'} - ${meeting.title}`,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            text: formatDisplayDate(meeting.meetingDate),
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            text: `Prepared by ${meeting.createdByName}`,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: 'Agenda', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph(meeting.agenda || 'No agenda supplied.'),
+          new Paragraph({ text: 'AI Summary', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph(meeting.aiSummary || 'No AI-generated summary captured yet.'),
+          new Paragraph({ text: 'Decisions', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph(meeting.decisions || 'No decisions captured yet.'),
+          new Paragraph({ text: 'Attendees', heading: HeadingLevel.HEADING_1 }),
+          new Paragraph(
+            meeting.attendees.length > 0
+              ? meeting.attendees.map((attendee) => attendee.name).join(', ')
+              : 'No attendees recorded.'
+          ),
+          new Paragraph({ text: 'Action Items', heading: HeadingLevel.HEADING_1 }),
+          ...(meeting.actionItems.length > 0
+            ? [
+                new Table({
+                  width: { size: 100, type: WidthType.PERCENTAGE },
+                  rows: [
+                    new TableRow({
+                      children: [
+                        new TableCell({ children: [new Paragraph('Action item')] }),
+                        new TableCell({ children: [new Paragraph('Owner')] }),
+                        new TableCell({ children: [new Paragraph('Status')] }),
+                        new TableCell({ children: [new Paragraph('Due date')] }),
+                      ],
+                    }),
+                    ...actionRows,
+                  ],
+                }),
+              ]
+            : [new Paragraph('No action items captured.')]),
+          ...(meeting.nextMeetingDate
+            ? [
+                new Paragraph({ text: '' }),
+                new Paragraph({ text: 'Next Meeting', heading: HeadingLevel.HEADING_1 }),
+                new Paragraph(formatDisplayDate(meeting.nextMeetingDate)),
+              ]
+            : []),
+        ],
+      },
+    ],
+  });
+
+  return Packer.toBuffer(document);
+}
+
+export function buildMeetingSummaryDocumentFilename(
+  snapshot: MeetingPeriodSummarySnapshot
+) {
+  return `${normalizeSlug(snapshot.departmentName)}-meeting-summary-${snapshot.periodStart}-to-${snapshot.periodEnd}.docx`;
+}
+
+export async function buildMeetingSummaryDocumentDocx(input: {
+  snapshot: MeetingPeriodSummarySnapshot;
+  summaryText: string;
+}) {
+  const { snapshot, summaryText } = input;
+
+  const document = new Document({
+    sections: [
+      {
+        children: [
+          new Paragraph({
+            text: 'CIOM Portal',
+            heading: HeadingLevel.TITLE,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            children: [new TextRun({ text: `${snapshot.departmentName} Meeting Summary`, bold: true })],
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({
+            text: `${formatDisplayDate(snapshot.periodStart)} to ${formatDisplayDate(snapshot.periodEnd)}`,
+            alignment: AlignmentType.CENTER,
+          }),
+          new Paragraph({ text: '' }),
+          new Paragraph({ text: 'Leadership Summary', heading: HeadingLevel.HEADING_1 }),
+          ...summaryText
+            .split(/\n{2,}/)
+            .filter(Boolean)
+            .map(
+              (block) =>
+                new Paragraph({
+                  children: [new TextRun(block.trim())],
+                  spacing: { after: 220 },
+                })
+            ),
+          new Paragraph({ text: 'Meetings Covered', heading: HeadingLevel.HEADING_1 }),
+          ...snapshot.meetings.flatMap((meeting) => [
+            new Paragraph({
+              children: [
+                new TextRun({ text: `${meeting.title} - ${formatDisplayDate(meeting.meetingDate)}`, bold: true }),
+              ],
+              spacing: { before: 180, after: 120 },
+            }),
+            new Paragraph(`Agenda: ${meeting.agenda || 'No agenda supplied.'}`),
+            new Paragraph(`Summary: ${meeting.aiSummary || 'No AI summary captured.'}`),
+            new Paragraph(`Decisions: ${meeting.decisions || 'No decisions captured.'}`),
+            new Paragraph(
+              `Attendees: ${meeting.attendeeNames.length > 0 ? meeting.attendeeNames.join(', ') : 'No attendees recorded.'}`
+            ),
+            new Paragraph(
+              `Action items: ${
+                meeting.actionItems.length > 0
+                  ? meeting.actionItems
+                      .map(
+                        (item) =>
+                          `${item.description}${item.ownerName ? ` (${item.ownerName})` : ''}${
+                            item.dueDate ? ` due ${item.dueDate}` : ''
+                          }`
+                      )
+                      .join('; ')
+                  : 'No action items captured.'
+              }`
+            ),
+            ...(meeting.nextMeetingDate
+              ? [new Paragraph(`Next meeting date: ${formatDisplayDate(meeting.nextMeetingDate)}`)]
+              : []),
+          ]),
         ],
       },
     ],
