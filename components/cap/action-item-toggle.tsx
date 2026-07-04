@@ -11,7 +11,15 @@ export function ActionItemToggle({ actionItemId, status }: { actionItemId: numbe
     <button
       type="button"
       disabled={pending}
-      onClick={() => startTransition(async () => toggleActionItemStatusAction(actionItemId))}
+      onClick={() =>
+        startTransition(async () => {
+          try {
+            await toggleActionItemStatusAction(actionItemId);
+          } catch {
+            // Keep the list stable even if the action fails; the next refresh will reflect the true state.
+          }
+        })
+      }
       className="rounded-xl border border-[#dbcdec] bg-[#f8f5fd] px-3 py-2 text-xs font-medium text-[#4B248C]"
     >
       {pending ? 'Updating...' : status === 'open' ? 'Mark done' : 'Reopen'}
