@@ -10,8 +10,10 @@ import {
   BookOpenText,
   CalendarDays,
   ClipboardList,
+  FolderKanban,
   LayoutDashboard,
   LogOut,
+  Telescope,
   Settings2,
   ShieldCheck,
 } from 'lucide-react';
@@ -24,6 +26,8 @@ const links = [
   { href: '/records', label: 'Records', description: 'Browse record history', icon: BookCopy, accent: 'lilac' as const },
   { href: '/insights', label: 'Insights', description: 'See trends and anomalies', icon: BarChart3 },
   { href: '/meetings', label: 'Meetings', description: 'Track decisions and follow-up', icon: CalendarDays },
+  { href: '/programs', label: 'Programs', description: 'Events, ledgers, and reconciliation', icon: FolderKanban },
+  { href: '/leadership', label: 'Leadership', description: 'Read-only cross-platform visibility', icon: Telescope },
   { href: '/notifications', label: 'Notifications', description: 'Reminders and updates', icon: Bell },
   { href: '/docs', label: 'Setup Docs', description: 'Environment and launch notes', icon: BookOpenText },
   { href: '/admin', label: 'Admin', description: 'Users, roles, and departments', icon: ShieldCheck },
@@ -32,7 +36,7 @@ const links = [
 
 function isLinkActive(pathname: string, href: string) {
   if (href === '/records') {
-    return pathname === '/records' || pathname.startsWith('/records/');
+    return pathname === '/records' || (pathname.startsWith('/records/') && !pathname.startsWith('/records/new'));
   }
 
   if (href === '/records/new') {
@@ -49,6 +53,7 @@ export function PortalNav({
   onNavigate,
   pendingApprovalsCount = 0,
   unreadNotificationsCount = 0,
+  hasLeadershipAccess = false,
 }: {
   role: 'admin' | 'leader' | 'member';
   systemRole: 'main_admin' | 'chief_admin' | 'none';
@@ -56,10 +61,13 @@ export function PortalNav({
   onNavigate?: () => void;
   pendingApprovalsCount?: number;
   unreadNotificationsCount?: number;
+  hasLeadershipAccess?: boolean;
 }) {
   const pathname = usePathname();
   const canAccessAdmin =
     systemRole === 'main_admin' || systemRole === 'chief_admin' || role === 'admin' || role === 'leader';
+  const canAccessSetupDocs = systemRole === 'main_admin' || systemRole === 'chief_admin';
+  const canAccessLeadership = canAccessAdmin || hasLeadershipAccess;
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-[#3d1f72] bg-[linear-gradient(180deg,#341765_0%,#4B248C_62%,#5b32a3_100%)] px-3 py-5 text-white">
@@ -77,6 +85,14 @@ export function PortalNav({
         <nav className="space-y-2 pb-4">
           {links.map((link) => {
             if (link.href === '/admin' && !canAccessAdmin) {
+              return null;
+            }
+
+            if (link.href === '/docs' && !canAccessSetupDocs) {
+              return null;
+            }
+
+            if (link.href === '/leadership' && !canAccessLeadership) {
               return null;
             }
 
