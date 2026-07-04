@@ -9,8 +9,10 @@ import {
 } from 'lucide-react';
 
 import { InviteAccessGuidanceCard } from '@/components/cap/invite-access-guidance-card';
+import { OnboardingChecklist } from '@/components/cap/onboarding-checklist';
 import { getSession } from '@/lib/cap/auth';
 import {
+  getCalendarConnectionForUser,
   getDashboardSummary,
   getDepartmentFieldDefinitions,
 } from '@/lib/cap/services';
@@ -85,6 +87,7 @@ export default async function DashboardPage() {
   }
 
   const summary = await getDashboardSummary(session!.user);
+  const calendarConnection = await getCalendarConnectionForUser(Number(session!.user.id));
   const fieldDefinitionsByDepartment = Object.fromEntries(
     await Promise.all(
       summary.latestRecords.map(async (record) => [
@@ -101,8 +104,41 @@ export default async function DashboardPage() {
     { label: 'Visitors logged', value: summary.visitorCount, icon: TrendingUp },
   ];
 
+  const onboardingSteps = [
+    {
+      title: 'Submit your first weekly record',
+      description: "Capture this week's ministry figures so your archive, insights, and summaries all start from real data.",
+      href: '/records/new',
+      actionLabel: 'Open Weekly Record',
+      done: summary.recordCount > 0,
+    },
+    {
+      title: 'Document your first meeting and action items',
+      description: 'Store ministry decisions, minutes, and follow-up ownership so teams know what happens next.',
+      href: '/meetings',
+      actionLabel: 'Open Meetings',
+      done: summary.upcomingMeetings.length > 0 || summary.openActionItemCount > 0,
+    },
+    {
+      title: 'Review history and trends',
+      description: 'Open Records and Insights to confirm where history lives and how leadership summaries are generated.',
+      href: '/insights',
+      actionLabel: 'Open Insights',
+      done: summary.recordCount > 0,
+    },
+    {
+      title: 'Connect Google Calendar when you are ready',
+      description: 'Calendar connection is optional, but it prepares the account for future reminder and event mirroring.',
+      href: '/settings/profile',
+      actionLabel: 'Open Profile',
+      done: Boolean(calendarConnection),
+    },
+  ];
+
   return (
     <div className="space-y-6">
+      <OnboardingChecklist name={session!.user.name || 'friend'} steps={onboardingSteps} />
+
       <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_58%,#f2ebff_100%)] p-7 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div className="max-w-3xl">
