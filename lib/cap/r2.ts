@@ -92,3 +92,30 @@ export async function deleteAttachmentObject(key: string) {
 
   return true;
 }
+
+export async function uploadPrivateObjectToR2(
+  key: string,
+  body: Uint8Array | Buffer,
+  contentType: string
+) {
+  const client = getClient();
+  const bucket = getEnvValue('R2_BUCKET', 'CLOUDFLARE_R2_BUCKET_NAME');
+
+  if (!client || !bucket) {
+    return null;
+  }
+
+  await client.send(
+    new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      Body: body,
+      ContentType: contentType,
+    })
+  );
+
+  return {
+    key,
+    publicUrl: getAttachmentPublicUrl(key),
+  };
+}
