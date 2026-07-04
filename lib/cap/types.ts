@@ -225,6 +225,10 @@ export interface AttachmentRecord {
 }
 
 export interface MeetingMinutesSuggestion {
+  title?: string | null;
+  meetingDate?: string | null;
+  nextMeetingDate?: string | null;
+  agenda?: string | null;
   summary: string;
   decisions: string;
   actionItems: Array<{
@@ -267,6 +271,45 @@ export interface MeetingSummary {
   attendees: Array<{ id: number; name: string }>;
   actionItems: MeetingActionItem[];
   attachments: AttachmentRecord[];
+}
+
+export interface MeetingPeriodSummarySnapshot {
+  departmentId: number;
+  departmentName: string;
+  periodStart: string;
+  periodEnd: string;
+  generatedAt: string;
+  meetingCount: number;
+  meetings: Array<{
+    id: number;
+    title: string;
+    meetingDate: string;
+    agenda: string | null;
+    decisions: string | null;
+    aiSummary: string | null;
+    nextMeetingDate: string | null;
+    attendeeNames: string[];
+    openActionItemCount: number;
+    actionItems: Array<{
+      description: string;
+      ownerName: string | null;
+      status: ActionStatus;
+      dueDate: string | null;
+    }>;
+    attachmentFilenames: string[];
+  }>;
+}
+
+export interface GeneratedMeetingDocument {
+  id: number;
+  filename: string;
+  r2Key: string;
+  publicUrl: string | null;
+  uploadedAt: string;
+  uploadedByUserId: number | null;
+  uploadedByName: string | null;
+  departmentId: number | null;
+  departmentName: string | null;
 }
 
 export interface CreateUserInput {
@@ -378,6 +421,12 @@ export interface GenerateDepartmentReportInput {
   periodType: ReportPeriodType;
   start?: string;
   end?: string;
+}
+
+export interface GenerateMeetingSummaryDocumentInput {
+  departmentId: number;
+  start: string;
+  end: string;
 }
 
 export interface ProcessMeetingMinutesInput {
