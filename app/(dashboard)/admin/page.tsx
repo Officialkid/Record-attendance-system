@@ -6,10 +6,12 @@ import {
   submitUserFormAction,
 } from '@/app/actions/cap';
 import { AdminMembershipManager } from '@/components/cap/admin-membership-manager';
+import { DepartmentCommandCenter } from '@/components/cap/department-command-center';
 import { DepartmentInviteManager } from '@/components/cap/department-invite-manager';
 import { SystemStatusCard } from '@/components/cap/system-status-card';
 import { getSession } from '@/lib/cap/auth';
 import { getCapHealthSnapshot } from '@/lib/cap/health';
+import { getActiveUserContext } from '@/lib/cap/phase3';
 import {
   getDepartmentFieldDefinitions,
   listAllDepartments,
@@ -21,10 +23,9 @@ import type { DepartmentFieldDefinition } from '@/lib/cap/types';
 
 export default async function AdminPage() {
   const session = await getSession();
+  const isMainAdmin = session?.user.systemRole === 'main_admin';
   const isSystemAdmin =
-    session?.user.systemRole === 'main_admin' ||
-    session?.user.systemRole === 'chief_admin' ||
-    session?.user.role === 'admin';
+    session?.user.systemRole === 'main_admin' || session?.user.systemRole === 'chief_admin';
   const isDepartmentAdmin = Object.values(session?.user.departmentRoles || {}).includes('department_admin');
 
   if (!session?.user || (!isSystemAdmin && !isDepartmentAdmin)) {
@@ -34,6 +35,7 @@ export default async function AdminPage() {
   const departments = isSystemAdmin
     ? await listAllDepartments()
     : await listDepartmentsForUser(session.user);
+  const activeContext = await getActiveUserContext(session.user);
   const invites = await listDepartmentInvites(session.user);
 
   const fieldDefinitionsByDepartment = Object.fromEntries(
@@ -59,23 +61,50 @@ export default async function AdminPage() {
         </p>
       </div>
 
+      <div className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5 text-sm text-[#5f5673]">
+        <p className="font-semibold text-[#241c33]">Recommended ministry flow</p>
+        <p className="mt-2">
+          Use one-time invite links as the normal onboarding path. Direct user creation and manual membership changes
+          are still available for recovery, exceptional admin cases, or controlled setup work, but invite links should
+          be the default way real members enter the system.
+        </p>
+      </div>
+
+      {isSystemAdmin ? (
+        <DepartmentCommandCenter
+          departments={departments}
+          activeDepartmentId={activeContext.contextType === 'department' ? activeContext.targetId : null}
+          isMainAdmin={isMainAdmin}
+        />
+      ) : null}
+
       <DepartmentInviteManager departments={departments} invites={invites} />
 
-      {isSystemAdmin && health ? <SystemStatusCard health={health} /> : null}
+      {isMainAdmin && health ? <SystemStatusCard health={health} /> : null}
 
       {isSystemAdmin ? (
         <div className="grid gap-6 xl:grid-cols-3">
-          <form action={submitDepartmentFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-[#241c33]">Create department</h3>
-            <div className="mt-4 space-y-3">
-              <input name="name" required placeholder="Department name" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
-              <input name="slug" required placeholder="department-slug" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
-              <textarea name="description" rows={3} placeholder="Description" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
-              <button type="submit" className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white">
-                Create department
-              </button>
-            </div>
-          </form>
+          {isMainAdmin ? (
+            <form action={submitDepartmentFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#241c33]">Create department</h3>
+              <div className="mt-4 space-y-3">
+                <input name="name" required placeholder="Department name" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
+                <input name="slug" required placeholder="department-slug" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
+                <textarea name="description" rows={3} placeholder="Description" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
+                <button type="submit" className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white">
+                  Create department
+                </button>
+              </div>
+            </form>
+          ) : (
+            <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#241c33]">Department creation</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Only the main admin can create brand new departments. Chief admins can still manage users,
+                memberships, invites, and schemas for the departments already in the system.
+              </p>
+            </article>
+          )}
 
           <form action={submitFieldDefinitionFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Add field definition</h3>
@@ -109,6 +138,10 @@ export default async function AdminPage() {
 
           <form action={submitUserFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Admin-add user</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Keep this for controlled admin setup or recovery work. Normal ministry onboarding should use invite links
+              above.
+            </p>
             <div className="mt-4 space-y-3">
               <input name="name" required placeholder="Full name" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
               <input name="email" type="email" required placeholder="Email address" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
@@ -171,6 +204,60 @@ export default async function AdminPage() {
           </article>
         )}
       </div>
+
+      {isSystemAdmin ? (
+        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-xl font-semibold text-[#241c33]">System users</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Review who is in the system, which department roles they hold, and then use the membership editor above to move or add them across departments.
+              </p>
+            </div>
+            <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-medium text-[#4B248C]">
+              {users.length} users
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full divide-y divide-[#ece4f8] text-sm">
+              <thead className="bg-[#fbf9fe] text-left text-[#5f5673]">
+                <tr>
+                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">System role</th>
+                  <th className="px-4 py-3">Departments</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#f3eefb]">
+                {users.map((user) => (
+                  <tr key={user.id}>
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-[#241c33]">{user.name}</p>
+                      <p className="text-xs text-[#5f5673]">{user.email}</p>
+                    </td>
+                    <td className="px-4 py-3 text-[#5f5673]">
+                      {user.systemRole === 'none' ? 'Department-scoped' : user.systemRole}
+                    </td>
+                    <td className="px-4 py-3 text-[#5f5673]">
+                      {user.departmentIds.length > 0
+                        ? user.departmentIds
+                            .map((departmentId) => {
+                              const department = departments.find((item) => item.id === departmentId);
+                              const role = user.departmentRoles[departmentId];
+                              return department ? `${department.name}${role ? ` (${role})` : ''}` : `#${departmentId}`;
+                            })
+                            .join(', ')
+                        : 'No department yet'}
+                    </td>
+                    <td className="px-4 py-3 text-[#5f5673]">{user.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </article>
+      ) : null}
     </section>
   );
 }
