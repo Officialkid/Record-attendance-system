@@ -12,14 +12,27 @@ export function MeetingSummaryGenerator({
   departments: Department[];
   documents: GeneratedMeetingDocument[];
 }) {
-  const [departmentId, setDepartmentId] = useState<number>(departments[0]?.id || 1);
+  const firstDepartmentId = departments[0]?.id ?? null;
+  const [departmentId, setDepartmentId] = useState<number | null>(firstDepartmentId);
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [feedback, setFeedback] = useState('');
   const [items, setItems] = useState(documents);
   const [pending, startTransition] = useTransition();
 
-  const visibleItems = items.filter((item) => item.departmentId === departmentId);
+  const visibleItems = departmentId === null ? [] : items.filter((item) => item.departmentId === departmentId);
+
+  if (departments.length === 0) {
+    return (
+      <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">AI document summary</p>
+        <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Summarize multiple meetings into one document</h3>
+        <p className="mt-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+          Meeting summary documents will appear once at least one department is available in your account context.
+        </p>
+      </article>
+    );
+  }
 
   return (
     <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
@@ -46,7 +59,7 @@ export function MeetingSummaryGenerator({
           <label className="block space-y-2">
             <span className="text-sm font-medium text-[#241c33]">Department</span>
             <select
-              value={departmentId}
+              value={departmentId ?? ''}
               onChange={(event) => setDepartmentId(Number(event.target.value))}
               className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
             >
@@ -81,21 +94,25 @@ export function MeetingSummaryGenerator({
 
           <button
             type="button"
-            disabled={pending}
+            disabled={pending || departmentId === null}
             onClick={() => {
               setFeedback('');
               startTransition(async () => {
-                const result = await generateMeetingSummaryDocumentAction({
-                  departmentId,
-                  start,
-                  end,
-                });
-                setFeedback(result.message);
-                if (!result.success || !result.document) {
-                  return;
-                }
+                try {
+                  const result = await generateMeetingSummaryDocumentAction({
+                    departmentId: departmentId!,
+                    start,
+                    end,
+                  });
+                  setFeedback(result.message);
+                  if (!result.success || !result.document) {
+                    return;
+                  }
 
-                setItems((current) => [result.document, ...current]);
+                  setItems((current) => [result.document, ...current]);
+                } catch (error) {
+                  setFeedback(error instanceof Error ? error.message : 'Meeting summary generation failed unexpectedly.');
+                }
               });
             }}
             className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
