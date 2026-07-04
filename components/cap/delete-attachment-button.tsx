@@ -15,8 +15,12 @@ export function DeleteAttachmentButton({ attachmentId }: { attachmentId: number 
         disabled={pending}
         onClick={() => {
           startTransition(async () => {
-            const result = await deleteAttachmentAction(attachmentId);
-            setFeedback(result.message);
+            try {
+              const result = await deleteAttachmentAction(attachmentId);
+              setFeedback(result.message);
+            } catch (error) {
+              setFeedback(error instanceof Error ? error.message : 'Attachment removal failed unexpectedly.');
+            }
           });
         }}
         className="rounded-full border border-[#eadfb8] bg-white px-3 py-1 text-xs font-medium text-[#a06f00] disabled:opacity-60"
