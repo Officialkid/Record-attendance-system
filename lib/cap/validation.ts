@@ -171,6 +171,66 @@ export const updateOwnProfileSchema = z.object({
   avatarUrl: z.string().url('Enter a valid avatar URL.').nullable().optional(),
 });
 
+export const setActiveUserContextSchema = z.object({
+  contextType: z.enum(['department', 'event_side', 'leadership']),
+  targetId: z.number().int().positive(),
+});
+
+export const createEventSchema = z.object({
+  name: z.string().min(3, 'Enter an event name.'),
+  defaultExpectedAmount: z.coerce.number().positive('Enter a positive expected amount.'),
+});
+
+export const createStandaloneContributionLedgerSchema = z.object({
+  name: z.string().min(3, 'Enter a ledger name.'),
+  defaultExpectedAmount: z.coerce.number().positive('Enter a positive expected amount.'),
+});
+
+export const createStandaloneExpenseLedgerSchema = z.object({
+  name: z.string().min(3, 'Enter a ledger name.'),
+});
+
+export const addEventMembershipSchema = z.object({
+  eventId: z.number().int().positive(),
+  userId: z.number().int().positive(),
+  side: z.enum(['organizer', 'finance', 'admin']),
+});
+
+export const addContributionParticipantSchema = z.object({
+  ledgerId: z.number().int().positive(),
+  name: z.string().min(2, 'Enter a participant name.'),
+  expectedAmount: z.coerce.number().positive().optional(),
+});
+
+export const recordContributionPaymentSchema = z.object({
+  participantId: z.number().int().positive(),
+  amount: z.coerce.number().positive('Enter a payment amount above zero.'),
+  paymentDate: optionalIsoDate,
+});
+
+export const addExpenseCategorySchema = z.object({
+  ledgerId: z.number().int().positive(),
+  name: z.string().min(2, 'Enter a category name.'),
+});
+
+export const addExpenseItemSchema = z.object({
+  categoryId: z.number().int().positive(),
+  description: z.string().min(3, 'Enter an expense description.'),
+  expectedAmount: z.coerce.number().nonnegative().nullable().optional(),
+  actualAmount: z.coerce.number().nonnegative().nullable().optional(),
+  paidBy: z.string().max(160).optional().default(''),
+  paymentStatus: z.enum(['paid', 'reimbursement_pending', 'reimbursed']).default('paid'),
+});
+
+export const endEventSchema = z.object({
+  eventId: z.number().int().positive(),
+});
+
+export const setEventVisibilitySchema = z.object({
+  membershipId: z.number().int().positive(),
+  remainVisible: z.boolean(),
+});
+
 export const createRecordSchema = z.object({
   departmentId: z.number().int().positive(),
   recordDate: requiredIsoDate,
