@@ -437,3 +437,220 @@ export interface UpdateOwnProfileInput {
   name: string;
   avatarUrl?: string | null;
 }
+
+export type UserContextType = 'department' | 'event_side' | 'leadership';
+export type EventMembershipSide = 'organizer' | 'finance' | 'admin';
+export type EventStatus = 'active' | 'ended';
+export type LedgerStatus = 'active' | 'closed';
+export type PaymentStatus = 'paid' | 'reimbursement_pending' | 'reimbursed';
+
+export interface UserContextOption {
+  key: string;
+  label: string;
+  description: string;
+  departmentLabel: string;
+  contextType: UserContextType;
+  targetId: number;
+  href: string;
+  isActive: boolean;
+}
+
+export interface ActiveUserContext {
+  contextType: UserContextType;
+  targetId: number | null;
+  label: string;
+  href: string;
+}
+
+export interface SetActiveUserContextInput {
+  contextType: UserContextType;
+  targetId: number;
+}
+
+export interface EventRecord {
+  id: number;
+  departmentId: number;
+  name: string;
+  status: EventStatus;
+  createdByUserId: number;
+  endedAt: string | null;
+  createdAt: string;
+}
+
+export interface EventMembership {
+  id: number;
+  eventId: number;
+  userId: number;
+  side: EventMembershipSide;
+  status: 'approved';
+  joinedAt: string;
+  leftOrEndedAt: string | null;
+  remainVisible: boolean;
+}
+
+export interface ContributionLedger {
+  id: number;
+  name: string;
+  ownerDepartmentId: number | null;
+  eventId: number | null;
+  defaultExpectedAmount: number;
+  status: LedgerStatus;
+  createdAt: string;
+}
+
+export interface ContributionParticipant {
+  id: number;
+  ledgerId: number;
+  name: string;
+  expectedAmount: number;
+  amountPaid: number;
+  balance: number;
+  paidInFull: boolean;
+  createdAt: string;
+}
+
+export interface ContributionPayment {
+  id: number;
+  participantId: number;
+  amount: number;
+  paymentDate: string;
+  recordedByUserId: number;
+  recordedByName: string;
+  createdAt: string;
+}
+
+export interface ExpenseLedger {
+  id: number;
+  name: string;
+  ownerDepartmentId: number | null;
+  eventId: number | null;
+  status: LedgerStatus;
+  createdAt: string;
+}
+
+export interface ExpenseCategory {
+  id: number;
+  ledgerId: number;
+  name: string;
+}
+
+export interface ExpenseItem {
+  id: number;
+  categoryId: number;
+  description: string;
+  expectedAmount: number | null;
+  actualAmount: number | null;
+  variance: number | null;
+  paidBy: string | null;
+  paymentStatus: PaymentStatus;
+  recordedByUserId: number;
+  recordedByName: string;
+  createdAt: string;
+}
+
+export interface EventFinancialSummary {
+  totalCollected: number;
+  totalSpent: number;
+  balanceRetained: number;
+}
+
+export interface EventDetail {
+  event: EventRecord;
+  activeSide: EventMembershipSide;
+  canManageEvent: boolean;
+  canViewReconciliation: boolean;
+  contributionLedger: ContributionLedger | null;
+  expenseLedger: ExpenseLedger | null;
+  participants: ContributionParticipant[];
+  payments: ContributionPayment[];
+  categories: ExpenseCategory[];
+  expenseItems: ExpenseItem[];
+  financialSummary: EventFinancialSummary | null;
+}
+
+export interface EventListItem extends EventRecord {
+  userSides: EventMembershipSide[];
+  contributionLedgerStatus: LedgerStatus | null;
+  expenseLedgerStatus: LedgerStatus | null;
+  totalCollected: number;
+  totalSpent: number;
+  balanceRetained: number;
+  participantCount: number;
+  expenseItemCount: number;
+}
+
+export interface CreateEventInput {
+  name: string;
+  defaultExpectedAmount: number;
+}
+
+export interface CreateStandaloneContributionLedgerInput {
+  name: string;
+  defaultExpectedAmount: number;
+}
+
+export interface CreateStandaloneExpenseLedgerInput {
+  name: string;
+}
+
+export interface AddEventMembershipInput {
+  eventId: number;
+  userId: number;
+  side: EventMembershipSide;
+}
+
+export interface AddContributionParticipantInput {
+  ledgerId: number;
+  name: string;
+  expectedAmount?: number;
+}
+
+export interface RecordContributionPaymentInput {
+  participantId: number;
+  amount: number;
+  paymentDate?: string;
+}
+
+export interface AddExpenseCategoryInput {
+  ledgerId: number;
+  name: string;
+}
+
+export interface AddExpenseItemInput {
+  categoryId: number;
+  description: string;
+  expectedAmount?: number | null;
+  actualAmount?: number | null;
+  paidBy?: string;
+  paymentStatus?: PaymentStatus;
+}
+
+export interface EndEventInput {
+  eventId: number;
+}
+
+export interface SetEventVisibilityInput {
+  membershipId: number;
+  remainVisible: boolean;
+}
+
+export interface DepartmentLeadershipSnapshot {
+  departmentId: number;
+  departmentName: string;
+  recordCount: number;
+  latestRecordDate: string | null;
+  openActionItemCount: number;
+  latestMeetingDate: string | null;
+}
+
+export interface EventLeadershipSnapshot {
+  eventId: number;
+  eventName: string;
+  status: EventStatus;
+  endedAt: string | null;
+  totalCollected: number;
+  totalSpent: number;
+  balanceRetained: number;
+  organizerCount: number;
+  financeCount: number;
+}
