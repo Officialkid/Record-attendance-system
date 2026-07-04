@@ -2,10 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { PortalShell } from '@/components/cap/portal-shell';
 import { getSession } from '@/lib/cap/auth';
-import {
-  countOpenDepartmentInvitesForUser,
-  countUnreadNotificationsForUser,
-} from '@/lib/cap/services';
+import { countUnreadNotificationsForUser } from '@/lib/cap/services';
 import { getTimeBasedGreeting } from '@/lib/cap/utils';
 
 export const dynamic = 'force-dynamic';
@@ -17,7 +14,6 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   const unreadNotificationsCount = await countUnreadNotificationsForUser(session.user);
-  const openInviteCount = await countOpenDepartmentInvitesForUser(session.user);
 
   return (
     <PortalShell
@@ -28,14 +24,8 @@ export default async function PortalLayout({ children }: { children: React.React
       email={session.user.email || 'Unknown email'}
       departmentCount={session.user.departmentIds.length}
       unreadNotificationsCount={unreadNotificationsCount}
-      pendingApprovalsCount={openInviteCount}
+      pendingApprovalsCount={0}
       avatarUrl={session.user.avatarUrl}
-      hasLeadershipAccess={
-        session.user.systemRole === 'main_admin' ||
-        session.user.systemRole === 'chief_admin' ||
-        session.user.role === 'admin' ||
-        session.user.role === 'leader'
-      }
     >
       {session.user.status === 'pending' && session.user.departmentIds.length === 0 && session.user.systemRole === 'none' ? (
         <div className="mb-6 rounded-[24px] border border-[#eadfb8] bg-[#fffbf0] px-5 py-4 text-sm text-[#5f5673]">
