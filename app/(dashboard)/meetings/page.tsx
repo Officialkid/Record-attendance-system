@@ -4,22 +4,63 @@ import { DeleteAttachmentButton } from '@/components/cap/delete-attachment-butto
 import { DeleteMeetingButton } from '@/components/cap/delete-meeting-button';
 import { EditMeetingLink } from '@/components/cap/edit-meeting-link';
 import { MeetingForm } from '@/components/cap/meeting-form';
+import { MeetingSummaryGenerator } from '@/components/cap/meeting-summary-generator';
 import { getSession } from '@/lib/cap/auth';
 import { getAttachmentPublicUrl } from '@/lib/cap/r2';
-import { listDepartmentsForUser, listMeetings, listUsers } from '@/lib/cap/services';
+import {
+  listGeneratedMeetingSummaryDocuments,
+  listDepartmentsForUser,
+  listMeetings,
+  listUsersVisibleTo,
+} from '@/lib/cap/services';
 import { formatDisplayDate } from '@/lib/cap/utils';
 
 export default async function MeetingsPage() {
   const session = await getSession();
   const departments = await listDepartmentsForUser(session!.user);
   const meetings = await listMeetings(session!.user);
-  const users = await listUsers();
+  const users = await listUsersVisibleTo(session!.user);
+  const meetingSummaryDocuments = await listGeneratedMeetingSummaryDocuments(session!.user);
 
   return (
     <section className="space-y-6">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Phase 2</p>
         <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Meetings and minutes</h2>
+        <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
+          Capture point-form notes, upload a `.txt`, `.docx`, or `.pdf` minutes file, let CIOM Portal suggest the
+          summary and action items, then keep both the source document and the generated minutes DOCX in R2 so
+          ministry teams can return to them later.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <article className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#b6841a]">Step 1</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Bring your notes in any practical form</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Raw point form works. Full minutes work too. If you already have a file, upload it directly and process it
+            inside the meeting form.
+          </p>
+        </article>
+
+        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Step 2</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Let the AI draft the follow-up</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            The assistant can now prefill the title, dates, agenda, summary, decisions, and action-item suggestions so
+            you mainly review and adjust the ministry details instead of typing everything from scratch.
+          </p>
+        </article>
+
+        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Step 3</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Store the source minutes safely</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Source minutes files and bulky attachments live in R2, while the database keeps the searchable meeting
+            details, summaries, action items, and metadata clean.
+          </p>
+        </article>
       </div>
 
       <MeetingForm
@@ -29,7 +70,20 @@ export default async function MeetingsPage() {
         canCreateCrossDepartment={session!.user.role !== 'member'}
       />
 
+      <MeetingSummaryGenerator departments={departments} documents={meetingSummaryDocuments} />
+
       <div className="space-y-4">
+        {meetings.length === 0 ? (
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-[#241c33]">No meetings recorded yet</h3>
+            <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
+              Start with the meeting form above. You can paste point-form notes, upload the source minutes file, let
+              CIOM Portal suggest the summary and action items, then save the meeting so this page becomes your clear
+              archive for ministry follow-up.
+            </p>
+          </article>
+        ) : null}
+
         {meetings.map((meeting) => (
           <article key={meeting.id} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-4">
