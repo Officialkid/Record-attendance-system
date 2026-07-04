@@ -148,7 +148,7 @@ export function LoginForm({
       <div className="rounded-2xl border border-[#eadfb8] bg-[#fffbf0] p-4 text-sm text-[#5f5673]">
         <p className="font-medium text-[#241c33]">First time here?</p>
         <p className="mt-2">
-          Ask your department admin for a one-time invite link. Open that link, sign in, and CIOM Portal will place you
+          Ask your department admin for the shared department access link. Open that link, sign in, and CIOM Portal will place you
           directly into the right ministry department.
         </p>
       </div>
