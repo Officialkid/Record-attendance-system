@@ -10,6 +10,10 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
     const isSystemAdmin = systemRole === 'main_admin' || systemRole === 'chief_admin';
 
+    if (pathname === '/leadership') {
+      return NextResponse.redirect(new URL('/admin', req.url));
+    }
+
     if (mustChangePassword && pathname !== '/settings/profile') {
       return NextResponse.redirect(new URL('/settings/profile', req.url));
     }
