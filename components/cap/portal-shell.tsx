@@ -5,9 +5,7 @@ import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { Bell, ChevronLeft, ChevronRight, Menu, ShieldCheck, X } from 'lucide-react';
 
-import type { UserContextOption } from '@/lib/cap/types';
 import { PortalNav } from '@/components/cap/portal-nav';
-import { ContextSwitcher } from '@/components/cap/context-switcher';
 import { cn } from '@/lib/cap/utils';
 
 function initials(name: string) {
@@ -30,8 +28,6 @@ export function PortalShell({
   unreadNotificationsCount,
   pendingApprovalsCount,
   avatarUrl,
-  activeContextLabel,
-  contextOptions,
   hasLeadershipAccess,
 }: {
   children: React.ReactNode;
@@ -44,8 +40,6 @@ export function PortalShell({
   unreadNotificationsCount: number;
   pendingApprovalsCount: number;
   avatarUrl: string | null;
-  activeContextLabel: string;
-  contextOptions: UserContextOption[];
   hasLeadershipAccess: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -174,8 +168,6 @@ export function PortalShell({
               </div>
 
               <div className="flex flex-wrap items-start gap-3">
-                <ContextSwitcher activeLabel={activeContextLabel} options={contextOptions} />
-
                 <Link
                   href="/notifications"
                   className="inline-flex items-center gap-2 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]"
