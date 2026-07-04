@@ -39,7 +39,7 @@ export default async function ProfilePage() {
       {user.status === 'pending' && assignedDepartments.length === 0 ? (
         <div className="rounded-2xl border border-[#eadfb8] bg-[#fffbf0] p-4 text-sm text-[#5f5673]">
           Your account is signed in successfully, but your ministry workspace still needs a department invite link.
-          Ask the relevant department head, chief admin, or main admin to generate your one-time CIOM Portal invite so your
+          Ask the relevant department head, chief admin, or main admin to share the department access link so your
           tools open automatically.
         </div>
       ) : null}
