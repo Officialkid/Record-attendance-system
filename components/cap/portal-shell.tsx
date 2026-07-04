@@ -28,7 +28,6 @@ export function PortalShell({
   unreadNotificationsCount,
   pendingApprovalsCount,
   avatarUrl,
-  hasLeadershipAccess,
 }: {
   children: React.ReactNode;
   role: 'admin' | 'leader' | 'member';
@@ -40,7 +39,6 @@ export function PortalShell({
   unreadNotificationsCount: number;
   pendingApprovalsCount: number;
   avatarUrl: string | null;
-  hasLeadershipAccess: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -59,22 +57,16 @@ export function PortalShell({
   }, [collapsed]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#efe7ff_0%,#faf7ff_28%,#f7f2ff_100%)] lg:grid lg:grid-cols-[auto_minmax(0,1fr)]">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#efe7ff_0%,#faf7ff_28%,#f7f2ff_100%)] lg:grid lg:grid-cols-[auto_1fr]">
       <div className="hidden lg:block">
-        <div
-          className={cn(
-            'sticky top-0 h-[100dvh] overflow-hidden transition-[width] duration-200',
-            collapsed ? 'w-[92px]' : 'w-[290px]'
-          )}
-        >
-            <PortalNav
-              role={role}
-              systemRole={systemRole}
-              collapsed={collapsed}
-              unreadNotificationsCount={unreadNotificationsCount}
-              pendingApprovalsCount={pendingApprovalsCount}
-              hasLeadershipAccess={hasLeadershipAccess}
-            />
+        <div className={cn('sticky top-0 h-screen transition-[width] duration-200', collapsed ? 'w-[92px]' : 'w-[290px]')}>
+          <PortalNav
+            role={role}
+            systemRole={systemRole}
+            collapsed={collapsed}
+            unreadNotificationsCount={unreadNotificationsCount}
+            pendingApprovalsCount={pendingApprovalsCount}
+          />
           <button
             type="button"
             onClick={() => setCollapsed((current) => !current)}
@@ -132,7 +124,6 @@ export function PortalShell({
                 systemRole={systemRole}
                 unreadNotificationsCount={unreadNotificationsCount}
                 pendingApprovalsCount={pendingApprovalsCount}
-                hasLeadershipAccess={hasLeadershipAccess}
                 onNavigate={() => setMobileOpen(false)}
               />
               <button
@@ -149,7 +140,7 @@ export function PortalShell({
         ) : null}
       </div>
 
-      <main className="min-w-0 px-4 py-5 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
+      <main className="px-4 py-5 sm:px-5 sm:py-6 lg:px-8 lg:py-8">
         <div className="mx-auto max-w-7xl">
           <header className="mb-8 rounded-[28px] border border-[#ddd3f0] bg-white px-5 py-5 shadow-sm sm:px-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -163,11 +154,11 @@ export function PortalShell({
                 </p>
                 <p className="mt-2 text-sm text-[#7a7190]">Signed in as {email}</p>
                 <p className="mt-4 max-w-2xl text-sm text-[#5f5673]">
-                  Weekly Record is for fresh submissions. Records is the archive for review, edits, and cleanup.
+                  Use Weekly Record for new submissions, Records for history, Insights for trends, Meetings for follow-up, and Notifications for ministry updates.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-start gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/notifications"
                   className="inline-flex items-center gap-2 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]"
