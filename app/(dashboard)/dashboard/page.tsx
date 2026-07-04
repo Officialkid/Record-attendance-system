@@ -41,14 +41,14 @@ export default async function DashboardPage() {
           </h2>
           <p className="mt-3 max-w-3xl text-sm text-[#5f5673]">
             Your account is signed in, but your ministry workspace is not unlocked yet. Use the steps below to get a
-            one-time invite link from the correct department lead and claim access directly.
+            department access link from the correct department lead and claim access directly.
           </p>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
             {[
               {
                 title: '1. Contact your department lead',
-                body: 'Ask the head of department, chief admin, or main admin to generate your one-time CIOM Portal invite link.',
+                body: 'Ask the head of department, chief admin, or main admin to share your department access link.',
               },
               {
                 title: '2. Open the shared link',
@@ -73,7 +73,7 @@ export default async function DashboardPage() {
           <article className="space-y-4 rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">What happens next</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">After you claim the department invite</h3>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">After you claim the department access link</h3>
             </div>
 
             {[
