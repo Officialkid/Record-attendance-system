@@ -22,7 +22,9 @@ import {
   decideDepartmentMembership,
   disconnectCalendarConnection,
   generateDepartmentReport,
+  generateMeetingSummaryDocument,
   markNotificationRead,
+  markNotificationUnread,
   processMeetingMinutes,
   registerAttachment,
   sendDueMeetingReminders,
@@ -499,6 +501,26 @@ export async function generateDepartmentReportAction(
   }
 }
 
+export async function generateMeetingSummaryDocumentAction(
+  input: Parameters<typeof generateMeetingSummaryDocument>[1]
+) {
+  try {
+    const user = await requireSessionUser();
+    const document = await generateMeetingSummaryDocument(user, input);
+    revalidatePath('/meetings');
+    return {
+      success: true,
+      message: 'Meeting summary document generated successfully.',
+      document,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to generate the meeting summary document.',
+    };
+  }
+}
+
 export async function deleteGeneratedReportAction(reportId: number) {
   try {
     const user = await requireSessionUser();
@@ -543,6 +565,21 @@ export async function markNotificationReadAction(notificationId: number) {
     revalidatePath('/notifications');
     revalidatePath('/dashboard');
     return { success: true, message: 'Notification marked as read.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to update notification.',
+    };
+  }
+}
+
+export async function markNotificationUnreadAction(notificationId: number) {
+  try {
+    const user = await requireSessionUser();
+    await markNotificationUnread(user, notificationId);
+    revalidatePath('/notifications');
+    revalidatePath('/dashboard');
+    return { success: true, message: 'Notification marked as unread.' };
   } catch (error) {
     return {
       success: false,
