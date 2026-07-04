@@ -56,6 +56,13 @@ function deriveUiRole(
 
 async function getApprovedDepartmentAccess(userId: number) {
   const db = await getDb();
+  const userRow = (await db
+    .prepare(
+      `SELECT system_role
+       FROM users
+       WHERE id = ?`
+    )
+    .get(userId)) as { system_role: SystemRole } | undefined;
   const membershipRows = (await db
     .prepare(
       `SELECT department_id, role
@@ -65,12 +72,33 @@ async function getApprovedDepartmentAccess(userId: number) {
     )
     .all(userId)) as Array<{ department_id: number; role: DepartmentMembershipRole }>;
 
+  const membershipDepartmentIds = membershipRows.map((row) => row.department_id);
+  const membershipDepartmentRoles = Object.fromEntries(
+    membershipRows.map((row) => [row.department_id, row.role])
+  ) as Record<number, DepartmentMembershipRole>;
+
+  if (userRow?.system_role === 'main_admin' || userRow?.system_role === 'chief_admin') {
+    const allDepartmentRows = (await db
+      .prepare(
+        `SELECT id
+         FROM departments
+         ORDER BY id ASC`
+      )
+      .all()) as Array<{ id: number }>;
+
+    const allDepartmentIds = allDepartmentRows.map((row) => row.id);
+    return {
+      departmentIds: allDepartmentIds,
+      departmentRoles: Object.fromEntries(
+        allDepartmentIds.map((departmentId) => [departmentId, membershipDepartmentRoles[departmentId] || 'member'])
+      ) as Record<number, DepartmentMembershipRole>,
+    };
+  }
+
   if (membershipRows.length > 0) {
     return {
-      departmentIds: membershipRows.map((row) => row.department_id),
-      departmentRoles: Object.fromEntries(
-        membershipRows.map((row) => [row.department_id, row.role])
-      ) as Record<number, DepartmentMembershipRole>,
+      departmentIds: membershipDepartmentIds,
+      departmentRoles: membershipDepartmentRoles,
     };
   }
 
