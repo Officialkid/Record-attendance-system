@@ -19,7 +19,13 @@ import {
 } from '@/lib/cap/services';
 import type { DepartmentFieldDefinition } from '@/lib/cap/types';
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ view?: string }>;
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const isLeadershipView = resolvedSearchParams?.view === 'leadership';
   const session = await getSession();
   const isMainAdmin = session?.user.systemRole === 'main_admin';
   const isSystemAdmin =
@@ -46,7 +52,7 @@ export default async function AdminPage() {
 
   return (
     <section className="space-y-6">
-      <div>
+      <div id={isLeadershipView ? 'leadership-overview' : undefined}>
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Administration</p>
         <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">
           {isSystemAdmin ? 'Department and invite administration' : 'Department invites and access'}
@@ -57,6 +63,74 @@ export default async function AdminPage() {
             : 'Create one-time onboarding links for your departments and guide members into the right ministry workspace.'}
         </p>
       </div>
+
+      {isSystemAdmin ? (
+        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Leadership</p>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Cross-platform leadership view</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Super admins can use this area as the stable leadership workspace for ministry-wide
+                oversight while the deeper standalone leadership route is being hardened.
+              </p>
+            </div>
+            {isLeadershipView ? (
+              <span className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                Leadership view active
+              </span>
+            ) : null}
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Department visibility</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Review departments, memberships, and invite status from one workspace.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Programs oversight</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Jump into Programs to review meetings, records, and event-side reporting.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Meeting follow-up</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Track committee decisions, uploads, and next actions from the Meetings area.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Insight review</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Use ministry trends and history as the shared reporting lens for leadership review.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <a
+              href="/programs"
+              className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
+            >
+              Open Programs
+            </a>
+            <a
+              href="/meetings"
+              className="rounded-2xl bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a6113]"
+            >
+              Open Meetings
+            </a>
+            <a
+              href="/insights"
+              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
+            >
+              Open Insights
+            </a>
+          </div>
+        </article>
+      ) : null}
 
       <div className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5 text-sm text-[#5f5673]">
         <p className="font-semibold text-[#241c33]">Recommended ministry flow</p>
