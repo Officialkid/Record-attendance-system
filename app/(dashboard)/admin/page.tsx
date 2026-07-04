@@ -6,12 +6,10 @@ import {
   submitUserFormAction,
 } from '@/app/actions/cap';
 import { AdminMembershipManager } from '@/components/cap/admin-membership-manager';
-import { DepartmentCommandCenter } from '@/components/cap/department-command-center';
 import { DepartmentInviteManager } from '@/components/cap/department-invite-manager';
 import { SystemStatusCard } from '@/components/cap/system-status-card';
 import { getSession } from '@/lib/cap/auth';
 import { getCapHealthSnapshot } from '@/lib/cap/health';
-import { getActiveUserContext } from '@/lib/cap/phase3';
 import {
   getDepartmentFieldDefinitions,
   listAllDepartments,
@@ -35,7 +33,6 @@ export default async function AdminPage() {
   const departments = isSystemAdmin
     ? await listAllDepartments()
     : await listDepartmentsForUser(session.user);
-  const activeContext = await getActiveUserContext(session.user);
   const invites = await listDepartmentInvites(session.user);
 
   const fieldDefinitionsByDepartment = Object.fromEntries(
@@ -69,14 +66,6 @@ export default async function AdminPage() {
           be the default way real members enter the system.
         </p>
       </div>
-
-      {isSystemAdmin ? (
-        <DepartmentCommandCenter
-          departments={departments}
-          activeDepartmentId={activeContext.contextType === 'department' ? activeContext.targetId : null}
-          isMainAdmin={isMainAdmin}
-        />
-      ) : null}
 
       <DepartmentInviteManager departments={departments} invites={invites} />
 
