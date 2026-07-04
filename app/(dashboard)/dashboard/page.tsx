@@ -1,26 +1,38 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import {
   ArrowRight,
   BookCopy,
   CalendarDays,
   ClipboardList,
+  ShieldCheck,
   TrendingUp,
   Users,
 } from 'lucide-react';
 
+import { submitDepartmentFormAction } from '@/app/actions/cap';
+import { DepartmentCommandCenter } from '@/components/cap/department-command-center';
 import { InviteAccessGuidanceCard } from '@/components/cap/invite-access-guidance-card';
 import { OnboardingChecklist } from '@/components/cap/onboarding-checklist';
 import { getSession } from '@/lib/cap/auth';
+import { getActiveUserContext } from '@/lib/cap/phase3';
 import {
   getCalendarConnectionForUser,
   getDashboardSummary,
   getDepartmentFieldDefinitions,
+  listAllDepartments,
 } from '@/lib/cap/services';
 import type { DepartmentFieldDefinition } from '@/lib/cap/types';
 import { formatCurrency, formatDisplayDate } from '@/lib/cap/utils';
 
 export default async function DashboardPage() {
   const session = await getSession();
+  const activeContext = await getActiveUserContext(session!.user);
+
+  if (activeContext.contextType === 'event_side' || activeContext.contextType === 'leadership') {
+    redirect(activeContext.href);
+  }
+
   const isPendingOnly =
     session!.user.status === 'pending' &&
     session!.user.departmentIds.length === 0 &&
@@ -88,6 +100,10 @@ export default async function DashboardPage() {
 
   const summary = await getDashboardSummary(session!.user);
   const calendarConnection = await getCalendarConnectionForUser(Number(session!.user.id));
+  const allDepartments =
+    session!.user.systemRole === 'main_admin' || session!.user.systemRole === 'chief_admin'
+      ? await listAllDepartments()
+      : [];
   const fieldDefinitionsByDepartment = Object.fromEntries(
     await Promise.all(
       summary.latestRecords.map(async (record) => [
@@ -208,6 +224,52 @@ export default async function DashboardPage() {
         })}
       </section>
 
+      {allDepartments.length > 0 ? (
+        <DepartmentCommandCenter
+          departments={allDepartments}
+          activeDepartmentId={activeContext.contextType === 'department' ? activeContext.targetId : null}
+          isMainAdmin={session!.user.systemRole === 'main_admin'}
+        />
+      ) : null}
+
+      {session!.user.systemRole === 'main_admin' ? (
+        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Department setup</p>
+            <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Create a new department from your dashboard</h2>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              This keeps the super-admin flow simple when you need to open a new ministry workspace quickly.
+            </p>
+          </div>
+
+          <form action={submitDepartmentFormAction} className="mt-5 grid gap-3 xl:grid-cols-[1fr_0.8fr_1.2fr_auto]">
+            <input
+              name="name"
+              required
+              placeholder="Department name"
+              className="rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+            />
+            <input
+              name="slug"
+              required
+              placeholder="department-slug"
+              className="rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+            />
+            <input
+              name="description"
+              placeholder="Short description"
+              className="rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+            />
+            <button
+              type="submit"
+              className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white"
+            >
+              Create department
+            </button>
+          </form>
+        </section>
+      ) : null}
+
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
@@ -217,8 +279,7 @@ export default async function DashboardPage() {
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Latest submitted records</h2>
               <p className="mt-2 text-sm text-[#5f5673]">
-                This card is your latest snapshot. The full archive lives in Records, while the new submission flow
-                stays under Weekly Record.
+                Latest snapshot only.
               </p>
             </div>
             <Link href="/records" className="inline-flex items-center gap-2 text-sm font-medium text-[#4B248C]">
@@ -230,7 +291,7 @@ export default async function DashboardPage() {
           <div className="mt-5 space-y-3">
             {summary.latestRecords.length === 0 ? (
               <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
-                No records have been submitted yet. Use Weekly Record to capture this week&apos;s figures, then the archive will appear here automatically.
+                No records yet. Add one from Weekly Record and it will appear here automatically.
               </div>
             ) : summary.latestRecords.map((record) => {
               const values = record.values as Record<string, number | string | string[]>;
@@ -312,6 +373,27 @@ export default async function DashboardPage() {
           </div>
         </article>
       </section>
+
+      {allDepartments.length > 0 ? (
+        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Admin shortcuts</p>
+              <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Run the platform from one super-admin view</h2>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Open the department admin tools, invite workspace, and super-admin maintenance area without leaving the dashboard.
+              </p>
+            </div>
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
+            >
+              <ShieldCheck className="h-4 w-4" />
+              <span>Open admin workspace</span>
+            </Link>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
