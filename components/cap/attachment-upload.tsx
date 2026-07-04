@@ -20,35 +20,39 @@ export function AttachmentUpload({ meetingId }: { meetingId: number }) {
           }
 
           startTransition(async () => {
-            const uploadPlan = await createAttachmentUploadAction({
-              filename: file.name,
-              contentType: file.type || 'application/octet-stream',
-            });
+            try {
+              const uploadPlan = await createAttachmentUploadAction({
+                filename: file.name,
+                contentType: file.type || 'application/octet-stream',
+              });
 
-            if (!uploadPlan.success || !uploadPlan.uploadUrl || !uploadPlan.key) {
-              setMessage(uploadPlan.message);
-              return;
+              if (!uploadPlan.success || !uploadPlan.uploadUrl || !uploadPlan.key) {
+                setMessage(uploadPlan.message);
+                return;
+              }
+
+              const response = await fetch(uploadPlan.uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: {
+                  'Content-Type': file.type || 'application/octet-stream',
+                },
+              });
+
+              if (!response.ok) {
+                setMessage('Upload failed before attachment registration.');
+                return;
+              }
+
+              const registered = await registerAttachmentAction({
+                meetingId,
+                r2Key: uploadPlan.key,
+                filename: file.name,
+              });
+              setMessage(registered.message);
+            } catch (error) {
+              setMessage(error instanceof Error ? error.message : 'Attachment upload failed unexpectedly.');
             }
-
-            const response = await fetch(uploadPlan.uploadUrl, {
-              method: 'PUT',
-              body: file,
-              headers: {
-                'Content-Type': file.type || 'application/octet-stream',
-              },
-            });
-
-            if (!response.ok) {
-              setMessage('Upload failed before attachment registration.');
-              return;
-            }
-
-            const registered = await registerAttachmentAction({
-              meetingId,
-              r2Key: uploadPlan.key,
-              filename: file.name,
-            });
-            setMessage(registered.message);
           });
         }}
       />
