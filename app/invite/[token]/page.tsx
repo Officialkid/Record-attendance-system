@@ -28,7 +28,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Department invite</p>
             <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">This invite link is not available.</h2>
             <p className="mt-3 text-sm text-[#5f5673]">
-              The invite may have expired, already been used, or been copied incorrectly. Ask the department admin for a fresh one-time link.
+              The department link may have expired or been copied incorrectly. Ask the department admin for the active department link.
             </p>
             <Link href="/login" className="mt-6 inline-flex rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white">
               Open CIOM Portal login
