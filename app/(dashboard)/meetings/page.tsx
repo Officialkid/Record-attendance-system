@@ -15,10 +15,28 @@ import {
 } from '@/lib/cap/services';
 import { formatDisplayDate } from '@/lib/cap/utils';
 
-export default async function MeetingsPage() {
+export default async function MeetingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ departmentId?: string }>;
+}) {
   const session = await getSession();
+  const params = await searchParams;
   const departments = await listDepartmentsForUser(session!.user);
-  const meetings = await listMeetings(session!.user);
+  const requestedDepartmentId = Number(params.departmentId || '');
+  const hasRequestedDepartment =
+    Number.isFinite(requestedDepartmentId) &&
+    departments.some((department) => department.id === requestedDepartmentId);
+  const defaultDepartmentId =
+    hasRequestedDepartment
+      ? requestedDepartmentId
+      : departments[0]?.id || null;
+  const meetings = (await listMeetings(session!.user)).filter((meeting) =>
+    hasRequestedDepartment ? meeting.departmentId === requestedDepartmentId : true
+  );
+  const selectedDepartment = hasRequestedDepartment
+    ? departments.find((department) => department.id === requestedDepartmentId) || null
+    : null;
   const users = await listUsersVisibleTo(session!.user);
   const meetingSummaryDocuments = await listGeneratedMeetingSummaryDocuments(session!.user);
 
@@ -32,6 +50,11 @@ export default async function MeetingsPage() {
           summary and action items, then keep both the source document and the generated minutes DOCX in R2 so
           ministry teams can return to them later.
         </p>
+        {selectedDepartment ? (
+          <p className="mt-3 inline-flex rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+            Viewing {selectedDepartment.name} meetings
+          </p>
+        ) : null}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -68,6 +91,7 @@ export default async function MeetingsPage() {
         users={users}
         defaultMeetingDate={new Date().toISOString().slice(0, 10)}
         canCreateCrossDepartment={session!.user.role !== 'member'}
+        defaultDepartmentId={defaultDepartmentId}
       />
 
       <MeetingSummaryGenerator departments={departments} documents={meetingSummaryDocuments} />
