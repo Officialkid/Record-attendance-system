@@ -59,8 +59,8 @@ export default async function AdminPage({
         </h2>
         <p className="mt-2 text-sm text-[#5f5673]">
           {isSystemAdmin
-            ? 'Manage departments, field definitions, direct member access, and one-time onboarding links from one workspace.'
-            : 'Create one-time onboarding links for your departments and guide members into the right ministry workspace.'}
+            ? 'Manage departments, field definitions, direct member access, and reusable department access links from one workspace.'
+            : 'Create reusable department access links for your departments and guide members into the right ministry workspace.'}
         </p>
       </div>
 
@@ -135,8 +135,8 @@ export default async function AdminPage({
       <div className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5 text-sm text-[#5f5673]">
         <p className="font-semibold text-[#241c33]">Recommended ministry flow</p>
         <p className="mt-2">
-          Use one-time invite links as the normal onboarding path. Direct user creation and manual membership changes
-          are still available for recovery, exceptional admin cases, or controlled setup work, but invite links should
+          Use department access links as the normal onboarding path. Direct user creation and manual membership changes
+          are still available for recovery, exceptional admin cases, or controlled setup work, but shared department links should
           be the default way real members enter the system.
         </p>
       </div>
@@ -202,7 +202,7 @@ export default async function AdminPage({
           <form action={submitUserFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Admin-add user</h3>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Keep this for controlled admin setup or recovery work. Normal ministry onboarding should use invite links
+              Keep this for controlled admin setup or recovery work. Normal ministry onboarding should use department links
               above.
             </p>
             <div className="mt-4 space-y-3">
@@ -262,7 +262,7 @@ export default async function AdminPage({
           <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Department admin notes</h3>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Use one-time invite links to onboard members directly into your department, then direct them to Notifications for meeting and workflow updates.
+              Use department access links to onboard members directly into your department, then direct them to Notifications for meeting and workflow updates.
             </p>
           </article>
         )}
