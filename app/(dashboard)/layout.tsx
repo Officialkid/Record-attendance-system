@@ -19,10 +19,22 @@ export default async function PortalLayout({ children }: { children: React.React
 
   const unreadNotificationsCount = await countUnreadNotificationsForUser(session.user);
   const openInviteCount = await countOpenDepartmentInvitesForUser(session.user);
-  const [activeContext, contextOptions] = await Promise.all([
-    getActiveUserContext(session.user),
-    listUserContextOptions(session.user),
-  ]);
+  let activeContext = {
+    contextType: 'department' as const,
+    targetId: null,
+    label: 'Workspace',
+    href: '/dashboard',
+  };
+  let contextOptions = [] as Awaited<ReturnType<typeof listUserContextOptions>>;
+
+  try {
+    [activeContext, contextOptions] = await Promise.all([
+      getActiveUserContext(session.user),
+      listUserContextOptions(session.user),
+    ]);
+  } catch (error) {
+    console.error('Portal context loading failed; falling back to the default dashboard context.', error);
+  }
 
   return (
     <PortalShell
