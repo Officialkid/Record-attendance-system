@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 
@@ -26,6 +26,7 @@ interface MeetingFormProps {
   users: UserRecord[];
   defaultMeetingDate: string;
   canCreateCrossDepartment?: boolean;
+  defaultDepartmentId?: number | null;
   existingMeeting?: MeetingSummary;
 }
 
@@ -48,12 +49,17 @@ export function MeetingForm({
   users,
   defaultMeetingDate,
   canCreateCrossDepartment = false,
+  defaultDepartmentId = null,
   existingMeeting,
 }: MeetingFormProps) {
   const router = useRouter();
   const isEditing = Boolean(existingMeeting);
   const [departmentId, setDepartmentId] = useState(
-    existingMeeting?.departmentId ? String(existingMeeting.departmentId) : ''
+    existingMeeting?.departmentId
+      ? String(existingMeeting.departmentId)
+      : defaultDepartmentId
+        ? String(defaultDepartmentId)
+        : ''
   );
   const [title, setTitle] = useState(existingMeeting?.title || '');
   const [meetingDate, setMeetingDate] = useState(existingMeeting?.meetingDate || defaultMeetingDate);
@@ -74,6 +80,58 @@ export function MeetingForm({
   const [pending, startTransition] = useTransition();
   const [processingMinutes, startMinutesTransition] = useTransition();
   const [processingFileMinutes, startFileMinutesTransition] = useTransition();
+  const visibleUsers = useMemo(() => {
+    const selectedDepartmentId = departmentId ? Number(departmentId) : null;
+    if (!selectedDepartmentId) {
+      return users;
+    }
+
+    return users.filter((user) => user.departmentIds.includes(selectedDepartmentId));
+  }, [departmentId, users]);
+
+  const applyMinutesSuggestion = (
+    suggestion: NonNullable<Awaited<ReturnType<typeof processMeetingMinutesAction>>['suggestion']>
+  ) => {
+    if (suggestion.title?.trim() && !title.trim()) {
+      setTitle(suggestion.title.trim());
+    }
+
+    if (suggestion.meetingDate?.trim() && /^\d{4}-\d{2}-\d{2}$/.test(suggestion.meetingDate.trim())) {
+      setMeetingDate(suggestion.meetingDate.trim());
+    }
+
+    if (
+      suggestion.nextMeetingDate?.trim() &&
+      /^\d{4}-\d{2}-\d{2}$/.test(suggestion.nextMeetingDate.trim()) &&
+      !nextMeetingDate.trim()
+    ) {
+      setNextMeetingDate(suggestion.nextMeetingDate.trim());
+    }
+
+    if (suggestion.agenda?.trim() && !agenda.trim()) {
+      setAgenda(suggestion.agenda.trim());
+    }
+
+    setAiSummary(suggestion.summary || '');
+    setDecisions((current) => current || suggestion.decisions || '');
+    setActionItems((current) => {
+      const suggestions = suggestion.actionItems.map((item, index) => {
+        const matchingUser = item.ownerName
+          ? users.find((user) => user.name.toLowerCase() === item.ownerName!.toLowerCase())
+          : null;
+
+        return {
+          id: Date.now() + index,
+          description: item.description,
+          ownerUserId: matchingUser ? String(matchingUser.id) : '',
+          status: 'open' as const,
+          dueDate: item.dueDate || '',
+        };
+      });
+
+      return [...current, ...suggestions.filter((item) => item.description.trim())];
+    });
+  };
 
   const toggleAttendee = (userId: number) => {
     setAttendeeUserIds((current) =>
@@ -108,32 +166,18 @@ export function MeetingForm({
     setFeedback('');
 
     startMinutesTransition(async () => {
-      const result = await processMeetingMinutesAction(sourceNotes);
-      if (!result.success || !result.suggestion) {
+      try {
+        const result = await processMeetingMinutesAction(sourceNotes);
+        if (!result.success || !result.suggestion) {
+          setFeedback(result.message);
+          return;
+        }
+
+        applyMinutesSuggestion(result.suggestion);
         setFeedback(result.message);
-        return;
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : 'Minutes extraction failed unexpectedly.');
       }
-
-      setAiSummary(result.suggestion.summary || '');
-      setDecisions((current) => current || result.suggestion.decisions || '');
-      setActionItems((current) => {
-        const suggestions = result.suggestion!.actionItems.map((item, index) => {
-          const matchingUser = item.ownerName
-            ? users.find((user) => user.name.toLowerCase() === item.ownerName!.toLowerCase())
-            : null;
-
-          return {
-            id: Date.now() + index,
-            description: item.description,
-            ownerUserId: matchingUser ? String(matchingUser.id) : '',
-            status: 'open' as const,
-            dueDate: item.dueDate || '',
-          };
-        });
-
-        return [...current, ...suggestions.filter((item) => item.description.trim())];
-      });
-      setFeedback(result.message);
     });
   };
 
@@ -145,65 +189,51 @@ export function MeetingForm({
 
     setFeedback('');
     startFileMinutesTransition(async () => {
-      const uploadPlan = await createAttachmentUploadAction({
-        filename: sourceDocumentFile.name,
-        contentType: sourceDocumentFile.type || 'application/octet-stream',
-      });
-
-      if (!uploadPlan.success || !uploadPlan.uploadUrl || !uploadPlan.key) {
-        setFeedback(uploadPlan.message);
-        return;
-      }
-
-      const uploadResponse = await fetch(uploadPlan.uploadUrl, {
-        method: 'PUT',
-        body: sourceDocumentFile,
-        headers: {
-          'Content-Type': sourceDocumentFile.type || 'application/octet-stream',
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        setFeedback('Minutes file upload failed before processing.');
-        return;
-      }
-
-      setSourceDocumentKey(uploadPlan.key);
-
-      const formData = new FormData();
-      formData.append('file', sourceDocumentFile);
-      const result = await processMeetingMinutesFileAction(formData);
-      if (!result.success || !result.suggestion) {
-        setFeedback(result.message);
-        return;
-      }
-
-      setSourceNotes(result.extractedText || '');
-      setAiSummary(result.suggestion.summary || '');
-      setDecisions((current) => current || result.suggestion!.decisions || '');
-      setActionItems((current) => {
-        const suggestions = result.suggestion!.actionItems.map((item, index) => {
-          const matchingUser = item.ownerName
-            ? users.find((user) => user.name.toLowerCase() === item.ownerName!.toLowerCase())
-            : null;
-
-          return {
-            id: Date.now() + index,
-            description: item.description,
-            ownerUserId: matchingUser ? String(matchingUser.id) : '',
-            status: 'open' as const,
-            dueDate: item.dueDate || '',
-          };
+      try {
+        const uploadPlan = await createAttachmentUploadAction({
+          filename: sourceDocumentFile.name,
+          contentType: sourceDocumentFile.type || 'application/octet-stream',
         });
 
-        return [...current, ...suggestions.filter((item) => item.description.trim())];
-      });
-      setFeedback(result.message);
+        if (!uploadPlan.success || !uploadPlan.uploadUrl || !uploadPlan.key) {
+          setFeedback(uploadPlan.message);
+          return;
+        }
+
+        const uploadResponse = await fetch(uploadPlan.uploadUrl, {
+          method: 'PUT',
+          body: sourceDocumentFile,
+          headers: {
+            'Content-Type': sourceDocumentFile.type || 'application/octet-stream',
+          },
+        });
+
+        if (!uploadResponse.ok) {
+          setFeedback('Minutes file upload failed before processing.');
+          return;
+        }
+
+        setSourceDocumentKey(uploadPlan.key);
+
+        const formData = new FormData();
+        formData.append('file', sourceDocumentFile);
+        const result = await processMeetingMinutesFileAction(formData);
+        if (!result.success || !result.suggestion) {
+          setFeedback(result.message);
+          return;
+        }
+
+        setSourceNotes(result.extractedText || '');
+        applyMinutesSuggestion(result.suggestion);
+        setFeedback(result.message);
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : 'Minutes file processing failed unexpectedly.');
+      }
     });
   };
 
   const resetForm = () => {
-    setDepartmentId('');
+    setDepartmentId(defaultDepartmentId ? String(defaultDepartmentId) : '');
     setTitle('');
     setMeetingDate(defaultMeetingDate);
     setAgenda('');
@@ -222,44 +252,48 @@ export function MeetingForm({
     setFeedback('');
 
     startTransition(async () => {
-      const payload = {
-        departmentId: departmentId ? Number(departmentId) : null,
-        title,
-        meetingDate,
-        agenda,
-        decisions,
-        aiSummary,
-        sourceDocumentR2Key: sourceDocumentKey,
-        nextMeetingDate,
-        attendeeUserIds,
-        actionItems: actionItems
-          .filter((item) => item.description.trim())
-          .map((item) => ({
-            id: item.id,
-            description: item.description.trim(),
-            ownerUserId: item.ownerUserId ? Number(item.ownerUserId) : null,
-            status: item.status,
-            dueDate: item.dueDate,
-          })),
-      };
+      try {
+        const payload = {
+          departmentId: departmentId ? Number(departmentId) : null,
+          title,
+          meetingDate,
+          agenda,
+          decisions,
+          aiSummary,
+          sourceDocumentR2Key: sourceDocumentKey,
+          nextMeetingDate,
+          attendeeUserIds,
+          actionItems: actionItems
+            .filter((item) => item.description.trim())
+            .map((item) => ({
+              id: item.id,
+              description: item.description.trim(),
+              ownerUserId: item.ownerUserId ? Number(item.ownerUserId) : null,
+              status: item.status,
+              dueDate: item.dueDate,
+            })),
+        };
 
-      const result = isEditing
-        ? await updateMeetingAction({
-            meetingId: existingMeeting!.id,
-            ...payload,
-          })
-        : await createMeetingAction(payload);
+        const result = isEditing
+          ? await updateMeetingAction({
+              meetingId: existingMeeting!.id,
+              ...payload,
+            })
+          : await createMeetingAction(payload);
 
-      setFeedback(result.message);
+        setFeedback(result.message);
 
-      if (!result.success) {
-        return;
-      }
+        if (!result.success) {
+          return;
+        }
 
-      if (isEditing) {
+        if (!isEditing) {
+          resetForm();
+        }
+
         router.refresh();
-      } else {
-        resetForm();
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : 'Meeting save failed unexpectedly.');
       }
     });
   };
@@ -331,7 +365,8 @@ export function MeetingForm({
           <div>
             <h3 className="text-base font-semibold text-[#241c33]">AI minutes assistant</h3>
             <p className="text-sm text-[#5f5673]">
-              Paste meeting notes and CIOM Portal will suggest a summary, decisions, and action items.
+              Paste raw point-form notes or fuller minutes and CIOM Portal will try to prefill the title, dates,
+              agenda, summary, decisions, and action items from the minutes.
             </p>
           </div>
           <button
@@ -357,7 +392,8 @@ export function MeetingForm({
             <div>
               <p className="text-sm font-medium text-[#241c33]">Upload minutes file</p>
               <p className="mt-1 text-xs text-[#5f5673]">
-                Supported: .txt, .docx, .pdf. CIOM Portal uploads the source file and extracts text for review.
+                Supported: `.txt`, `.docx`, and `.pdf`. CIOM Portal uploads the source file to storage first, then
+                extracts the text for review and action-item drafting.
               </p>
             </div>
             <button
@@ -416,7 +452,7 @@ export function MeetingForm({
           </p>
         </div>
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {users.map((user) => {
+          {visibleUsers.map((user) => {
             const checked = attendeeUserIds.includes(user.id);
             return (
               <label
@@ -441,6 +477,11 @@ export function MeetingForm({
             );
           })}
         </div>
+        {visibleUsers.length === 0 ? (
+          <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+            No visible users are available for the current department selection yet.
+          </p>
+        ) : null}
       </div>
 
       <div className="space-y-4 xl:col-span-2">
@@ -482,7 +523,7 @@ export function MeetingForm({
                   className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
                 >
                   <option value="">Owner</option>
-                  {users.map((user) => (
+                  {visibleUsers.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.name}
                     </option>
