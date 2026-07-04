@@ -17,7 +17,7 @@ export function InviteOnlyAccessPanel() {
 
       <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
         {[
-          'Department admins generate a one-time invite link from the Admin page.',
+          'Department admins generate a reusable department access link from the Admin page.',
           'Members open that link, sign in with Google or email/password, and access is approved automatically.',
           'After claim, CIOM Portal sends them into the correct department path instead of a generic waiting screen.',
         ].map((item) => (
@@ -31,7 +31,7 @@ export function InviteOnlyAccessPanel() {
       <div className="rounded-2xl border border-[#eadfb8] bg-[#fffbf0] p-4 text-sm text-[#5f5673]">
         <p className="font-medium text-[#241c33]">Need access?</p>
         <p className="mt-2">
-          Ask the head of department or CIOM Portal admin to generate and share your invite link from the ministry admin panel.
+          Ask the head of department or CIOM Portal admin to generate and share your department link from the ministry admin panel.
         </p>
       </div>
 
