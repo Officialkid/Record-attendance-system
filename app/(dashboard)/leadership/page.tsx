@@ -1,5 +1,83 @@
-import { redirect } from 'next/navigation';
+import Link from 'next/link';
 
-export default async function LeadershipPage() {
-  redirect('/admin');
+export default function LeadershipPage() {
+  return (
+    <section className="space-y-6">
+      <div className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Leadership</p>
+        <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Leadership overview</h2>
+        <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
+          Super admins can use this space as the cross-department visibility point for leadership review,
+          planning, and ministry-wide reporting.
+        </p>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <h3 className="text-2xl font-semibold text-[#241c33]">What leadership can do here</h3>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Department visibility</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Review ministry activity across departments without switching into each one manually.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Programs oversight</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Follow meetings, records, and financial summaries from the Programs side of the portal.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Meeting follow-up</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Open the shared Meetings workspace for committee decisions, notes, and next actions.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-sm font-semibold text-[#241c33]">Next phase</p>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                This page is now the stable landing area while richer charts and leadership summaries are
+                layered in safely.
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <h3 className="text-2xl font-semibold text-[#241c33]">Leadership shortcuts</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Use these areas right away while we continue hardening the broader reporting workspace.
+          </p>
+
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link
+              href="/admin"
+              className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
+            >
+              Open admin workspace
+            </Link>
+            <Link
+              href="/programs"
+              className="rounded-2xl bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a6113]"
+            >
+              Open Programs
+            </Link>
+            <Link
+              href="/meetings"
+              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
+            >
+              Open Meetings
+            </Link>
+            <Link
+              href="/insights"
+              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
+            >
+              Open Insights
+            </Link>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
 }
