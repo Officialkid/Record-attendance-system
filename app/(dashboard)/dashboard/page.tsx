@@ -11,11 +11,9 @@ import {
 } from 'lucide-react';
 
 import { submitDepartmentFormAction } from '@/app/actions/cap';
-import { DepartmentCommandCenter } from '@/components/cap/department-command-center';
 import { InviteAccessGuidanceCard } from '@/components/cap/invite-access-guidance-card';
 import { OnboardingChecklist } from '@/components/cap/onboarding-checklist';
 import { getSession } from '@/lib/cap/auth';
-import { getActiveUserContext } from '@/lib/cap/phase3';
 import {
   getCalendarConnectionForUser,
   getDashboardSummary,
@@ -27,11 +25,6 @@ import { formatCurrency, formatDisplayDate } from '@/lib/cap/utils';
 
 export default async function DashboardPage() {
   const session = await getSession();
-  const activeContext = await getActiveUserContext(session!.user);
-
-  if (activeContext.contextType === 'event_side' || activeContext.contextType === 'leadership') {
-    redirect(activeContext.href);
-  }
 
   const isPendingOnly =
     session!.user.status === 'pending' &&
@@ -223,14 +216,6 @@ export default async function DashboardPage() {
           );
         })}
       </section>
-
-      {allDepartments.length > 0 ? (
-        <DepartmentCommandCenter
-          departments={allDepartments}
-          activeDepartmentId={activeContext.contextType === 'department' ? activeContext.targetId : null}
-          isMainAdmin={session!.user.systemRole === 'main_admin'}
-        />
-      ) : null}
 
       {session!.user.systemRole === 'main_admin' ? (
         <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
