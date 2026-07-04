@@ -15,13 +15,17 @@ export function DeleteMeetingButton({ meetingId }: { meetingId: number }) {
       disabled={pending}
       onClick={() => {
         startTransition(async () => {
-          const result = await deleteMeetingAction(meetingId);
-          if (!result.success) {
-            window.alert(result.message);
-            return;
-          }
+          try {
+            const result = await deleteMeetingAction(meetingId);
+            if (!result.success) {
+              window.alert(result.message);
+              return;
+            }
 
-          router.refresh();
+            router.refresh();
+          } catch (error) {
+            window.alert(error instanceof Error ? error.message : 'Meeting deletion failed unexpectedly.');
+          }
         });
       }}
       className="rounded-xl border border-[#ead4d4] bg-white px-3 py-2 text-xs font-medium text-[#a24444] disabled:opacity-60"
