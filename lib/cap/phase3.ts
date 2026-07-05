@@ -49,17 +49,121 @@ type SessionLikeUser = {
   departmentRoles?: Record<number, 'department_admin' | 'member'>;
 };
 
+let programsSchemaPromise: Promise<void> | null = null;
+
+async function ensureProgramsSchema() {
+  if (!programsSchemaPromise) {
+    programsSchemaPromise = (async () => {
+      const db = await getDb();
+      await db.exec(`
+        CREATE TABLE IF NOT EXISTS events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          department_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'active',
+          created_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          ended_at TEXT,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS event_memberships (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          side TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'approved',
+          joined_at TEXT DEFAULT (datetime('now')),
+          left_or_ended_at TEXT,
+          remain_visible INTEGER NOT NULL DEFAULT 1,
+          UNIQUE (event_id, user_id, side)
+        );
+
+        CREATE TABLE IF NOT EXISTS contribution_ledgers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          owner_department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+          event_id INTEGER REFERENCES events(id) ON DELETE SET NULL,
+          default_expected_amount REAL NOT NULL,
+          status TEXT NOT NULL DEFAULT 'active',
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS contribution_participants (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ledger_id INTEGER NOT NULL REFERENCES contribution_ledgers(id) ON DELETE CASCADE,
+          name TEXT NOT NULL,
+          expected_amount REAL NOT NULL,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS contribution_payments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          participant_id INTEGER NOT NULL REFERENCES contribution_participants(id) ON DELETE CASCADE,
+          amount REAL NOT NULL,
+          payment_date TEXT NOT NULL DEFAULT (date('now')),
+          recorded_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS expense_ledgers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          owner_department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+          event_id INTEGER REFERENCES events(id) ON DELETE SET NULL,
+          status TEXT NOT NULL DEFAULT 'active',
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE TABLE IF NOT EXISTS expense_categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ledger_id INTEGER NOT NULL REFERENCES expense_ledgers(id) ON DELETE CASCADE,
+          name TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS expense_items (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category_id INTEGER NOT NULL REFERENCES expense_categories(id) ON DELETE CASCADE,
+          description TEXT NOT NULL,
+          expected_amount REAL,
+          actual_amount REAL,
+          paid_by TEXT,
+          payment_status TEXT NOT NULL DEFAULT 'paid',
+          recorded_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_events_department_status
+          ON events(department_id, status, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_event_memberships_user_status
+          ON event_memberships(user_id, status, remain_visible);
+        CREATE INDEX IF NOT EXISTS idx_contribution_ledgers_event
+          ON contribution_ledgers(event_id);
+        CREATE INDEX IF NOT EXISTS idx_expense_ledgers_event
+          ON expense_ledgers(event_id);
+      `);
+    })().catch((error) => {
+      programsSchemaPromise = null;
+      throw error;
+    });
+  }
+
+  await programsSchemaPromise;
+}
+
 async function allRows<T>(sql: string, ...params: SqlValue[]) {
+  await ensureProgramsSchema();
   const db = await getDb();
   return (await db.prepare(sql).all(...params)) as T[];
 }
 
 async function firstRow<T>(sql: string, ...params: SqlValue[]) {
+  await ensureProgramsSchema();
   const db = await getDb();
   return (await db.prepare(sql).get(...params)) as T | undefined;
 }
 
 async function runStatement(sql: string, ...params: SqlValue[]) {
+  await ensureProgramsSchema();
   const db = await getDb();
   return db.prepare(sql).run(...params);
 }
