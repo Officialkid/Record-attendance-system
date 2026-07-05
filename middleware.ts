@@ -10,8 +10,8 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
     const isSystemAdmin = systemRole === 'main_admin' || systemRole === 'chief_admin';
 
-    if (pathname === '/leadership') {
-      return NextResponse.redirect(new URL('/oversight', req.url));
+    if (pathname === '/oversight') {
+      return NextResponse.redirect(new URL('/leadership', req.url));
     }
 
     if (mustChangePassword && pathname !== '/settings/profile') {
@@ -50,6 +50,7 @@ export const config = {
     '/meetings/:path*',
     '/programs/:path*',
     '/leadership/:path*',
+    '/oversight/:path*',
     '/admin/:path*',
     '/settings/:path*',
     '/add-attendance/:path*',
