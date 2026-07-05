@@ -31,13 +31,13 @@ export function DepartmentInviteManager({
     <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-xl font-semibold text-[#241c33]">One-time invite links</h3>
+          <h3 className="text-xl font-semibold text-[#241c33]">Department access links</h3>
           <p className="mt-2 text-sm text-[#5f5673]">
-            Create a secure invite link for a department. Each link works once, approves that department automatically, and then closes itself.
+            Generate a department join link, then simply share it. The same link can be used by the right members of that department.
           </p>
         </div>
         <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-medium text-[#4B248C]">
-          {items.filter((invite) => !invite.usedAt).length} open invites
+          {items.filter((invite) => new Date(invite.expiresAt).getTime() >= Date.now()).length} active links
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export function DepartmentInviteManager({
             className="inline-flex items-center gap-2 rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             <Link2 className="h-4 w-4" />
-            <span>{pending ? 'Generating invite...' : 'Generate one-time invite'}</span>
+            <span>{pending ? 'Preparing link...' : 'Generate department link'}</span>
           </button>
 
           {feedback ? <p className="rounded-2xl bg-white px-4 py-3 text-sm text-[#4B248C]">{feedback}</p> : null}
@@ -164,7 +164,7 @@ export function DepartmentInviteManager({
           <div className="rounded-3xl border border-[#e6def4] bg-[#fbf9fe] p-4">
             <p className="text-sm font-medium text-[#241c33]">How this helps</p>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Share the invite with a new user, let them sign in with Google or email/password, and CIOM Portal will approve the target department immediately after they claim it.
+              Share the department link with everyone meant to join that department. They can sign in or create an account and CIOM Portal will approve that department automatically.
             </p>
           </div>
 
@@ -184,10 +184,12 @@ export function DepartmentInviteManager({
                   </div>
                   <span
                     className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] ${
-                      invite.usedAt ? 'bg-[#f1edea] text-[#786857]' : 'bg-[#fff3d6] text-[#9c730f]'
+                      new Date(invite.expiresAt).getTime() < Date.now()
+                        ? 'bg-[#f1edea] text-[#786857]'
+                        : 'bg-[#fff3d6] text-[#9c730f]'
                     }`}
                   >
-                    {invite.usedAt ? 'Used' : 'Open'}
+                    {new Date(invite.expiresAt).getTime() < Date.now() ? 'Expired' : 'Active'}
                   </span>
                 </div>
 
@@ -195,7 +197,9 @@ export function DepartmentInviteManager({
                 <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-[#7a7190]">
                   <span className="inline-flex items-center gap-1">
                     <MailPlus className="h-3.5 w-3.5" />
-                    {invite.usedAt ? `Claimed by ${invite.usedByName || 'a user'}` : 'Waiting to be claimed'}
+                    {invite.usedAt
+                      ? `Reusable link. Last used by ${invite.usedByName || 'a member'}`
+                      : 'Reusable link ready to be shared'}
                   </span>
                 </div>
               </div>
