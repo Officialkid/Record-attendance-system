@@ -1,16 +1,11 @@
 'use client';
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+type SummaryRow = {
+  name: string;
+  amount: number;
+  fillClass: string;
+  trackClass: string;
+};
 
 export function ProgramsEventSummaryChart({
   totalCollected,
@@ -21,11 +16,28 @@ export function ProgramsEventSummaryChart({
   totalSpent: number;
   balanceRetained: number;
 }) {
-  const data = [
-    { name: 'Collected', amount: totalCollected, fill: '#4B248C' },
-    { name: 'Spent', amount: totalSpent, fill: '#C97A2B' },
-    { name: 'Balance', amount: balanceRetained, fill: balanceRetained >= 0 ? '#2B7A4B' : '#B13A3A' },
+  const data: SummaryRow[] = [
+    {
+      name: 'Collected',
+      amount: totalCollected,
+      fillClass: 'bg-[#4B248C]',
+      trackClass: 'bg-[#ede7f7]',
+    },
+    {
+      name: 'Spent',
+      amount: totalSpent,
+      fillClass: 'bg-[#C97A2B]',
+      trackClass: 'bg-[#fff1df]',
+    },
+    {
+      name: 'Balance',
+      amount: balanceRetained,
+      fillClass: balanceRetained >= 0 ? 'bg-[#2B7A4B]' : 'bg-[#B13A3A]',
+      trackClass: balanceRetained >= 0 ? 'bg-[#e8f5ec]' : 'bg-[#fdecec]',
+    },
   ];
+
+  const maxAmount = Math.max(...data.map((entry) => Math.abs(entry.amount)), 1);
   const totalFlow = totalCollected + totalSpent;
   const stewardshipRate = totalCollected > 0 ? Math.round((balanceRetained / totalCollected) * 100) : 0;
 
@@ -46,21 +58,24 @@ export function ProgramsEventSummaryChart({
         </div>
       </div>
 
-      <div className="mt-4 h-[220px] w-full rounded-2xl border border-[#efe7fb] bg-[#fcfbfe] p-3">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
-            <CartesianGrid stroke="#efe7fb" strokeDasharray="3 3" />
-            <XAxis dataKey="name" tick={{ fill: '#5f5673', fontSize: 12 }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fill: '#5f5673', fontSize: 12 }} axisLine={false} tickLine={false} />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="amount" radius={[10, 10, 0, 0]}>
-              {data.map((entry) => (
-                <Cell key={entry.name} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+      <div className="mt-4 rounded-2xl border border-[#efe7fb] bg-[#fcfbfe] p-4">
+        <div className="space-y-4">
+          {data.map((entry) => {
+            const width = Math.max(8, Math.round((Math.abs(entry.amount) / maxAmount) * 100));
+
+            return (
+              <div key={entry.name} className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-[#241c33]">{entry.name}</p>
+                  <p className="text-sm text-[#5f5673]">{entry.amount.toLocaleString()}</p>
+                </div>
+                <div className={`h-3 w-full overflow-hidden rounded-full ${entry.trackClass}`}>
+                  <div className={`h-full rounded-full ${entry.fillClass}`} style={{ width: `${width}%` }} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
