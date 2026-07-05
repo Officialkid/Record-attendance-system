@@ -1,8 +1,8 @@
 import { getSession } from '@/lib/cap/auth';
 import { getActiveUserContext } from '@/lib/cap/phase3';
 import {
-  listDepartmentsForUser,
   getDepartmentFieldDefinitions,
+  listRecordWorkflowDepartmentsForUser,
   listUsersVisibleTo,
 } from '@/lib/cap/services';
 import { getNearestSaturday } from '@/lib/cap/utils';
@@ -16,7 +16,7 @@ export default async function NewRecordPage({
   const params = await searchParams;
   const session = await getSession();
   const activeContext = await getActiveUserContext(session!.user);
-  const allDepartments = await listDepartmentsForUser(session!.user);
+  const allDepartments = await listRecordWorkflowDepartmentsForUser(session!.user);
   const fieldDefinitionsByDepartment = Object.fromEntries(
     await Promise.all(
       allDepartments.map(async (department) => [department.id, await getDepartmentFieldDefinitions(department.id)])
