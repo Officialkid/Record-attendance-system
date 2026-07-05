@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import {
@@ -10,8 +12,61 @@ import {
   recordContributionPaymentAction,
 } from '@/app/actions/cap';
 import type { EventDetail } from '@/lib/cap/types';
+import { ProgramsEventSummaryChart } from './programs-event-summary-chart';
 
-export function ProgramsEventWorkspace({ detail }: { detail: EventDetail }) {
+function WorkspaceCard({
+  title,
+  body,
+  href,
+  active,
+  disabled,
+  badge,
+}: {
+  title: string;
+  body: string;
+  href: string;
+  active: boolean;
+  disabled: boolean;
+  badge: string;
+}) {
+  if (disabled) {
+    return (
+      <article className="rounded-[28px] border border-[#e6def4] bg-[#f8f5fd] p-5 opacity-70">
+        <div className="flex items-center justify-between gap-3">
+          <h3 className="text-xl font-semibold text-[#241c33]">{title}</h3>
+          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#7a7190]">{badge}</span>
+        </div>
+        <p className="mt-3 text-sm text-[#5f5673]">{body}</p>
+      </article>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className={`block rounded-[28px] border p-5 transition-transform hover:-translate-y-0.5 ${
+        active
+          ? 'border-[#4B248C] bg-[linear-gradient(135deg,#f7f1ff_0%,#efe6ff_100%)]'
+          : 'border-[#e6def4] bg-[#fbf9fe]'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="text-xl font-semibold text-[#241c33]">{title}</h3>
+        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">{badge}</span>
+      </div>
+      <p className="mt-3 text-sm text-[#5f5673]">{body}</p>
+    </Link>
+  );
+}
+
+export function ProgramsEventWorkspace({
+  detail,
+  selectedView,
+}: {
+  detail: EventDetail;
+  selectedView: 'organizer' | 'finance' | null;
+}) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -31,8 +86,16 @@ export function ProgramsEventWorkspace({ detail }: { detail: EventDetail }) {
   const [expensePaidBy, setExpensePaidBy] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<'paid' | 'reimbursement_pending' | 'reimbursed'>('paid');
 
-  const canEditContributions = detail.activeSide === 'organizer' || detail.activeSide === 'admin';
-  const canEditExpenses = detail.activeSide === 'finance' || detail.activeSide === 'admin';
+  const hasOrganizerAccess = detail.activeSide === 'organizer' || detail.canManageEvent;
+  const hasFinanceAccess = detail.activeSide === 'finance' || detail.canManageEvent;
+  const workspaceView =
+    selectedView || (detail.canManageEvent ? null : detail.activeSide === 'finance' ? 'finance' : 'organizer');
+  const totalCollected = detail.financialSummary?.totalCollected || 0;
+  const totalSpent = detail.financialSummary?.totalSpent || 0;
+  const totalBalance = detail.financialSummary?.balanceRetained || 0;
+  const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
+  const recentPayments = detail.payments.slice(0, 5);
+  const recentExpenses = detail.expenseItems.slice(0, 5);
 
   const runAction = (task: () => Promise<{ success: boolean; message: string }>, onSuccess?: () => void) => {
     setError('');
@@ -46,6 +109,7 @@ export function ProgramsEventWorkspace({ detail }: { detail: EventDetail }) {
 
       setMessage(result.message);
       onSuccess?.();
+      router.refresh();
     });
   };
 
@@ -60,55 +124,188 @@ export function ProgramsEventWorkspace({ detail }: { detail: EventDetail }) {
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs event</p>
             <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">{detail.event.name}</h2>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Active side: <span className="font-semibold text-[#241c33]">{detail.activeSide}</span> • Status:{' '}
-              {detail.event.status}
+              Status: {detail.event.status} • Current access view:{' '}
+              <span className="font-semibold text-[#241c33]">{detail.activeSide}</span>
             </p>
           </div>
 
-          {detail.canManageEvent && detail.event.status === 'active' ? (
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => runAction(() => endEventAction(detail.event.id))}
-              className="rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#7a5a12]"
+          <div className="flex flex-wrap gap-3">
+            {detail.canManageEvent && detail.event.status === 'active' ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => runAction(() => endEventAction(detail.event.id))}
+                className="rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#7a5a12]"
+              >
+                End event and lock ledgers
+              </button>
+            ) : null}
+            <Link
+              href={`/programs/events/${detail.event.id}`}
+              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
             >
-              End event and lock ledgers
-            </button>
-          ) : null}
+              Event home
+            </Link>
+          </div>
         </div>
       </section>
 
+      <section className="grid gap-4 xl:grid-cols-2">
+        <WorkspaceCard
+          title="Organizer page"
+          body="Manage participant names, expected amounts, collected payments, and the live contribution picture for this event."
+          href={`/programs/events/${detail.event.id}?side=organizer`}
+          active={workspaceView === 'organizer'}
+          disabled={!hasOrganizerAccess}
+          badge={hasOrganizerAccess ? 'Open workspace' : 'Access needed'}
+        />
+        <WorkspaceCard
+          title="Expenses page"
+          body="Manage categories, expense items, actual amounts, reimbursements, and the finance-side spending story."
+          href={`/programs/events/${detail.event.id}?side=finance`}
+          active={workspaceView === 'finance'}
+          disabled={!hasFinanceAccess}
+          badge={hasFinanceAccess ? 'Open workspace' : 'Access needed'}
+        />
+      </section>
+
       {detail.canViewReconciliation && detail.financialSummary ? (
-        <section className="grid gap-4 md:grid-cols-3">
-          <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-            <p className="text-sm text-[#5f5673]">Total collected</p>
-            <p className="mt-4 text-3xl font-semibold text-[#241c33]">
-              {detail.financialSummary.totalCollected.toLocaleString()}
-            </p>
+        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Detailed analysis</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared event summary</h3>
+                <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
+                  This is the analysis zone for the event itself. Department members can use it for discussion and
+                  leadership can read the same story from the numbers.
+                </p>
+              </div>
+              <p className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                Spend coverage: {collectionCoverage}%
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <p className="text-xs text-[#5f5673]">Total collected</p>
+                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
+              </div>
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <p className="text-xs text-[#5f5673]">Total spent</p>
+                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
+              </div>
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <p className="text-xs text-[#5f5673]">Balance retained</p>
+                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
+              <ProgramsEventSummaryChart
+                totalCollected={totalCollected}
+                totalSpent={totalSpent}
+                balanceRetained={totalBalance}
+              />
+            </div>
           </article>
-          <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-            <p className="text-sm text-[#5f5673]">Total spent</p>
-            <p className="mt-4 text-3xl font-semibold text-[#241c33]">
-              {detail.financialSummary.totalSpent.toLocaleString()}
-            </p>
-          </article>
-          <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-            <p className="text-sm text-[#5f5673]">Balance retained</p>
-            <p className="mt-4 text-3xl font-semibold text-[#241c33]">
-              {detail.financialSummary.balanceRetained.toLocaleString()}
-            </p>
+
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Quick read</p>
+            <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">What the room can see fast</h3>
+            <div className="mt-5 space-y-3">
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <p className="text-sm font-semibold text-[#241c33]">Organizer side</p>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  {detail.participants.length} participants are currently registered for this event.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <p className="text-sm font-semibold text-[#241c33]">Finance side</p>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  {detail.expenseItems.length} expense items are logged across {detail.categories.length} categories.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <p className="text-sm font-semibold text-[#241c33]">Balance visibility</p>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  The event keeps a live balance so the department does not have to manually combine organizer and
+                  finance reports during meetings.
+                </p>
+              </div>
+            </div>
           </article>
         </section>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-          <h3 className="text-2xl font-semibold text-[#241c33]">Contribution ledger</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Organizer-side members add participants and log payments. Balances are always computed live.
-          </p>
+      {workspaceView === null ? (
+        <section className="grid gap-6 xl:grid-cols-2">
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <h3 className="text-2xl font-semibold text-[#241c33]">Recent organizer activity</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Use the Organizer card above to enter deeper contribution work for this event.
+            </p>
+            <div className="mt-5 space-y-3">
+              {recentPayments.length === 0 ? (
+                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                  No payments recorded yet.
+                </p>
+              ) : (
+                recentPayments.map((payment) => {
+                  const participant = detail.participants.find((item) => item.id === payment.participantId);
+                  return (
+                    <div key={payment.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                      <p className="font-semibold text-[#241c33]">{participant?.name || 'Participant'}</p>
+                      <p className="mt-1 text-sm text-[#5f5673]">
+                        Paid {payment.amount.toLocaleString()} on {payment.paymentDate}
+                      </p>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </article>
 
-          {canEditContributions && detail.contributionLedger ? (
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <h3 className="text-2xl font-semibold text-[#241c33]">Recent expense activity</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Use the Expenses card above to enter deeper finance work for this event.
+            </p>
+            <div className="mt-5 space-y-3">
+              {recentExpenses.length === 0 ? (
+                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                  No expense items recorded yet.
+                </p>
+              ) : (
+                recentExpenses.map((item) => (
+                  <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                    <p className="font-semibold text-[#241c33]">{item.description}</p>
+                    <p className="mt-1 text-sm text-[#5f5673]">
+                      Actual: {item.actualAmount ?? '-'} • Status: {item.paymentStatus}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </article>
+        </section>
+      ) : null}
+
+      {workspaceView === 'organizer' ? (
+        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-2xl font-semibold text-[#241c33]">Organizer workspace</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Add participants, track collections, and keep the contribution side ready for review.
+              </p>
+            </div>
+            <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+              {detail.participants.length} participants
+            </div>
+          </div>
+
+          {hasOrganizerAccess && detail.contributionLedger ? (
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Add participant</h4>
@@ -221,15 +418,24 @@ export function ProgramsEventWorkspace({ detail }: { detail: EventDetail }) {
               </p>
             ) : null}
           </div>
-        </article>
+        </section>
+      ) : null}
 
-        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-          <h3 className="text-2xl font-semibold text-[#241c33]">Expense ledger</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Finance-side members create categories, log actuals, and track reimbursement state per item.
-          </p>
+      {workspaceView === 'finance' ? (
+        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-2xl font-semibold text-[#241c33]">Expenses workspace</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Build categories, record actuals, and track reimbursements or paid items from the finance side.
+              </p>
+            </div>
+            <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+              {detail.expenseItems.length} expenses
+            </div>
+          </div>
 
-          {canEditExpenses && detail.expenseLedger ? (
+          {hasFinanceAccess && detail.expenseLedger ? (
             <div className="mt-5 space-y-4">
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Add category</h4>
@@ -302,9 +508,7 @@ export function ProgramsEventWorkspace({ detail }: { detail: EventDetail }) {
                 <select
                   value={paymentStatus}
                   onChange={(event) =>
-                    setPaymentStatus(
-                      event.target.value as 'paid' | 'reimbursement_pending' | 'reimbursed'
-                    )
+                    setPaymentStatus(event.target.value as 'paid' | 'reimbursement_pending' | 'reimbursed')
                   }
                   className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
                 >
@@ -358,8 +562,8 @@ export function ProgramsEventWorkspace({ detail }: { detail: EventDetail }) {
               </p>
             ) : null}
           </div>
-        </article>
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }
