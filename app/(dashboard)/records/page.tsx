@@ -5,9 +5,10 @@ import { DeleteRecordButton } from '@/components/cap/delete-record-button';
 import { getSession } from '@/lib/cap/auth';
 import {
   getDepartmentFieldDefinitions,
-  listDepartmentsForUser,
+  listRecordWorkflowDepartmentsForUser,
   listRecordsForDepartment,
 } from '@/lib/cap/services';
+import type { DepartmentFieldDefinition } from '@/lib/cap/types';
 import { formatCurrency, formatDisplayDate } from '@/lib/cap/utils';
 
 export default async function RecordsPage({
@@ -17,7 +18,39 @@ export default async function RecordsPage({
 }) {
   const params = await searchParams;
   const session = await getSession();
-  const departments = await listDepartmentsForUser(session!.user);
+  const allDepartments = await listRecordWorkflowDepartmentsForUser(session!.user);
+  const fieldDefinitionsByDepartment = Object.fromEntries(
+    await Promise.all(
+      allDepartments.map(async (department) => [department.id, await getDepartmentFieldDefinitions(department.id)])
+    )
+  );
+  const departments = allDepartments.filter(
+    (department) => (fieldDefinitionsByDepartment[department.id] || []).length > 0
+  );
+  const isSystemAdmin =
+    session!.user.systemRole === 'main_admin' || session!.user.systemRole === 'chief_admin';
+
+  if (departments.length === 0) {
+    return (
+      <section className="space-y-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">
+            Historical records
+          </p>
+          <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Weekly record history</h2>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Record history is only available for departments that use the weekly record workflow.
+          </p>
+        </div>
+
+        <div className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 text-sm text-[#5f5673] shadow-sm">
+          Your current access does not include a records-enabled department. Programs uses event workspaces, and
+          Leadership uses its own department area.
+        </div>
+      </section>
+    );
+  }
+
   const selectedDepartmentId = Number(params.departmentId || departments[0]?.id || 1);
   if (!departments.some((department) => department.id === selectedDepartmentId)) {
     notFound();
@@ -26,7 +59,7 @@ export default async function RecordsPage({
     start: params.start,
     end: params.end,
   });
-  const fieldDefinitions = await getDepartmentFieldDefinitions(selectedDepartmentId);
+  const fieldDefinitions = fieldDefinitionsByDepartment[selectedDepartmentId] || [];
 
   return (
     <section className="space-y-5">
@@ -37,7 +70,7 @@ export default async function RecordsPage({
           </p>
           <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Weekly record history</h2>
           <p className="mt-2 text-sm text-[#5f5673]">
-            Review saved submissions, then edit or remove anything that needs cleaning before your ministry data grows.
+            Edit or delete saved submissions before you begin loading clean ministry data.
           </p>
         </div>
 
@@ -46,17 +79,26 @@ export default async function RecordsPage({
             Add weekly record
           </Link>
           <form className="flex flex-wrap gap-3 rounded-2xl border border-[#ddd3f0] bg-white p-3 shadow-sm">
-            <select
-              name="departmentId"
-              defaultValue={String(selectedDepartmentId)}
-              className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
-            >
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+            {isSystemAdmin ? (
+              <select
+                name="departmentId"
+                defaultValue={String(selectedDepartmentId)}
+                className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm text-[#241c33]"
+              >
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <>
+                <input type="hidden" name="departmentId" value={String(selectedDepartmentId)} />
+                <div className="rounded-xl border border-[#d9cfee] bg-[#fbf9fe] px-3 py-2 text-sm font-medium text-[#241c33]">
+                  {departments.find((department) => department.id === selectedDepartmentId)?.name || 'Department'}
+                </div>
+              </>
+            )}
             <input
               type="date"
               name="start"
@@ -79,7 +121,7 @@ export default async function RecordsPage({
       <div className="overflow-hidden rounded-[28px] border border-[#ddd3f0] bg-white shadow-sm">
         {records.length === 0 ? (
           <div className="p-6 text-sm text-[#5f5673]">
-            No records match this filter yet. Clear the dates or add a new weekly record to start the archive.
+            No records match this filter yet. Clear the dates or add a weekly record.
           </div>
         ) : (
           <>
@@ -101,7 +143,7 @@ export default async function RecordsPage({
                     </div>
 
                     <div className="grid gap-2 sm:grid-cols-2">
-                      {fieldDefinitions.map((field) => {
+                      {fieldDefinitions.map((field: DepartmentFieldDefinition) => {
                         const rawValue = values[field.fieldKey];
                         const displayValue =
                           field.fieldType === 'currency'
@@ -143,7 +185,7 @@ export default async function RecordsPage({
                     <th className="px-5 py-4">Date</th>
                     <th className="px-5 py-4">Department</th>
                     <th className="px-5 py-4">Handled by</th>
-                    <th className="px-5 py-4">Details</th>
+                    <th className="px-5 py-4">Key figures</th>
                     <th className="px-5 py-4">Visitors</th>
                     <th className="px-5 py-4">Actions</th>
                   </tr>
@@ -161,7 +203,7 @@ export default async function RecordsPage({
                         <td className="px-5 py-4 text-[#5f5673]">{record.handledByName}</td>
                         <td className="px-5 py-4">
                           <div className="flex flex-wrap gap-2">
-                            {fieldDefinitions.map((field) => {
+                            {fieldDefinitions.map((field: DepartmentFieldDefinition) => {
                               const rawValue = values[field.fieldKey];
                               const displayValue =
                                 field.fieldType === 'currency'
