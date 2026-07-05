@@ -132,6 +132,13 @@ async function ensureProgramsSchema() {
           created_at TEXT DEFAULT (datetime('now'))
         );
 
+        CREATE TABLE IF NOT EXISTS user_context_state (
+          user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          last_context_type TEXT,
+          last_context_id INTEGER,
+          updated_at TEXT DEFAULT (datetime('now'))
+        );
+
         CREATE INDEX IF NOT EXISTS idx_events_department_status
           ON events(department_id, status, created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_event_memberships_user_status
