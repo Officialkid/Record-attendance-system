@@ -27,17 +27,23 @@ export default async function ProgramsPage() {
     isSystemAdmin || session.user.departmentRoles?.[programsDepartment?.id || -1] === 'department_admin';
   const hasFinanceAccess = isSystemAdmin || (financeDepartment ? session.user.departmentIds.includes(financeDepartment.id) : false);
 
-  const [events, eventMemberships, users, standaloneLedgers] = await Promise.all([
+  const [events, eventMemberships] = await Promise.all([
     listProgramEventsForUser(session.user),
     listUserEventMemberships(session.user),
-    isSystemAdmin ? listUsers() : Promise.resolve([]),
-    hasFinanceAccess
-      ? listStandaloneFinanceLedgers(session.user)
-      : Promise.resolve({
-          contributionLedgers: [],
-          expenseLedgers: [],
-        }),
   ]);
+
+  const users = isSystemAdmin
+    ? await listUsers().catch(() => [])
+    : [];
+  const standaloneLedgers = hasFinanceAccess
+    ? await listStandaloneFinanceLedgers(session.user).catch(() => ({
+        contributionLedgers: [],
+        expenseLedgers: [],
+      }))
+    : {
+        contributionLedgers: [],
+        expenseLedgers: [],
+      };
 
   return (
     <ProgramsHub
