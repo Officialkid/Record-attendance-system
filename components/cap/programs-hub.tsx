@@ -179,22 +179,16 @@ export function ProgramsHub({
                   Programs meetings
                 </Link>
                 <Link
-                  href={`/records/new?departmentId=${programsDepartmentId}`}
+                  href="#recent-events"
                   className="rounded-2xl bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a6113]"
                 >
-                  Add Programs record
+                  Open recent events
                 </Link>
                 <Link
-                  href={`/records?departmentId=${programsDepartmentId}`}
+                  href="#past-events"
                   className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
                 >
-                  Programs records archive
-                </Link>
-                <Link
-                  href={`/insights?departmentId=${programsDepartmentId}`}
-                  className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
-                >
-                  Programs insights
+                  Open past events
                 </Link>
               </div>
             ) : null}
@@ -340,7 +334,7 @@ export function ProgramsHub({
         </article>
       </section>
 
-      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <section id="recent-events" className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -479,7 +473,7 @@ export function ProgramsHub({
         </div>
       </section>
 
-      <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+      <section id="past-events" className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Past events</p>
