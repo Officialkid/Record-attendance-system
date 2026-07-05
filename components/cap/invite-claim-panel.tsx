@@ -35,15 +35,14 @@ export function InviteClaimPanel({
   const [autoClaimStarted, setAutoClaimStarted] = useState(false);
 
   const expired = !!invite.expiresAt && new Date(invite.expiresAt).getTime() < Date.now();
-  const used = Boolean(invite.usedAt);
 
   useEffect(() => {
-    if (!signedInUser || expired || used || autoClaimStarted) {
+    if (!signedInUser || expired || autoClaimStarted) {
       return;
     }
 
     setAutoClaimStarted(true);
-    setFeedback({ success: true, message: 'Finishing your invited access and opening the right department...' });
+    setFeedback({ success: true, message: 'Opening your department access and loading the right workspace...' });
 
     startTransition(async () => {
       const result = await acceptDepartmentInviteAction({ token });
@@ -56,7 +55,7 @@ export function InviteClaimPanel({
       router.replace(result.result?.destinationUrl || '/dashboard');
       router.refresh();
     });
-  }, [autoClaimStarted, expired, router, signedInUser, startTransition, token, used]);
+  }, [autoClaimStarted, expired, router, signedInUser, startTransition, token]);
 
   return (
     <section className="rounded-[32px] border border-[#ddd3f0] bg-white p-6 shadow-sm sm:p-7">
@@ -65,7 +64,7 @@ export function InviteClaimPanel({
         Join {invite.departmentName} as a {invite.role === 'department_admin' ? 'department admin' : 'member'}.
       </h2>
       <p className="mt-3 text-sm text-[#5f5673]">
-        This secure link is single-use. Once claimed, CIOM Portal will approve your access to the target department immediately.
+        This secure department link can be shared with the right members of this department. CIOM Portal will approve access immediately each time it is used before expiry.
       </p>
 
       {invite.note ? (
@@ -74,17 +73,13 @@ export function InviteClaimPanel({
         </div>
       ) : null}
 
-      {used ? (
-        <div className="mt-5 rounded-2xl border border-[#f0c2b6] bg-[#fff1ec] p-4 text-sm text-[#a63e1c]">
-          This invite has already been used.
-        </div>
-      ) : expired ? (
+      {expired ? (
         <div className="mt-5 rounded-2xl border border-[#f0c2b6] bg-[#fff1ec] p-4 text-sm text-[#a63e1c]">
           This invite has expired. Ask the department admin for a fresh link.
         </div>
       ) : null}
 
-      {!used && !expired && signedInUser ? (
+      {!expired && signedInUser ? (
         <div className="mt-6 space-y-4">
           <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
             <p className="text-sm font-medium text-[#241c33]">Signed in as</p>
@@ -111,12 +106,12 @@ export function InviteClaimPanel({
             className="inline-flex items-center gap-2 rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             <Link2 className="h-4 w-4" />
-            <span>{pending ? 'Claiming access...' : 'Claim this department access now'}</span>
+            <span>{pending ? 'Opening access...' : 'Use this department access now'}</span>
           </button>
         </div>
       ) : null}
 
-      {!used && !expired && !signedInUser ? (
+      {!expired && !signedInUser ? (
         <div className="mt-6 space-y-5">
           {googleEnabled ? (
             <button
@@ -225,7 +220,7 @@ export function InviteClaimPanel({
               disabled={pending}
               className="inline-flex items-center gap-2 rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
             >
-              <span>{pending ? 'Creating invited account...' : 'Create account and claim access'}</span>
+              <span>{pending ? 'Creating invited account...' : 'Create account and open access'}</span>
               <ArrowRight className="h-4 w-4" />
             </button>
           </form>
