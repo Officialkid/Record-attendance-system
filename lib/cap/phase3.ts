@@ -1204,14 +1204,21 @@ export async function getLeadershipSnapshots(user: SessionLikeUser): Promise<{
 }> {
   await assertLeadershipAccess(user);
 
-  const departments = await allRows<DepartmentLeadershipSnapshot>(
+  const departmentRows = await allRows<{
+    department_id: number;
+    department_name: string;
+    record_count: number | null;
+    latest_record_date: string | null;
+    open_action_item_count: number | null;
+    latest_meeting_date: string | null;
+  }>(
     `SELECT
-      departments.id AS departmentId,
-      departments.name AS departmentName,
-      COALESCE(record_counts.record_count, 0) AS recordCount,
-      record_counts.latest_record_date AS latestRecordDate,
-      COALESCE(action_counts.open_action_item_count, 0) AS openActionItemCount,
-      action_counts.latest_meeting_date AS latestMeetingDate
+      departments.id AS department_id,
+      departments.name AS department_name,
+      COALESCE(record_counts.record_count, 0) AS record_count,
+      record_counts.latest_record_date AS latest_record_date,
+      COALESCE(action_counts.open_action_item_count, 0) AS open_action_item_count,
+      action_counts.latest_meeting_date AS latest_meeting_date
      FROM departments
      LEFT JOIN (
        SELECT department_id, COUNT(*) AS record_count, MAX(record_date) AS latest_record_date
@@ -1229,17 +1236,27 @@ export async function getLeadershipSnapshots(user: SessionLikeUser): Promise<{
      ORDER BY departments.name ASC`
   );
 
-  const events = await allRows<EventLeadershipSnapshot>(
+  const eventRows = await allRows<{
+    event_id: number;
+    event_name: string;
+    status: 'active' | 'ended';
+    ended_at: string | null;
+    total_collected: number | null;
+    total_spent: number | null;
+    balance_retained: number | null;
+    organizer_count: number | null;
+    finance_count: number | null;
+  }>(
     `SELECT
-      events.id AS eventId,
-      events.name AS eventName,
+      events.id AS event_id,
+      events.name AS event_name,
       events.status AS status,
-      events.ended_at AS endedAt,
-      COALESCE(contribution_totals.total_collected, 0) AS totalCollected,
-      COALESCE(expense_totals.total_spent, 0) AS totalSpent,
-      COALESCE(contribution_totals.total_collected, 0) - COALESCE(expense_totals.total_spent, 0) AS balanceRetained,
-      COALESCE(member_totals.organizer_count, 0) AS organizerCount,
-      COALESCE(member_totals.finance_count, 0) AS financeCount
+      events.ended_at AS ended_at,
+      COALESCE(contribution_totals.total_collected, 0) AS total_collected,
+      COALESCE(expense_totals.total_spent, 0) AS total_spent,
+      COALESCE(contribution_totals.total_collected, 0) - COALESCE(expense_totals.total_spent, 0) AS balance_retained,
+      COALESCE(member_totals.organizer_count, 0) AS organizer_count,
+      COALESCE(member_totals.finance_count, 0) AS finance_count
      FROM events
      LEFT JOIN (
        SELECT contribution_ledgers.event_id, SUM(contribution_payments.amount) AS total_collected
@@ -1266,6 +1283,27 @@ export async function getLeadershipSnapshots(user: SessionLikeUser): Promise<{
      ) AS member_totals ON member_totals.event_id = events.id
      ORDER BY events.created_at DESC`
   );
+
+  const departments = departmentRows.map((row) => ({
+    departmentId: row.department_id,
+    departmentName: row.department_name,
+    recordCount: row.record_count || 0,
+    latestRecordDate: row.latest_record_date,
+    openActionItemCount: row.open_action_item_count || 0,
+    latestMeetingDate: row.latest_meeting_date,
+  }));
+
+  const events = eventRows.map((row) => ({
+    eventId: row.event_id,
+    eventName: row.event_name,
+    status: row.status,
+    endedAt: row.ended_at,
+    totalCollected: row.total_collected || 0,
+    totalSpent: row.total_spent || 0,
+    balanceRetained: row.balance_retained || 0,
+    organizerCount: row.organizer_count || 0,
+    financeCount: row.finance_count || 0,
+  }));
 
   return { departments, events };
 }
