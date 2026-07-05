@@ -20,12 +20,12 @@ import { cn } from '@/lib/cap/utils';
 
 const links = [
   { href: '/dashboard', label: 'Dashboard', description: 'Overview and next steps', icon: LayoutDashboard },
-  { href: '/records/new', label: 'Weekly Record', description: 'Submit a new weekly entry', icon: ClipboardList, accent: 'amber' as const },
-  { href: '/records', label: 'Records', description: 'Browse record history', icon: BookCopy, accent: 'lilac' as const },
-  { href: '/insights', label: 'Insights', description: 'See trends and anomalies', icon: BarChart3 },
+  { href: '/records/new', label: 'Weekly Record', description: 'Protocol & Admin entry flow', icon: ClipboardList, accent: 'amber' as const },
+  { href: '/records', label: 'Records', description: 'Protocol & Admin history', icon: BookCopy, accent: 'lilac' as const },
+  { href: '/insights', label: 'Insights', description: 'Record-based trends and anomalies', icon: BarChart3 },
   { href: '/meetings', label: 'Meetings', description: 'Track decisions and follow-up', icon: CalendarDays },
   { href: '/programs', label: 'Programs', description: 'Events, ledgers, and reconciliation', icon: CalendarDays },
-  { href: '/oversight', label: 'Leadership', description: 'Read-only cross-platform visibility', icon: BarChart3 },
+  { href: '/leadership', label: 'Leadership', description: 'Leadership department workspace', icon: BarChart3 },
   { href: '/notifications', label: 'Notifications', description: 'Reminders and updates', icon: Bell },
   { href: '/docs', label: 'Setup Docs', description: 'Environment and launch notes', icon: BookOpenText },
   { href: '/admin', label: 'Admin', description: 'Users, roles, and departments', icon: ShieldCheck },
@@ -47,25 +47,30 @@ function isLinkActive(pathname: string, href: string) {
 export function PortalNav({
   role,
   systemRole,
+  departmentSlugs,
   collapsed = false,
   onNavigate,
   pendingApprovalsCount = 0,
   unreadNotificationsCount = 0,
-  hasLeadershipAccess = false,
 }: {
   role: 'admin' | 'leader' | 'member';
   systemRole: 'main_admin' | 'chief_admin' | 'none';
+  departmentSlugs: string[];
   collapsed?: boolean;
   onNavigate?: () => void;
   pendingApprovalsCount?: number;
   unreadNotificationsCount?: number;
-  hasLeadershipAccess?: boolean;
 }) {
   const pathname = usePathname();
+  const isSystemAdmin = systemRole === 'main_admin' || systemRole === 'chief_admin';
   const canAccessAdmin =
-    systemRole === 'main_admin' || systemRole === 'chief_admin' || role === 'admin' || role === 'leader';
-  const canAccessSetupDocs = systemRole === 'main_admin' || systemRole === 'chief_admin';
-  const canAccessLeadership = canAccessAdmin || hasLeadershipAccess;
+    isSystemAdmin || role === 'admin' || role === 'leader';
+  const canAccessSetupDocs = isSystemAdmin;
+  const hasProgramsAccess = isSystemAdmin || departmentSlugs.includes('programs');
+  const hasLeadershipAccess = isSystemAdmin || departmentSlugs.includes('leadership');
+  const hasRecordAccess =
+    isSystemAdmin ||
+    departmentSlugs.some((slug) => slug === 'protocol-admin' || slug === 'protocol' || slug === 'admin');
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden border-r border-[#3d1f72] bg-[linear-gradient(180deg,#341765_0%,#4B248C_62%,#5b32a3_100%)] px-3 py-5 text-white">
@@ -90,7 +95,15 @@ export function PortalNav({
               return null;
             }
 
-            if (link.label === 'Leadership' && !canAccessLeadership) {
+            if ((link.href === '/records/new' || link.href === '/records' || link.href === '/insights') && !hasRecordAccess) {
+              return null;
+            }
+
+            if (link.href === '/programs' && !hasProgramsAccess) {
+              return null;
+            }
+
+            if (link.label === 'Leadership' && !hasLeadershipAccess) {
               return null;
             }
 
