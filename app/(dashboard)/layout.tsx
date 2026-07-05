@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { PortalShell } from '@/components/cap/portal-shell';
 import { getSession } from '@/lib/cap/auth';
+import { listDepartmentsForUser } from '@/lib/cap/services';
 import { getTimeBasedGreeting } from '@/lib/cap/utils';
 
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,9 @@ export default async function PortalLayout({ children }: { children: React.React
     redirect('/login');
   }
 
+  const departments = await listDepartmentsForUser(session.user);
+  const departmentSlugs = departments.map((department) => department.slug);
+
   return (
     <PortalShell
       role={session.user.role}
@@ -20,6 +24,7 @@ export default async function PortalLayout({ children }: { children: React.React
       name={session.user.name || 'friend'}
       email={session.user.email || 'Unknown email'}
       departmentCount={session.user.departmentIds.length}
+      departmentSlugs={departmentSlugs}
       unreadNotificationsCount={0}
       pendingApprovalsCount={0}
       avatarUrl={session.user.avatarUrl}
