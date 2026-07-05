@@ -209,89 +209,6 @@ const schemaStatements = splitSqlStatements(`
     generated_at TEXT DEFAULT (datetime('now'))
   );
 
-  CREATE TABLE IF NOT EXISTS user_context_state (
-    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    last_context_type TEXT,
-    last_context_id INTEGER,
-    updated_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    department_id INTEGER NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'active',
-    created_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    ended_at TEXT,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS event_memberships (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    side TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'approved',
-    joined_at TEXT DEFAULT (datetime('now')),
-    left_or_ended_at TEXT,
-    remain_visible INTEGER NOT NULL DEFAULT 1,
-    UNIQUE (event_id, user_id, side)
-  );
-
-  CREATE TABLE IF NOT EXISTS contribution_ledgers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    owner_department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
-    event_id INTEGER REFERENCES events(id) ON DELETE SET NULL,
-    default_expected_amount REAL NOT NULL,
-    status TEXT NOT NULL DEFAULT 'active',
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS contribution_participants (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ledger_id INTEGER NOT NULL REFERENCES contribution_ledgers(id) ON DELETE CASCADE,
-    name TEXT NOT NULL,
-    expected_amount REAL NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS contribution_payments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    participant_id INTEGER NOT NULL REFERENCES contribution_participants(id) ON DELETE CASCADE,
-    amount REAL NOT NULL,
-    payment_date TEXT NOT NULL DEFAULT (date('now')),
-    recorded_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS expense_ledgers (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    owner_department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
-    event_id INTEGER REFERENCES events(id) ON DELETE SET NULL,
-    status TEXT NOT NULL DEFAULT 'active',
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS expense_categories (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    ledger_id INTEGER NOT NULL REFERENCES expense_ledgers(id) ON DELETE CASCADE,
-    name TEXT NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS expense_items (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    category_id INTEGER NOT NULL REFERENCES expense_categories(id) ON DELETE CASCADE,
-    description TEXT NOT NULL,
-    expected_amount REAL,
-    actual_amount REAL,
-    paid_by TEXT,
-    payment_status TEXT NOT NULL DEFAULT 'paid',
-    recorded_by_user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TEXT DEFAULT (datetime('now'))
-  );
-
   CREATE INDEX IF NOT EXISTS idx_department_records_department_date
     ON department_records(department_id, record_date DESC);
   CREATE INDEX IF NOT EXISTS idx_record_metrics_field_key
@@ -306,14 +223,6 @@ const schemaStatements = splitSqlStatements(`
     ON department_invites(department_id, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_calendar_meeting_events_meeting
     ON calendar_meeting_events(meeting_id);
-  CREATE INDEX IF NOT EXISTS idx_events_department_status
-    ON events(department_id, status, created_at DESC);
-  CREATE INDEX IF NOT EXISTS idx_event_memberships_user_status
-    ON event_memberships(user_id, status, remain_visible);
-  CREATE INDEX IF NOT EXISTS idx_contribution_ledgers_event
-    ON contribution_ledgers(event_id);
-  CREATE INDEX IF NOT EXISTS idx_expense_ledgers_event
-    ON expense_ledgers(event_id);
 `);
 
 const postMigrationStatements = splitSqlStatements(`
@@ -806,38 +715,22 @@ async function seedDatabase(database: CapDatabase) {
     )
     .run(adminEmail, adminName, adminId);
 
-  async function ensureDepartment(name: string, description: string) {
-    const slug = normalizeSlug(name);
-    const existingDepartment = (await database
-      .prepare('SELECT id FROM departments WHERE slug = ?')
-      .get(slug)) as { id: number } | undefined;
+  const protocolSlug = normalizeSlug('Protocol & Admin');
+  const existingDepartment = (await database
+    .prepare('SELECT id FROM departments WHERE slug = ?')
+    .get(protocolSlug)) as { id: number } | undefined;
 
-    if (existingDepartment?.id) {
-      return existingDepartment.id;
-    }
-
+  let protocolDepartmentId = existingDepartment?.id;
+  if (!protocolDepartmentId) {
     const result = await database
       .prepare('INSERT INTO departments (name, slug, description) VALUES (?, ?, ?)')
-      .run(name, slug, description);
-    return result.lastInsertRowid;
+      .run(
+        'Protocol & Admin',
+        protocolSlug,
+        'Weekly records, visitors, and accountability tracking for the Protocol & Admin team.'
+      );
+    protocolDepartmentId = result.lastInsertRowid;
   }
-
-  const protocolDepartmentId = await ensureDepartment(
-    'Protocol & Admin',
-    'Weekly records, visitors, and accountability tracking for the Protocol & Admin team.'
-  );
-  const financeDepartmentId = await ensureDepartment(
-    'Finance',
-    'Finance-owned ledgers, reconciliation, and ministry stewardship reporting.'
-  );
-  const programsDepartmentId = await ensureDepartment(
-    'Programs',
-    'Temporary camps, retreats, fundraisers, and event-linked organizer and finance work.'
-  );
-  const leadershipDepartmentId = await ensureDepartment(
-    'Leadership',
-    'Read-only leadership visibility across departments, meetings, and events.'
-  );
 
   if (!protocolDepartmentId) {
     throw new Error('Failed to seed the Protocol & Admin department.');
@@ -850,24 +743,6 @@ async function seedDatabase(database: CapDatabase) {
        VALUES (?, ?, 'department_admin', 'approved', 1, datetime('now'), datetime('now'))`
     )
     .run(protocolDepartmentId, adminId);
-
-  for (const departmentId of [
-    financeDepartmentId,
-    programsDepartmentId,
-    leadershipDepartmentId,
-  ]) {
-    if (!departmentId) {
-      continue;
-    }
-
-    await database
-      .prepare(
-        `INSERT OR IGNORE INTO department_memberships
-         (department_id, user_id, role, status, added_directly, requested_at, decided_at)
-         VALUES (?, ?, 'department_admin', 'approved', 1, datetime('now'), datetime('now'))`
-      )
-      .run(departmentId, adminId);
-  }
 
   const fieldDefinitions = [
     ['tithe', 'Tithe', 'currency', 1, true],
