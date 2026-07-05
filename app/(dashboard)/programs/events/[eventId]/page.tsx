@@ -20,6 +20,8 @@ export default async function EventWorkspacePage({
   const resolvedParams = await params;
   const resolvedSearch = await searchParams;
   const eventId = Number(resolvedParams.eventId);
+  const selectedView =
+    resolvedSearch.side === 'organizer' || resolvedSearch.side === 'finance' ? resolvedSearch.side : null;
 
   if (!Number.isFinite(eventId) || eventId <= 0) {
     notFound();
@@ -27,7 +29,7 @@ export default async function EventWorkspacePage({
 
   let detail;
   try {
-    detail = await getEventDetail(session.user, eventId, resolvedSearch.side || null);
+    detail = await getEventDetail(session.user, eventId, selectedView);
   } catch (error) {
     if (error instanceof Error && error.message === 'Event not found.') {
       notFound();
@@ -41,9 +43,9 @@ export default async function EventWorkspacePage({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs workspace</p>
-          <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Event-side execution</h2>
+          <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Event dashboard</h2>
           <p className="mt-2 text-sm text-[#5f5673]">
-            Move between organizer, finance, and admin views without leaving the platform.
+            Enter the event first, then move into Organizer or Expenses from the event cards below.
           </p>
         </div>
 
@@ -55,7 +57,7 @@ export default async function EventWorkspacePage({
         </Link>
       </div>
 
-      <ProgramsEventWorkspace detail={detail} />
+      <ProgramsEventWorkspace detail={detail} selectedView={selectedView} />
     </section>
   );
 }
