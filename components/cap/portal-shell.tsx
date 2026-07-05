@@ -26,6 +26,7 @@ export function PortalShell({
   name,
   email,
   departmentCount,
+  departmentSlugs,
   unreadNotificationsCount,
   pendingApprovalsCount,
   avatarUrl,
@@ -37,6 +38,7 @@ export function PortalShell({
   name: string;
   email: string;
   departmentCount: number;
+  departmentSlugs: string[];
   unreadNotificationsCount: number;
   pendingApprovalsCount: number;
   avatarUrl: string | null;
@@ -67,6 +69,7 @@ export function PortalShell({
             role={role}
             systemRole={systemRole}
             collapsed={collapsed}
+            departmentSlugs={departmentSlugs}
             unreadNotificationsCount={unreadNotificationsCount}
             pendingApprovalsCount={pendingApprovalsCount}
           />
@@ -125,6 +128,7 @@ export function PortalShell({
               <PortalNav
                 role={role}
                 systemRole={systemRole}
+                departmentSlugs={departmentSlugs}
                 unreadNotificationsCount={unreadNotificationsCount}
                 pendingApprovalsCount={pendingApprovalsCount}
                 onNavigate={() => setMobileOpen(false)}
@@ -147,70 +151,70 @@ export function PortalShell({
         <div className="mx-auto max-w-7xl">
           {showDashboardHero ? (
             <header className="mb-8 rounded-[28px] border border-[#ddd3f0] bg-white px-5 py-5 shadow-sm sm:px-6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="max-w-3xl">
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">CIOM Portal</p>
-                  <h1 className="mt-2 text-3xl font-semibold text-[#241c33]">{greeting}, {name}.</h1>
-                  <p className="mt-3 text-sm text-[#5f5673]">
-                    You&apos;re inside the ministry operations portal with{' '}
-                    <span className="font-semibold text-[#241c33]">{systemRole !== 'none' ? systemRole : role}</span>{' '}
-                    access.
-                  </p>
-                  <p className="mt-2 text-sm text-[#7a7190]">Signed in as {email}</p>
-                  <p className="mt-4 max-w-2xl text-sm text-[#5f5673]">
-                    Use Weekly Record for new submissions, Records for history, Insights for trends, Meetings for follow-up, and Notifications for ministry updates.
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-3">
-                  <Link
-                    href="/notifications"
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]"
-                  >
-                    <Bell className="h-4 w-4 text-[#4B248C]" />
-                    <span>Updates</span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#4B248C]">
-                      {unreadNotificationsCount}
-                    </span>
-                  </Link>
-
-                  {canAccessAdmin ? (
-                    <Link
-                      href="/admin"
-                      className="inline-flex items-center gap-2 rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm text-[#241c33]"
-                    >
-                      <ShieldCheck className="h-4 w-4 text-[#b6841a]" />
-                      <span>Invites</span>
-                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#7a5a12]">
-                        {pendingApprovalsCount}
-                      </span>
-                    </Link>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={() => signOut({ callbackUrl: '/login' })}
-                    className="inline-flex items-center rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
-                  >
-                    Sign out
-                  </button>
-
-                  <Link href="/settings/profile" className="inline-flex items-center gap-3 rounded-2xl border border-[#e6def4] bg-white px-4 py-3">
-                    {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarUrl} alt={name} className="h-10 w-10 rounded-2xl object-cover" />
-                    ) : (
-                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ede7f7] text-sm font-semibold text-[#4B248C]">
-                        {initials(name)}
-                      </span>
-                    )}
-                    <span className="text-left">
-                      <span className="block text-sm font-semibold text-[#241c33]">{name}</span>
-                      <span className="block text-xs text-[#7a7190]">Departments assigned: {departmentCount}</span>
-                    </span>
-                  </Link>
-                </div>
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">CIOM Portal</p>
+                <h1 className="mt-2 text-3xl font-semibold text-[#241c33]">{greeting}, {name}.</h1>
+                <p className="mt-3 text-sm text-[#5f5673]">
+                  You&apos;re inside the ministry operations portal with{' '}
+                  <span className="font-semibold text-[#241c33]">{systemRole !== 'none' ? systemRole : role}</span>{' '}
+                  access.
+                </p>
+                <p className="mt-2 text-sm text-[#7a7190]">Signed in as {email}</p>
+                <p className="mt-4 max-w-2xl text-sm text-[#5f5673]">
+                  Use Weekly Record for new submissions, Records for history, Insights for trends, Meetings for follow-up, and Notifications for ministry updates.
+                </p>
               </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <Link
+                  href="/notifications"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]"
+                >
+                  <Bell className="h-4 w-4 text-[#4B248C]" />
+                  <span>Updates</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#4B248C]">
+                    {unreadNotificationsCount}
+                  </span>
+                </Link>
+
+                {canAccessAdmin ? (
+                  <Link
+                    href="/admin"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm text-[#241c33]"
+                  >
+                    <ShieldCheck className="h-4 w-4 text-[#b6841a]" />
+                    <span>Invites</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#7a5a12]">
+                      {pendingApprovalsCount}
+                    </span>
+                  </Link>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => signOut({ callbackUrl: '/login' })}
+                  className="inline-flex items-center rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
+                >
+                  Sign out
+                </button>
+
+                <Link href="/settings/profile" className="inline-flex items-center gap-3 rounded-2xl border border-[#e6def4] bg-white px-4 py-3">
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={avatarUrl} alt={name} className="h-10 w-10 rounded-2xl object-cover" />
+                  ) : (
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ede7f7] text-sm font-semibold text-[#4B248C]">
+                      {initials(name)}
+                    </span>
+                  )}
+                  <span className="text-left">
+                    <span className="block text-sm font-semibold text-[#241c33]">{name}</span>
+                    <span className="block text-xs text-[#7a7190]">Departments assigned: {departmentCount}</span>
+                  </span>
+                </Link>
+              </div>
+            </div>
             </header>
           ) : null}
 
