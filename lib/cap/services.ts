@@ -178,6 +178,37 @@ function buildDepartmentLandingUrl(departmentId: number) {
   return `/records/new?departmentId=${departmentId}&invite=claimed`;
 }
 
+function buildDepartmentLandingUrlBySlug(department: { id: number; slug: string }) {
+  if (department.slug === 'programs') {
+    return '/programs';
+  }
+
+  if (department.slug === 'leadership') {
+    return '/leadership';
+  }
+
+  return buildDepartmentLandingUrl(department.id);
+}
+
+function isRecordsWorkflowDepartment(department: { slug: string }) {
+  return !['programs', 'leadership', 'finance'].includes(department.slug);
+}
+
+async function assertRecordsWorkflowDepartmentId(departmentId: number) {
+  const department = await getDepartmentById(departmentId);
+  if (!department) {
+    throw new Error('Department not found.');
+  }
+
+  if (!isRecordsWorkflowDepartment(department)) {
+    throw new Error(
+      'Weekly records only live inside Protocol & Admin. Programs uses event workspaces, and Leadership uses its own department view.'
+    );
+  }
+
+  return department;
+}
+
 async function getApprovalRecipientsForDepartment(departmentId: number) {
   return allRows<{ email: string; name: string | null }>(
     `SELECT DISTINCT users.email, users.name
@@ -306,11 +337,19 @@ async function mapUser(row: {
     row.id
   );
 
-  const departmentIds = memberships.map((membership) => membership.department_id);
-  const departmentRoles = Object.fromEntries(
+  let departmentIds = memberships.map((membership) => membership.department_id);
+  let departmentRoles = Object.fromEntries(
     memberships.map((membership) => [membership.department_id, membership.role])
   ) as Record<number, DepartmentMembershipRole>;
   const systemRole = row.system_role || 'none';
+
+  if (systemRole === 'main_admin' || systemRole === 'chief_admin') {
+    const allDepartments = await listAllDepartments();
+    departmentIds = allDepartments.map((department) => department.id);
+    departmentRoles = Object.fromEntries(
+      departmentIds.map((departmentId) => [departmentId, departmentRoles[departmentId] || 'member'])
+    ) as Record<number, DepartmentMembershipRole>;
+  }
 
   return {
     id: row.id,
@@ -746,7 +785,7 @@ export function assertMainAdmin(user: SessionLikeUser | null | undefined) {
 export function assertDepartmentAccess(user: SessionLikeUser | null | undefined, departmentId: number) {
   assertAuthenticated(user);
 
-  if (user.systemRole === 'main_admin' || user.systemRole === 'chief_admin' || user.role === 'admin') {
+  if (user.systemRole === 'main_admin' || user.systemRole === 'chief_admin') {
     return;
   }
 
@@ -758,7 +797,7 @@ export function assertDepartmentAccess(user: SessionLikeUser | null | undefined,
 function assertDepartmentAdminAccess(user: SessionLikeUser | null | undefined, departmentId: number) {
   assertAuthenticated(user);
 
-  if (user.systemRole === 'main_admin' || user.systemRole === 'chief_admin' || user.role === 'admin') {
+  if (user.systemRole === 'main_admin' || user.systemRole === 'chief_admin') {
     return;
   }
 
@@ -831,7 +870,7 @@ function getAppBaseUrl() {
 
 export async function listDepartmentsForUser(user: SessionLikeUser) {
   const rows =
-    user.systemRole === 'main_admin' || user.systemRole === 'chief_admin' || user.role === 'admin'
+    user.systemRole === 'main_admin' || user.systemRole === 'chief_admin'
       ? await allRows<{
           id: number;
           name: string;
@@ -856,6 +895,11 @@ export async function listDepartmentsForUser(user: SessionLikeUser) {
         );
 
   return rows.map(mapDepartment);
+}
+
+export async function listRecordWorkflowDepartmentsForUser(user: SessionLikeUser) {
+  const departments = await listDepartmentsForUser(user);
+  return departments.filter((department) => isRecordsWorkflowDepartment(department));
 }
 
 export async function listAllDepartments() {
@@ -1128,7 +1172,7 @@ export async function listPendingDepartmentMemberships(
 
   return rows
     .filter((row) => {
-      if (currentUser.systemRole === 'main_admin' || currentUser.systemRole === 'chief_admin' || currentUser.role === 'admin') {
+      if (currentUser.systemRole === 'main_admin' || currentUser.systemRole === 'chief_admin') {
         return true;
       }
 
@@ -1162,9 +1206,7 @@ export async function countUnreadNotificationsForUser(currentUser: SessionLikeUs
 
 export async function countOpenDepartmentInvitesForUser(currentUser: SessionLikeUser) {
   const invites = await listDepartmentInvites(currentUser);
-  return invites.filter(
-    (invite) => !invite.usedAt && new Date(invite.expiresAt).getTime() >= Date.now()
-  ).length;
+  return invites.filter((invite) => new Date(invite.expiresAt).getTime() >= Date.now()).length;
 }
 
 export async function listDepartmentInvites(currentUser: SessionLikeUser, departmentId?: number) {
@@ -1215,7 +1257,7 @@ export async function listDepartmentInvites(currentUser: SessionLikeUser, depart
 
   return rows
     .filter((row) => {
-      if (currentUser.systemRole === 'main_admin' || currentUser.systemRole === 'chief_admin' || currentUser.role === 'admin') {
+      if (currentUser.systemRole === 'main_admin' || currentUser.systemRole === 'chief_admin') {
         return true;
       }
 
@@ -1303,6 +1345,7 @@ async function getInviteRowByToken(token: string) {
     id: number;
     department_id: number;
     department_name: string;
+    department_slug: string;
     role: DepartmentMembershipRole;
     note: string | null;
     expires_at: string;
@@ -1313,6 +1356,7 @@ async function getInviteRowByToken(token: string) {
       department_invites.id,
       department_invites.department_id,
       departments.name AS department_name,
+      departments.slug AS department_slug,
       department_invites.role,
       department_invites.note,
       department_invites.expires_at,
@@ -1444,6 +1488,7 @@ export async function listRecordsForDepartment(
   range?: { start?: string; end?: string }
 ) {
   assertDepartmentAccess(user, departmentId);
+  await assertRecordsWorkflowDepartmentId(departmentId);
 
   const start = range?.start?.trim() || '';
   const end = range?.end?.trim() || '';
@@ -2265,8 +2310,8 @@ export async function createDepartmentInvite(currentUser: SessionLikeUser, input
     throw new Error('Department not found.');
   }
 
-  const token = generateInviteToken();
   const expiresAt = addDays(new Date(), parsed.expiresInDays).toISOString();
+  const token = generateInviteToken();
   const result = await runStatement(
     `INSERT INTO department_invites
      (department_id, role, note, token_hash, expires_at, created_by_user_id)
@@ -2302,10 +2347,6 @@ async function applyDepartmentInviteToUser(userId: number, currentUserId: number
   const invite = await getInviteRowByToken(token);
   if (!invite) {
     throw new Error('Invite link not found.');
-  }
-
-  if (invite.used_at) {
-    throw new Error('This invite link has already been used.');
   }
 
   if (new Date(invite.expires_at).getTime() < Date.now()) {
@@ -2357,7 +2398,7 @@ async function applyDepartmentInviteToUser(userId: number, currentUserId: number
       userId: invite.created_by_user_id,
       notificationType: 'invite_claimed',
       title: `${invite.department_name} invite claimed`,
-      message: `A one-time invite for ${invite.department_name} has now been claimed successfully.`,
+      message: `A department access link for ${invite.department_name} has been used successfully.`,
       actionUrl: '/admin',
       dedupeKey: `invite-claimed:${invite.id}:${userId}`,
     });
@@ -2367,7 +2408,10 @@ async function applyDepartmentInviteToUser(userId: number, currentUserId: number
     departmentId: invite.department_id,
     departmentName: invite.department_name,
     role: invite.role,
-    destinationUrl: buildDepartmentLandingUrl(invite.department_id),
+    destinationUrl: buildDepartmentLandingUrlBySlug({
+      id: invite.department_id,
+      slug: invite.department_slug,
+    }),
   };
 }
 
@@ -2760,6 +2804,7 @@ export async function createDepartmentRecord(
 ): Promise<CreateRecordResult> {
   assertDepartmentAccess(currentUser, input.departmentId);
   const parsed = createRecordSchema.parse(input);
+  await assertRecordsWorkflowDepartmentId(parsed.departmentId);
 
   if ((currentUser.role === 'member' || currentUser.role === 'leader') && !currentUser.departmentIds.includes(parsed.departmentId)) {
     throw new Error('You cannot create records for this department.');
@@ -2772,6 +2817,9 @@ export async function createDepartmentRecord(
   await assertHandledByMembership(parsed.departmentId, parsed.handledByUserId);
 
   const fieldDefs = await getDepartmentFieldDefinitions(parsed.departmentId);
+  if (fieldDefs.length === 0) {
+    throw new Error('This department does not use the weekly record workflow.');
+  }
   const values = buildRecordValues(fieldDefs, parsed.values);
 
   const recordResult = await runStatement(
@@ -2818,6 +2866,7 @@ export async function updateDepartmentRecord(
   const existing = await getDepartmentRecordById(currentUser, parsed.recordId);
 
   assertDepartmentAccess(currentUser, parsed.departmentId);
+  await assertRecordsWorkflowDepartmentId(parsed.departmentId);
   if (existing.departmentId !== parsed.departmentId) {
     assertDepartmentAccess(currentUser, existing.departmentId);
   }
@@ -2833,6 +2882,9 @@ export async function updateDepartmentRecord(
   await assertHandledByMembership(parsed.departmentId, parsed.handledByUserId);
 
   const fieldDefs = await getDepartmentFieldDefinitions(parsed.departmentId);
+  if (fieldDefs.length === 0) {
+    throw new Error('This department does not use the weekly record workflow.');
+  }
   const values = buildRecordValues(fieldDefs, parsed.values);
 
   await runStatement(
