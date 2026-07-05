@@ -15,35 +15,29 @@ export default async function ProgramsPage() {
     redirect('/login');
   }
 
-  const departments = await listAllDepartments();
-  const programsDepartment = departments.find((department) => department.slug === 'programs') || null;
-  const financeDepartment = departments.find((department) => department.slug === 'finance') || null;
-
   const isSystemAdmin =
     session.user.systemRole === 'main_admin' ||
     session.user.systemRole === 'chief_admin' ||
     session.user.role === 'admin';
+  const emptyLedgers = {
+    contributionLedgers: [],
+    expenseLedgers: [],
+  };
+
+  const departments = await listAllDepartments().catch(() => []);
+  const programsDepartment = departments.find((department) => department.slug === 'programs') || null;
+  const financeDepartment = departments.find((department) => department.slug === 'finance') || null;
   const canManagePrograms =
     isSystemAdmin || session.user.departmentRoles?.[programsDepartment?.id || -1] === 'department_admin';
-  const hasFinanceAccess = isSystemAdmin || (financeDepartment ? session.user.departmentIds.includes(financeDepartment.id) : false);
+  const hasFinanceAccess =
+    isSystemAdmin || (financeDepartment ? session.user.departmentIds.includes(financeDepartment.id) : false);
 
-  const [events, eventMemberships] = await Promise.all([
-    listProgramEventsForUser(session.user),
-    listUserEventMemberships(session.user),
-  ]);
-
-  const users = isSystemAdmin
-    ? await listUsers().catch(() => [])
-    : [];
+  const events = await listProgramEventsForUser(session.user).catch(() => []);
+  const eventMemberships = await listUserEventMemberships(session.user).catch(() => []);
+  const users = isSystemAdmin ? await listUsers().catch(() => []) : [];
   const standaloneLedgers = hasFinanceAccess
-    ? await listStandaloneFinanceLedgers(session.user).catch(() => ({
-        contributionLedgers: [],
-        expenseLedgers: [],
-      }))
-    : {
-        contributionLedgers: [],
-        expenseLedgers: [],
-      };
+    ? await listStandaloneFinanceLedgers(session.user).catch(() => emptyLedgers)
+    : emptyLedgers;
 
   return (
     <ProgramsHub
