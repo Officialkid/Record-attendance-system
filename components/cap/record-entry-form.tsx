@@ -20,6 +20,8 @@ interface RecordEntryFormProps {
   defaultDepartmentId: number;
   defaultRecordDate: string;
   currentUserId: number;
+  allowHandledBySelection?: boolean;
+  allowDepartmentSelection?: boolean;
   existingRecord?: DepartmentRecordDetail;
 }
 
@@ -61,6 +63,8 @@ export function RecordEntryForm({
   defaultDepartmentId,
   defaultRecordDate,
   currentUserId,
+  allowHandledBySelection = true,
+  allowDepartmentSelection = true,
   existingRecord,
 }: RecordEntryFormProps) {
   const router = useRouter();
@@ -189,22 +193,28 @@ export function RecordEntryForm({
         <div className="grid gap-4 md:grid-cols-3">
           <label className="space-y-2">
             <span className="text-sm font-medium text-[#241c33]">Department</span>
-            <select
-              value={departmentId}
-              onChange={(event) => {
-                const nextDepartmentId = Number(event.target.value);
-                setDepartmentId(nextDepartmentId);
-                const nextDefaultMember = departmentMembers[nextDepartmentId]?.[0]?.id || currentUserId;
-                setHandledByUserId(nextDefaultMember);
-              }}
-              className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-            >
-              {departments.map((department) => (
-                <option key={department.id} value={department.id}>
-                  {department.name}
-                </option>
-              ))}
-            </select>
+            {allowDepartmentSelection ? (
+              <select
+                value={departmentId}
+                onChange={(event) => {
+                  const nextDepartmentId = Number(event.target.value);
+                  setDepartmentId(nextDepartmentId);
+                  const nextDefaultMember = departmentMembers[nextDepartmentId]?.[0]?.id || currentUserId;
+                  setHandledByUserId(nextDefaultMember);
+                }}
+                className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+              >
+                {departments.map((department) => (
+                  <option key={department.id} value={department.id}>
+                    {department.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm font-medium text-[#241c33]">
+                {departments.find((department) => department.id === departmentId)?.name || 'Department context'}
+              </div>
+            )}
           </label>
 
           <label className="space-y-2">
@@ -219,17 +229,23 @@ export function RecordEntryForm({
 
           <label className="space-y-2">
             <span className="text-sm font-medium text-[#241c33]">Handled by</span>
-            <select
-              value={handledByUserId}
-              onChange={(event) => setHandledByUserId(Number(event.target.value))}
-              className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-            >
-              {members.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name} ({member.role})
-                </option>
-              ))}
-            </select>
+            {allowHandledBySelection ? (
+              <select
+                value={handledByUserId}
+                onChange={(event) => setHandledByUserId(Number(event.target.value))}
+                className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+              >
+                {members.map((member) => (
+                  <option key={member.id} value={member.id}>
+                    {member.name} ({member.role})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm font-medium text-[#241c33]">
+                {members.find((member) => member.id === handledByUserId)?.name || 'Current signed-in member'}
+              </div>
+            )}
           </label>
         </div>
 
