@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 
 import {
@@ -12,6 +13,95 @@ import {
 } from '@/app/actions/cap';
 import type { EventListItem, UserRecord } from '@/lib/cap/types';
 import { ProgramsEventSummaryChart } from './programs-event-summary-chart';
+
+type EventMembership = {
+  id: number;
+  event_id: number;
+  event_name: string;
+  side: 'organizer' | 'finance' | 'admin';
+  remain_visible: number;
+  status: 'active' | 'ended';
+};
+
+type StandaloneLedgers = {
+  contributionLedgers: Array<{ id: number; name: string; status: string }>;
+  expenseLedgers: Array<{ id: number; name: string; status: string }>;
+};
+
+function EventCard({ event }: { event: EventListItem }) {
+  return (
+    <div className="rounded-[28px] border border-[#e6def4] bg-[#fbf9fe] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-3xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <h4 className="text-xl font-semibold text-[#241c33]">{event.name}</h4>
+            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
+              {event.status === 'active' ? 'Recent event' : 'Past event'}
+            </span>
+          </div>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Open the event dashboard first, then choose Organizer or Expenses from inside the event itself.
+          </p>
+        </div>
+
+        <Link
+          href={`/programs/events/${event.id}`}
+          className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
+        >
+          Open event dashboard
+        </Link>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        {event.userSides.map((side) => (
+          <span key={`${event.id}-${side}`} className="rounded-full border border-[#ddd3f0] bg-white px-3 py-1 text-xs font-semibold text-[#241c33]">
+            {side === 'admin' ? 'Event admin' : side}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-4">
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-xs text-[#5f5673]">Collected</p>
+          <p className="mt-1 text-lg font-semibold text-[#241c33]">{event.totalCollected.toLocaleString()}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-xs text-[#5f5673]">Spent</p>
+          <p className="mt-1 text-lg font-semibold text-[#241c33]">{event.totalSpent.toLocaleString()}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-xs text-[#5f5673]">Balance</p>
+          <p className="mt-1 text-lg font-semibold text-[#241c33]">{event.balanceRetained.toLocaleString()}</p>
+        </div>
+        <div className="rounded-2xl bg-white p-3">
+          <p className="text-xs text-[#5f5673]">Activity</p>
+          <p className="mt-1 text-sm font-semibold text-[#241c33]">
+            {event.participantCount} participants • {event.expenseItemCount} expenses
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-[#241c33]">Detailed analysis preview</p>
+            <p className="text-xs text-[#7a7190]">
+              This is the same financial story leadership can review when the event is opened.
+            </p>
+          </div>
+          <p className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
+            {event.status === 'active' ? 'Live event' : 'Archive view'}
+          </p>
+        </div>
+        <ProgramsEventSummaryChart
+          totalCollected={event.totalCollected}
+          totalSpent={event.totalSpent}
+          balanceRetained={event.balanceRetained}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function ProgramsHub({
   events,
@@ -27,31 +117,13 @@ export function ProgramsHub({
   canManagePrograms: boolean;
   hasFinanceAccess: boolean;
   programsDepartmentId: number | null;
-  eventMemberships: Array<{
-    id: number;
-    event_id: number;
-    event_name: string;
-    side: 'organizer' | 'finance' | 'admin';
-    remain_visible: number;
-    status: 'active' | 'ended';
-  }>;
-  standaloneLedgers: {
-    contributionLedgers: Array<{ id: number; name: string; status: string }>;
-    expenseLedgers: Array<{ id: number; name: string; status: string }>;
-  };
+  eventMemberships: EventMembership[];
+  standaloneLedgers: StandaloneLedgers;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const totalCollected = events.reduce((sum, event) => sum + event.totalCollected, 0);
-  const totalSpent = events.reduce((sum, event) => sum + event.totalSpent, 0);
-  const totalBalance = events.reduce((sum, event) => sum + event.balanceRetained, 0);
-  const totalParticipants = events.reduce((sum, event) => sum + event.participantCount, 0);
-  const totalExpenseItems = events.reduce((sum, event) => sum + event.expenseItemCount, 0);
-  const activeEvents = events.filter((event) => event.status === 'active').length;
-  const endedEvents = events.length - activeEvents;
-  const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
-
   const [eventName, setEventName] = useState('');
   const [expectedAmount, setExpectedAmount] = useState('10000');
   const [selectedEventId, setSelectedEventId] = useState(String(events[0]?.id || ''));
@@ -59,6 +131,15 @@ export function ProgramsHub({
   const [selectedSide, setSelectedSide] = useState<'organizer' | 'finance' | 'admin'>('organizer');
   const [contributionLedgerName, setContributionLedgerName] = useState('');
   const [expenseLedgerName, setExpenseLedgerName] = useState('');
+
+  const totalCollected = events.reduce((sum, event) => sum + event.totalCollected, 0);
+  const totalSpent = events.reduce((sum, event) => sum + event.totalSpent, 0);
+  const totalBalance = events.reduce((sum, event) => sum + event.balanceRetained, 0);
+  const totalParticipants = events.reduce((sum, event) => sum + event.participantCount, 0);
+  const totalExpenseItems = events.reduce((sum, event) => sum + event.expenseItemCount, 0);
+  const recentEvents = events.filter((event) => event.status === 'active');
+  const pastEvents = events.filter((event) => event.status === 'ended');
+  const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
 
   const runAction = (task: () => Promise<{ success: boolean; message: string }>, onSuccess?: () => void) => {
     setError('');
@@ -72,52 +153,105 @@ export function ProgramsHub({
 
       setMessage(result.message);
       onSuccess?.();
+      router.refresh();
     });
   };
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Phase 3</p>
-        <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Programs, events, and reusable ledgers</h2>
-        <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
-          Run event organizer and finance work inside the same portal, keep ended events viewable, and let Finance spin
-          up standalone ledgers without leaving the platform.
-        </p>
+      <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#faf6ff_52%,#f3ebff_100%)] p-6 shadow-sm">
+        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs hub</p>
+            <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Events, meetings, and live department reporting</h2>
+            <p className="mt-3 max-w-3xl text-sm text-[#5f5673]">
+              This page is now the Programs dashboard inside the wider portal. Create events here, open each event to
+              move into Organizer or Expenses, and keep the department&apos;s analysis ready for leadership and committee
+              conversations.
+            </p>
 
-        {programsDepartmentId ? (
-          <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              href={`/meetings?departmentId=${programsDepartmentId}`}
-              className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
-            >
-              Programs meetings
-            </Link>
-            <Link
-              href={`/records/new?departmentId=${programsDepartmentId}`}
-              className="rounded-2xl bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a6113]"
-            >
-              Add Programs record
-            </Link>
-            <Link
-              href={`/records?departmentId=${programsDepartmentId}`}
-              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
-            >
-              Programs records archive
-            </Link>
-            <Link
-              href={`/insights?departmentId=${programsDepartmentId}`}
-              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
-            >
-              Programs insights
-            </Link>
+            {programsDepartmentId ? (
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Link
+                  href={`/meetings?departmentId=${programsDepartmentId}`}
+                  className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
+                >
+                  Programs meetings
+                </Link>
+                <Link
+                  href={`/records/new?departmentId=${programsDepartmentId}`}
+                  className="rounded-2xl bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#8a6113]"
+                >
+                  Add Programs record
+                </Link>
+                <Link
+                  href={`/records?departmentId=${programsDepartmentId}`}
+                  className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
+                >
+                  Programs records archive
+                </Link>
+                <Link
+                  href={`/insights?departmentId=${programsDepartmentId}`}
+                  className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
+                >
+                  Programs insights
+                </Link>
+              </div>
+            ) : null}
           </div>
-        ) : null}
 
-        <p className="mt-4 text-sm text-[#5f5673]">
-          Programs already has a place for meetings and records in the same portal. Use the shortcuts above to store
-          department meetings, department records, and follow-up history alongside event work.
-        </p>
+          <article className="rounded-[28px] border border-[#e6def4] bg-white/90 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Create first</p>
+            <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Create an event name</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Once saved, the event becomes its own mini-dashboard with Organizer, Expenses, recent activity, and
+              analysis in one place.
+            </p>
+
+            {canManagePrograms ? (
+              <div className="mt-4 space-y-3">
+                <input
+                  value={eventName}
+                  onChange={(event) => setEventName(event.target.value)}
+                  placeholder="Jewel Kids Camp 2026"
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  value={expectedAmount}
+                  onChange={(event) => setExpectedAmount(event.target.value)}
+                  placeholder="Default expected amount"
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                />
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() =>
+                    runAction(
+                      () =>
+                        createEventAction({
+                          name: eventName,
+                          defaultExpectedAmount: Number(expectedAmount),
+                        }),
+                      () => {
+                        setEventName('');
+                        setExpectedAmount('10000');
+                      }
+                    )
+                  }
+                  className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  Create event and both ledgers
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+                Programs members can review events here. Event creation is available to Programs admins and super admins.
+              </div>
+            )}
+          </article>
+        </div>
       </section>
 
       {message ? <p className="rounded-2xl bg-[#f4fff4] px-4 py-3 text-sm text-[#255b2f]">{message}</p> : null}
@@ -127,15 +261,15 @@ export function ProgramsHub({
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs board</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Department-wide financial picture</h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Department analysis</p>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">The Programs dashboard for presentations</h3>
               <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
-                This gives Programs the same kind of quick read that Leadership gets, but scoped to the department's
-                own events for planning meetings, reviews, and live presentations.
+                This is the department-level view for payments, expenses, and balances so organizers and leadership can
+                explain what is happening without jumping through many pages.
               </p>
             </div>
             <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
-              {activeEvents} active • {endedEvents} ended
+              {recentEvents.length} recent • {pastEvents.length} past
             </div>
           </div>
 
@@ -163,10 +297,9 @@ export function ProgramsHub({
           <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-[#241c33]">Presentation-ready overview</p>
+                <p className="text-sm font-semibold text-[#241c33]">Detailed analysis board</p>
                 <p className="text-xs text-[#7a7190]">
-                  Use this during committee or leadership discussions to explain collections, spending, and what
-                  remains.
+                  Collections, spending, and remaining balance for committee meetings and leadership review.
                 </p>
               </div>
               <p className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
@@ -182,27 +315,25 @@ export function ProgramsHub({
         </article>
 
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Discussion points</p>
-          <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">What the room can see quickly</h3>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">How it works</p>
+          <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Architecture of the Programs flow</h3>
           <div className="mt-5 space-y-3">
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">Collections vs expenses</p>
+              <p className="text-sm font-semibold text-[#241c33]">1. Create the event</p>
               <p className="mt-2 text-sm text-[#5f5673]">
-                Teams can compare incoming payments against outgoing expenses without opening each ledger one by one.
+                Start here with the event name and the portal generates the event shell plus both ledgers.
               </p>
             </div>
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">Balance retained</p>
+              <p className="text-sm font-semibold text-[#241c33]">2. Open the event dashboard</p>
               <p className="mt-2 text-sm text-[#5f5673]">
-                The remaining balance stays visible for accountability, carry-forward planning, and reporting to
-                leadership.
+                Each event opens into its own mini-dashboard with two pathways: Organizer and Expenses.
               </p>
             </div>
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">Department-only visibility</p>
+              <p className="text-sm font-semibold text-[#241c33]">3. Present the numbers</p>
               <p className="mt-2 text-sm text-[#5f5673]">
-                Programs can present its own event picture in one place, while Leadership still keeps its wider
-                read-only overview elsewhere.
+                The analysis area remains visible so department members and leadership can review one shared story.
               </p>
             </div>
           </div>
@@ -211,204 +342,102 @@ export function ProgramsHub({
 
       <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h3 className="text-2xl font-semibold text-[#241c33]">Programs events</h3>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Recent events</p>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Current event dashboards</h3>
               <p className="mt-2 text-sm text-[#5f5673]">
-                Open an event workspace to manage contributions, expenses, and reconciliation by side.
+                These are the active event spaces where teams can create, discuss, and present live figures.
               </p>
             </div>
             <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
-              {events.length} events
+              {recentEvents.length} active
             </div>
           </div>
 
-          <div className="mt-5 space-y-3">
-            {events.length === 0 ? (
+          <div className="mt-5 space-y-4">
+            {recentEvents.length === 0 ? (
               <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
-                No events yet. Create the first camp, retreat, or fundraiser from the form on this page.
+                No active events yet. Create the first event above and it will become the first dashboard on this page.
               </div>
             ) : (
-              events.map((event) => {
-                const side = event.userSides.includes('admin')
-                  ? 'admin'
-                  : event.userSides.includes('organizer')
-                    ? 'organizer'
-                    : 'finance';
-
-                return (
-                  <div key={event.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <h4 className="text-lg font-semibold text-[#241c33]">{event.name}</h4>
-                        <p className="mt-1 text-sm text-[#5f5673]">
-                          Status: {event.status} • Your sides: {event.userSides.join(', ')}
-                        </p>
-                      </div>
-                      <Link
-                        href={`/programs/events/${event.id}?side=${side}`}
-                        className="rounded-2xl bg-[#4B248C] px-4 py-2 text-sm font-semibold text-white"
-                      >
-                        Open workspace
-                      </Link>
-                    </div>
-
-                    <div className="mt-4 grid gap-3 lg:grid-cols-4">
-                      <div className="rounded-2xl bg-white p-3">
-                        <p className="text-xs text-[#5f5673]">Collected</p>
-                        <p className="mt-1 text-lg font-semibold text-[#241c33]">
-                          {event.totalCollected.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-white p-3">
-                        <p className="text-xs text-[#5f5673]">Spent</p>
-                        <p className="mt-1 text-lg font-semibold text-[#241c33]">
-                          {event.totalSpent.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-white p-3">
-                        <p className="text-xs text-[#5f5673]">Balance</p>
-                        <p className="mt-1 text-lg font-semibold text-[#241c33]">
-                          {event.balanceRetained.toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-white p-3">
-                        <p className="text-xs text-[#5f5673]">Activity</p>
-                        <p className="mt-1 text-sm font-semibold text-[#241c33]">
-                          {event.participantCount} participants • {event.expenseItemCount} expenses
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 rounded-2xl border border-[#ddd3f0] bg-[#f8f5fd] p-3">
-                      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold text-[#241c33]">Event summary board</p>
-                          <p className="text-xs text-[#7a7190]">
-                            Shared visual summary for organizer, finance, and leadership discussions.
-                          </p>
-                        </div>
-                        <p className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
-                          {event.status === 'active' ? 'Live event' : 'Archive view'}
-                        </p>
-                      </div>
-                      <ProgramsEventSummaryChart
-                        totalCollected={event.totalCollected}
-                        totalSpent={event.totalSpent}
-                        balanceRetained={event.balanceRetained}
-                      />
-                    </div>
-                  </div>
-                );
-              })
+              recentEvents.map((event) => <EventCard key={event.id} event={event} />)
             )}
           </div>
         </article>
 
         <div className="space-y-6">
-          {canManagePrograms ? (
-            <>
-              <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold text-[#241c33]">Create a new event</h3>
-                <div className="mt-4 space-y-3">
-                  <input
-                    value={eventName}
-                    onChange={(event) => setEventName(event.target.value)}
-                    placeholder="Jewel Kids Camp 2026"
-                    className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    value={expectedAmount}
-                    onChange={(event) => setExpectedAmount(event.target.value)}
-                    placeholder="Default expected amount"
-                    className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-                  />
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() =>
-                      runAction(
-                        () =>
-                          createEventAction({
-                            name: eventName,
-                            defaultExpectedAmount: Number(expectedAmount),
-                          }),
-                        () => {
-                          setEventName('');
-                          setExpectedAmount('10000');
-                        }
-                      )
-                    }
-                    className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                  >
-                    Create event and both ledgers
-                  </button>
-                </div>
-              </article>
-
-              <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-                <h3 className="text-xl font-semibold text-[#241c33]">Grant event-side access</h3>
-                <div className="mt-4 space-y-3">
-                  <select
-                    value={selectedEventId}
-                    onChange={(event) => setSelectedEventId(event.target.value)}
-                    className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-                  >
-                    {events.map((event) => (
-                      <option key={event.id} value={event.id}>
-                        {event.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={selectedUserId}
-                    onChange={(event) => setSelectedUserId(event.target.value)}
-                    className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-                  >
-                    {users.map((user) => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.email})
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={selectedSide}
-                    onChange={(event) =>
-                      setSelectedSide(event.target.value as 'organizer' | 'finance' | 'admin')
-                    }
-                    className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-                  >
-                    <option value="organizer">Organizer</option>
-                    <option value="finance">Finance</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                  <button
-                    type="button"
-                    disabled={pending || !selectedEventId || !selectedUserId}
-                    onClick={() =>
-                      runAction(() =>
-                        addEventMembershipAction({
-                          eventId: Number(selectedEventId),
-                          userId: Number(selectedUserId),
-                          side: selectedSide,
-                        })
-                      )
-                    }
-                    className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-                  >
-                    Grant side access
-                  </button>
-                </div>
-              </article>
-            </>
+          {canManagePrograms && users.length > 0 ? (
+            <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#241c33]">Grant event-side access</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                One member can be an admin in one department and a normal member elsewhere, so event-side access stays
+                separate and deliberate here.
+              </p>
+              <div className="mt-4 space-y-3">
+                <select
+                  value={selectedEventId}
+                  onChange={(event) => setSelectedEventId(event.target.value)}
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                >
+                  {events.map((event) => (
+                    <option key={event.id} value={event.id}>
+                      {event.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedUserId}
+                  onChange={(event) => setSelectedUserId(event.target.value)}
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                >
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email})
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedSide}
+                  onChange={(event) => setSelectedSide(event.target.value as 'organizer' | 'finance' | 'admin')}
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                >
+                  <option value="organizer">Organizer</option>
+                  <option value="finance">Finance</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <button
+                  type="button"
+                  disabled={pending || !selectedEventId || !selectedUserId}
+                  onClick={() =>
+                    runAction(() =>
+                      addEventMembershipAction({
+                        eventId: Number(selectedEventId),
+                        userId: Number(selectedUserId),
+                        side: selectedSide,
+                      })
+                    )
+                  }
+                  className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  Grant side access
+                </button>
+              </div>
+            </article>
+          ) : canManagePrograms ? (
+            <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#241c33]">Grant event-side access</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Event management is enabled, but the full cross-platform user list is only exposed from the super-admin
+                side. Open the super-admin account when you want to assign event-side access directly.
+              </p>
+            </article>
           ) : null}
 
           <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Ended event visibility</h3>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Keep ended events in your switcher as a record, or hide them to reduce clutter.
+              Keep archived dashboards visible in your switcher or hide them when you want a cleaner daily workspace.
             </p>
             <div className="mt-4 space-y-3">
               {eventMemberships.length === 0 ? (
@@ -417,7 +446,10 @@ export function ProgramsHub({
                 </p>
               ) : (
                 eventMemberships.map((membership) => (
-                  <div key={membership.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                  <div
+                    key={membership.id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4"
+                  >
                     <div>
                       <p className="font-semibold text-[#241c33]">
                         {membership.event_name} • {membership.side}
@@ -447,10 +479,38 @@ export function ProgramsHub({
         </div>
       </section>
 
+      <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Past events</p>
+            <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Archived dashboards and records</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Closed events remain useful as history, reporting evidence, and reference points for future planning.
+            </p>
+          </div>
+          <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+            {pastEvents.length} archived
+          </div>
+        </div>
+
+        <div className="mt-5 space-y-4">
+          {pastEvents.length === 0 ? (
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+              No past events yet. Ended events will stay here for archive viewing and later reporting.
+            </div>
+          ) : (
+            pastEvents.map((event) => <EventCard key={event.id} event={event} />)
+          )}
+        </div>
+      </section>
+
       {hasFinanceAccess ? (
         <section className="grid gap-6 xl:grid-cols-2">
           <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Standalone contribution ledger</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Keep finance work that is not tied to one event in its own reusable contribution ledger.
+            </p>
             <div className="mt-4 space-y-3">
               <input
                 value={contributionLedgerName}
@@ -495,6 +555,9 @@ export function ProgramsHub({
 
           <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Standalone expense ledger</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Use this when Finance needs a ledger that stands outside an event but still belongs in the same platform.
+            </p>
             <div className="mt-4 space-y-3">
               <input
                 value={expenseLedgerName}
