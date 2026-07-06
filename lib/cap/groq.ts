@@ -6,55 +6,60 @@ import type {
   MeetingPeriodSummarySnapshot,
 } from './types';
 
+function formatSnapshotNumber(value: number) {
+  return Number.isInteger(value) ? value.toLocaleString('en-US') : value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+function formatComparison(value: number | null) {
+  if (value === null) {
+    return 'No prior-period comparison is available.';
+  }
+
+  if (value === 0) {
+    return 'This matched the previous period.';
+  }
+
+  return `${value > 0 ? 'This was up' : 'This was down'} ${Math.abs(value).toFixed(1)}% versus the previous period.`;
+}
+
 function buildFallbackExecutiveSummary(snapshot: GeneratedReportSnapshot) {
-  const lines = [
-    `${snapshot.departmentName} recorded ${snapshot.recordCount} reporting week${snapshot.recordCount === 1 ? '' : 's'} between ${snapshot.periodStart} and ${snapshot.periodEnd}.`,
-    `Visitor engagement totaled ${snapshot.totalVisitors}, compared with ${snapshot.previousTotalVisitors} in the previous period.`,
+  const metricLines = snapshot.totals.map(
+    (metric) =>
+      `${metric.label} totaled ${formatSnapshotNumber(metric.total)} across ${snapshot.recordCount} reporting week${
+        snapshot.recordCount === 1 ? '' : 's'
+      }, averaging ${formatSnapshotNumber(metric.average)} per recorded week. ${formatComparison(metric.changePercent)}`
+  );
+
+  const summaryParagraphs = [
+    [
+      `${snapshot.departmentName} recorded ${formatSnapshotNumber(snapshot.recordCount)} reporting week${
+        snapshot.recordCount === 1 ? '' : 's'
+      } between ${snapshot.periodStart} and ${snapshot.periodEnd}.`,
+      `Visitor engagement totaled ${formatSnapshotNumber(snapshot.totalVisitors)}, compared with ${formatSnapshotNumber(snapshot.previousTotalVisitors)} in the previous period.`,
+      ...metricLines,
+      snapshot.netPosition
+        ? `Net position closed at ${formatSnapshotNumber(snapshot.netPosition.total)}. ${formatComparison(snapshot.netPosition.changePercent)}`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' '),
+    [
+      snapshot.anomalyCount > 0
+        ? `${formatSnapshotNumber(snapshot.anomalyCount)} anomaly flag${
+            snapshot.anomalyCount === 1 ? ' was' : 's were'
+          } detected${snapshot.anomalyFields.length > 0 ? ` across ${snapshot.anomalyFields.join(', ')}` : ''}. Leadership should review the flagged records before drawing conclusions.`
+        : 'No anomaly flags were raised across the tracked metrics in this period.',
+      snapshot.handlerSummary[0]
+        ? `${snapshot.handlerSummary[0].handledByName} handled the highest weekly volume with ${formatSnapshotNumber(snapshot.handlerSummary[0].weeksHandled)} submission${
+            snapshot.handlerSummary[0].weeksHandled === 1 ? '' : 's'
+          } and ${formatSnapshotNumber(snapshot.handlerSummary[0].totalVisitors)} recorded visitors.`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' '),
   ];
 
-  if (snapshot.totals.length > 0) {
-    const strongestMetric = [...snapshot.totals].sort(
-      (left, right) => Math.abs(right.changePercent ?? 0) - Math.abs(left.changePercent ?? 0)
-    )[0];
-
-    if (strongestMetric) {
-      const changeText =
-        strongestMetric.changePercent === null
-          ? 'held steady against the previous period.'
-          : `${strongestMetric.changePercent >= 0 ? 'changed by +' : 'changed by '}${strongestMetric.changePercent.toFixed(1)}% versus the previous period.`;
-
-      lines.push(
-        `${strongestMetric.label} closed at ${strongestMetric.total.toFixed(2)} and ${changeText}`
-      );
-    }
-  }
-
-  if (snapshot.netPosition) {
-    const netChange =
-      snapshot.netPosition.changePercent === null
-        ? 'Net position has no prior period for comparison.'
-        : `Net position moved ${snapshot.netPosition.changePercent >= 0 ? 'up' : 'down'} by ${Math.abs(snapshot.netPosition.changePercent).toFixed(1)}% versus the prior period.`;
-    lines.push(
-      `Net position for the selected period was ${snapshot.netPosition.total.toFixed(2)}. ${netChange}`
-    );
-  }
-
-  if (snapshot.anomalyCount > 0) {
-    lines.push(
-      `${snapshot.anomalyCount} anomaly flag${snapshot.anomalyCount === 1 ? ' was' : 's were'} detected across ${snapshot.anomalyFields.join(', ')}. Leadership should review those weeks for context before drawing conclusions.`
-    );
-  } else {
-    lines.push('No anomaly flags were raised across the tracked metrics in this period.');
-  }
-
-  const leadHandler = snapshot.handlerSummary[0];
-  if (leadHandler) {
-    lines.push(
-      `${leadHandler.handledByName} handled the highest weekly volume with ${leadHandler.weeksHandled} submission${leadHandler.weeksHandled === 1 ? '' : 's'} and ${leadHandler.totalVisitors} recorded visitors.`
-    );
-  }
-
-  return lines.join(' ');
+  return summaryParagraphs.join('\n\n');
 }
 
 export function isGroqConfigured() {
@@ -85,11 +90,37 @@ export async function generateExecutiveSummaryWithGroq(snapshot: GeneratedReport
           {
             role: 'system',
             content:
-              'You write concise executive ministry reports. Use only the supplied numbers. Mention trends, anomalies, and follow-up points for leadership in 2 short paragraphs.',
+              'You write concise executive ministry reports. Use only the supplied numbers. Do not invent monthly averages, yearly averages, growth claims, or extra facts. Refer to averages only as per recorded week when they are present in the supplied data. Return exactly 2 short paragraphs of plain text with no markdown, no bullet points, and no headings.',
           },
           {
             role: 'user',
-            content: JSON.stringify(snapshot),
+            content: JSON.stringify({
+              departmentName: snapshot.departmentName,
+              periodType: snapshot.periodType,
+              periodStart: snapshot.periodStart,
+              periodEnd: snapshot.periodEnd,
+              recordCount: snapshot.recordCount,
+              previousRecordCount: snapshot.previousRecordCount,
+              totalVisitors: snapshot.totalVisitors,
+              previousTotalVisitors: snapshot.previousTotalVisitors,
+              anomalyCount: snapshot.anomalyCount,
+              anomalyFields: snapshot.anomalyFields,
+              netPosition: snapshot.netPosition,
+              totals: snapshot.totals.map((metric) => ({
+                label: metric.label,
+                total: metric.total,
+                averagePerRecordedWeek: metric.average,
+                previousTotal: metric.previousTotal,
+                changePercent: metric.changePercent,
+              })),
+              leadHandler: snapshot.handlerSummary[0]
+                ? {
+                    handledByName: snapshot.handlerSummary[0].handledByName,
+                    weeksHandled: snapshot.handlerSummary[0].weeksHandled,
+                    totalVisitors: snapshot.handlerSummary[0].totalVisitors,
+                  }
+                : null,
+            }),
           },
         ],
       }),
@@ -105,7 +136,22 @@ export async function generateExecutiveSummaryWithGroq(snapshot: GeneratedReport
     };
 
     const summary = payload.choices?.[0]?.message?.content?.trim();
-    return summary || fallback;
+    if (!summary) {
+      return fallback;
+    }
+
+    const cleaned = summary
+      .replace(/\*\*/g, '')
+      .replace(/\r/g, '')
+      .trim();
+
+    if (
+      /per month|monthly average|average of .* month|per year|yearly average/i.test(cleaned)
+    ) {
+      return fallback;
+    }
+
+    return cleaned;
   } catch {
     return fallback;
   }
