@@ -69,10 +69,9 @@ export default async function AdminPage({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Leadership</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Cross-platform leadership view</h3>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Quick leadership shortcuts</h3>
               <p className="mt-2 text-sm text-[#5f5673]">
-                Super admins can use this area as the stable leadership workspace for ministry-wide
-                oversight while the deeper standalone leadership route is being hardened.
+                Keep this area light. Use it to jump into the three leadership-facing workspaces without extra explanation blocks.
               </p>
             </div>
             {isLeadershipView ? (
@@ -80,33 +79,6 @@ export default async function AdminPage({
                 Leadership view active
               </span>
             ) : null}
-          </div>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">Department visibility</p>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                Review departments, memberships, and invite status from one workspace.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">Programs oversight</p>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                Jump into Programs to review meetings, records, and event-side reporting.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">Meeting follow-up</p>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                Track committee decisions, uploads, and next actions from the Meetings area.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">Insight review</p>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                Use ministry trends and history as the shared reporting lens for leadership review.
-              </p>
-            </div>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
