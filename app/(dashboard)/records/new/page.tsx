@@ -70,8 +70,9 @@ export default async function NewRecordPage({
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Phase 1</p>
         <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Weekly department record</h2>
         <p className="mt-2 text-sm text-[#5f5673]">
-          Capture fresh ministry figures for the active records department. Use this page only for new weekly submissions;
-          use Records when you need to review or correct something already saved.
+          Capture fresh ministry figures for the active records department. You can enter them manually or import an
+          extracted weekly accounts table here, then use Records whenever you need to review or correct something
+          already saved.
         </p>
       </div>
 
