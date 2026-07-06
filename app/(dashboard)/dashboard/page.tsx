@@ -115,9 +115,16 @@ export default async function DashboardPage() {
 
   const cards = [
     { label: 'Departments', value: summary.departmentCount, icon: Users },
-    { label: 'Weekly records', value: summary.recordCount, icon: ClipboardList },
-    { label: 'Open action items', value: summary.openActionItemCount, icon: CalendarDays },
-    { label: 'Visitors logged', value: summary.visitorCount, icon: TrendingUp },
+    ...(hasRecordAccess
+      ? [
+          { label: 'Weekly records', value: summary.recordCount, icon: ClipboardList },
+          { label: 'Open action items', value: summary.openActionItemCount, icon: CalendarDays },
+          { label: 'Visitors logged', value: summary.visitorCount, icon: TrendingUp },
+        ]
+      : [
+          { label: 'Upcoming meetings', value: summary.upcomingMeetings.length, icon: CalendarDays },
+          { label: 'Open action items', value: summary.openActionItemCount, icon: TrendingUp },
+        ]),
   ];
 
   const onboardingSteps = hasRecordAccess
@@ -235,7 +242,7 @@ export default async function DashboardPage() {
         </section>
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className={`grid gap-4 md:grid-cols-2 ${hasRecordAccess ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
         {cards.map((card) => {
           const Icon = card.icon;
           return (
