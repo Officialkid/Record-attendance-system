@@ -52,6 +52,8 @@ export default async function InsightsPage({
   if (!departments.some((department) => department.id === selectedDepartmentId)) {
     notFound();
   }
+  const canManageReports =
+    isSystemAdmin || session!.user.departmentRoles[selectedDepartmentId] === 'department_admin';
   const insights = await getInsightsForDepartment(session!.user, selectedDepartmentId, {
     start: params.start,
     end: params.end,
@@ -96,34 +98,14 @@ export default async function InsightsPage({
         </form>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <article className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#b6841a]">What this page does</p>
-          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Turns saved records into trends</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Insights reads the department records already submitted in Weekly Record and Records. It does not invent
-            figures. It summarizes what has been saved for the chosen period.
-          </p>
-        </article>
-
-        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">What the AI report uses</p>
-          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Leadership summaries come from this range</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            When you generate a report, CIOM Portal passes this date range, totals, anomalies, and handler summary into
-            the report engine, then stores the resulting summary for later review and DOCX export.
-          </p>
-        </article>
-
-        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Current scope</p>
-          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">This report flow is record-based today</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Meeting minutes, decisions, and action items live under Meetings. The current leadership report flow is
-            driven by records and trends first, while meeting-based reporting can be added as the next reporting pass.
-          </p>
-        </article>
-      </div>
+      <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Insight flow</p>
+        <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Simple record-based reporting</h3>
+        <p className="mt-2 max-w-4xl text-sm text-[#5f5673]">
+          Insights only reads the records already saved for this department, shows the trend lines, and then uses the
+          same range to generate the leadership summary and DOCX export. Meeting-based reporting stays under Meetings.
+        </p>
+      </article>
 
       <InsightsCharts insights={insights} />
 
@@ -132,6 +114,7 @@ export default async function InsightsPage({
         initialStart={params.start}
         initialEnd={params.end}
         reports={generatedReports}
+        canManageReports={canManageReports}
       />
 
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
