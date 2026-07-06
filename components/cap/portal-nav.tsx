@@ -20,8 +20,8 @@ import { cn } from '@/lib/cap/utils';
 
 const links = [
   { href: '/dashboard', label: 'Dashboard', description: 'Overview and next steps', icon: LayoutDashboard },
-  { href: '/records/new', label: 'Weekly Record', description: 'Protocol & Admin entry flow', icon: ClipboardList, accent: 'amber' as const },
-  { href: '/records', label: 'Records', description: 'Protocol & Admin history', icon: BookCopy, accent: 'lilac' as const },
+  { href: '/records/new', label: 'Weekly Record', description: 'Protocols entry flow', icon: ClipboardList, accent: 'amber' as const },
+  { href: '/records', label: 'Records', description: 'Protocols history', icon: BookCopy, accent: 'lilac' as const },
   { href: '/insights', label: 'Insights', description: 'Record-based trends and anomalies', icon: BarChart3 },
   { href: '/meetings', label: 'Meetings', description: 'Track decisions and follow-up', icon: CalendarDays },
   { href: '/programs', label: 'Programs', description: 'Events, ledgers, and reconciliation', icon: CalendarDays },
