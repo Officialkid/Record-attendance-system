@@ -17,11 +17,13 @@ export function InviteClaimPanel({
   token,
   signedInUser,
   googleEnabled,
+  autoClaimError,
 }: {
   invite: DepartmentInvite;
   token: string;
   signedInUser: { name?: string | null; email?: string | null } | null;
   googleEnabled: boolean;
+  autoClaimError?: string | null;
 }) {
   const router = useRouter();
   const [name, setName] = useState('');
@@ -34,6 +36,7 @@ export function InviteClaimPanel({
   const [pending, startTransition] = useTransition();
 
   const expired = !!invite.expiresAt && new Date(invite.expiresAt).getTime() < Date.now();
+  const neverExpires = new Date(invite.expiresAt).getUTCFullYear() >= 2099;
 
   return (
     <section className="rounded-[32px] border border-[#ddd3f0] bg-white p-6 shadow-sm sm:p-7">
@@ -42,7 +45,8 @@ export function InviteClaimPanel({
         Join {invite.departmentName} as a {invite.role === 'department_admin' ? 'department admin' : 'member'}.
       </h2>
       <p className="mt-3 text-sm text-[#5f5673]">
-        This secure department link can be shared with the right members of this department. CIOM Portal will approve access immediately each time it is used before expiry.
+        This secure department link can be shared with the right members of this department. Once someone signs in,
+        CIOM Portal should attach the department automatically and send them to the right workspace.
       </p>
 
       <div className="mt-5 flex flex-wrap gap-2">
@@ -50,7 +54,7 @@ export function InviteClaimPanel({
           {invite.role === 'department_admin' ? 'Department admin access' : 'Member access'}
         </span>
         <span className="rounded-full border border-[#eadfb8] bg-[#fff8eb] px-3 py-1 text-xs font-semibold text-[#8a6113]">
-          {expired ? 'Expired link' : 'Reusable before expiry'}
+          {expired ? 'Expired link' : neverExpires ? 'Reusable with no expiry' : 'Reusable before expiry'}
         </span>
       </div>
 
@@ -63,6 +67,12 @@ export function InviteClaimPanel({
       {expired ? (
         <div className="mt-5 rounded-2xl border border-[#f0c2b6] bg-[#fff1ec] p-4 text-sm text-[#a63e1c]">
           This invite has expired. Ask the department admin for a fresh link.
+        </div>
+      ) : null}
+
+      {autoClaimError ? (
+        <div className="mt-5 rounded-2xl border border-[#f0c2b6] bg-[#fff1ec] p-4 text-sm text-[#a63e1c]">
+          {autoClaimError}
         </div>
       ) : null}
 
@@ -91,7 +101,8 @@ export function InviteClaimPanel({
                 <p className="text-sm font-semibold">Why this link matters</p>
               </div>
               <p className="mt-2 text-sm text-[#5f5673]">
-                This link stays shareable for the department until expiry, so admins do not need to recreate it for every person.
+                This link stays shareable for the department{neverExpires ? ' with no expiry' : ' until expiry'}, so
+                admins do not need to recreate it for every person.
               </p>
             </div>
           </div>
