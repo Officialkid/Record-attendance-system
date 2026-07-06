@@ -48,6 +48,11 @@ export function PortalShell({
   const pathname = usePathname();
   const canAccessAdmin =
     systemRole === 'main_admin' || systemRole === 'chief_admin' || role === 'admin' || role === 'leader';
+  const hasRecordAccess =
+    systemRole === 'main_admin' ||
+    systemRole === 'chief_admin' ||
+    departmentSlugs.some((slug) => slug === 'protocol-admin' || slug === 'protocol' || slug === 'admin');
+  const hasProgramsAccess = systemRole !== 'none' || departmentSlugs.includes('programs');
   const showDashboardHero = pathname === '/dashboard';
 
   useEffect(() => {
@@ -151,85 +156,88 @@ export function PortalShell({
         <div className="mx-auto max-w-7xl">
           {showDashboardHero ? (
             <header className="mb-8 rounded-[28px] border border-[#ddd3f0] bg-white px-5 py-5 shadow-sm sm:px-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">CIOM Portal</p>
-                <h1 className="mt-2 text-3xl font-semibold text-[#241c33]">{greeting}, {name}.</h1>
-                <p className="mt-3 text-sm text-[#5f5673]">
-                  You&apos;re inside the ministry operations portal with{' '}
-                  <span className="font-semibold text-[#241c33]">{systemRole !== 'none' ? systemRole : role}</span>{' '}
-                  access.
-                </p>
-                <div className="mt-4 flex flex-wrap items-center gap-3">
-                  <span className="rounded-full border border-[#e6def4] bg-[#fbf9fe] px-3 py-1 text-xs font-medium text-[#5f5673]">
-                    {departmentCount} departments
-                  </span>
-                  <details className="group relative">
-                    <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#e6def4] bg-white px-3 py-1 text-xs font-medium text-[#241c33]">
-                      <CircleHelp className="h-3.5 w-3.5 text-[#4B248C]" />
-                      <span>More</span>
-                    </summary>
-                    <div className="absolute left-0 top-[calc(100%+10px)] z-20 w-[290px] rounded-2xl border border-[#ddd3f0] bg-white p-4 text-sm text-[#5f5673] shadow-lg">
-                      <p>
-                        Signed in as <span className="font-semibold text-[#241c33]">{email}</span>
-                      </p>
-                      <p className="mt-2">
-                        Use Weekly Record for new submissions, Records for history, Insights for trends, Meetings for follow-up, and Notifications for ministry updates.
-                      </p>
-                    </div>
-                  </details>
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">CIOM Portal</p>
+                  <h1 className="mt-2 text-3xl font-semibold text-[#241c33]">{greeting}, {name}.</h1>
+                  <p className="mt-3 text-sm text-[#5f5673]">
+                    You&apos;re inside the ministry operations portal with{' '}
+                    <span className="font-semibold text-[#241c33]">{systemRole !== 'none' ? systemRole : role}</span>{' '}
+                    access.
+                  </p>
+                  <div className="mt-4 flex flex-wrap items-center gap-3">
+                    <span className="rounded-full border border-[#e6def4] bg-[#fbf9fe] px-3 py-1 text-xs font-medium text-[#5f5673]">
+                      {departmentCount} departments
+                    </span>
+                    <details className="group relative">
+                      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#e6def4] bg-white px-3 py-1 text-xs font-medium text-[#241c33]">
+                        <CircleHelp className="h-3.5 w-3.5 text-[#4B248C]" />
+                        <span>More</span>
+                      </summary>
+                      <div className="absolute left-0 top-[calc(100%+10px)] z-20 w-[290px] rounded-2xl border border-[#ddd3f0] bg-white p-4 text-sm text-[#5f5673] shadow-lg">
+                        <p>
+                          Signed in as <span className="font-semibold text-[#241c33]">{email}</span>
+                        </p>
+                        <p className="mt-2">
+                          {hasRecordAccess
+                            ? 'Use Weekly Record for new submissions, Records for history, Insights for trends, Meetings for follow-up, and Notifications for ministry updates.'
+                            : hasProgramsAccess
+                              ? 'Use Programs for event work, Meetings for follow-up, and Notifications for ministry updates.'
+                              : 'Use Meetings for coordination, Profile for your access details, and Notifications for ministry updates.'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => signOut({ callbackUrl: '/login' })}
+                          className="mt-3 inline-flex rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-3 py-2 text-sm font-medium text-[#241c33]"
+                        >
+                          Sign out
+                        </button>
+                      </div>
+                    </details>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <Link
-                  href="/notifications"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]"
-                >
-                  <Bell className="h-4 w-4 text-[#4B248C]" />
-                  <span>Updates</span>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#4B248C]">
-                    {unreadNotificationsCount}
-                  </span>
-                </Link>
-
-                {canAccessAdmin ? (
+                <div className="flex flex-wrap items-center gap-3">
                   <Link
-                    href="/admin"
-                    className="inline-flex items-center gap-2 rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm text-[#241c33]"
+                    href="/notifications"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]"
                   >
-                    <ShieldCheck className="h-4 w-4 text-[#b6841a]" />
-                    <span>Invites</span>
-                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#7a5a12]">
-                      {pendingApprovalsCount}
+                    <Bell className="h-4 w-4 text-[#4B248C]" />
+                    <span>Updates</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#4B248C]">
+                      {unreadNotificationsCount}
                     </span>
                   </Link>
-                ) : null}
 
-                <button
-                  type="button"
-                  onClick={() => signOut({ callbackUrl: '/login' })}
-                  className="inline-flex items-center rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
-                >
-                  Sign out
-                </button>
+                  {canAccessAdmin ? (
+                    <Link
+                      href="/admin"
+                      className="inline-flex items-center gap-2 rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm text-[#241c33]"
+                    >
+                      <ShieldCheck className="h-4 w-4 text-[#b6841a]" />
+                      <span>Invites</span>
+                      <span className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-[#7a5a12]">
+                        {pendingApprovalsCount}
+                      </span>
+                    </Link>
+                  ) : null}
 
-                <Link href="/settings/profile" className="inline-flex items-center gap-3 rounded-2xl border border-[#e6def4] bg-white px-4 py-3">
-                  {avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={avatarUrl} alt={name} className="h-10 w-10 rounded-2xl object-cover" />
-                  ) : (
-                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ede7f7] text-sm font-semibold text-[#4B248C]">
-                      {initials(name)}
+                  <Link href="/settings/profile" className="inline-flex items-center gap-3 rounded-2xl border border-[#e6def4] bg-white px-4 py-3">
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={avatarUrl} alt={name} className="h-10 w-10 rounded-2xl object-cover" />
+                    ) : (
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ede7f7] text-sm font-semibold text-[#4B248C]">
+                        {initials(name)}
+                      </span>
+                    )}
+                    <span className="text-left">
+                      <span className="block text-sm font-semibold text-[#241c33]">{name}</span>
+                      <span className="block text-xs text-[#7a7190]">Profile</span>
                     </span>
-                  )}
-                  <span className="text-left">
-                    <span className="block text-sm font-semibold text-[#241c33]">{name}</span>
-                    <span className="block text-xs text-[#7a7190]">Profile</span>
-                  </span>
-                </Link>
+                  </Link>
+                </div>
               </div>
-            </div>
             </header>
           ) : null}
 
