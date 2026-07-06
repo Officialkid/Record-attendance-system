@@ -5,6 +5,7 @@ import {
   Document,
   HeadingLevel,
   Packer,
+  PageBreak,
   Paragraph,
   Table,
   TableCell,
@@ -90,10 +91,16 @@ export async function buildGeneratedReportDocx(report: GeneratedReport) {
             alignment: AlignmentType.CENTER,
           }),
           new Paragraph({ text: '' }),
+          new Paragraph(`Reporting weeks: ${snapshot.recordCount}`),
+          new Paragraph(`Visitors: ${snapshot.totalVisitors}`),
+          new Paragraph(`Anomaly flags: ${snapshot.anomalyCount}`),
+          ...(snapshot.netPosition
+            ? [new Paragraph(`Net position: ${formatCurrency(snapshot.netPosition.total)}`)]
+            : []),
           new Paragraph({
-            text: 'Executive Summary',
-            heading: HeadingLevel.HEADING_1,
+            children: [new PageBreak()],
           }),
+          new Paragraph({ text: 'Executive Summary', heading: HeadingLevel.HEADING_1 }),
           ...report.summaryText
             .split(/\n{2,}/)
             .filter(Boolean)
@@ -102,18 +109,11 @@ export async function buildGeneratedReportDocx(report: GeneratedReport) {
                 new Paragraph({
                   children: [new TextRun(block.trim())],
                   spacing: { after: 220 },
-                })
+                }) 
             ),
           new Paragraph({
-            text: 'Operational Snapshot',
-            heading: HeadingLevel.HEADING_1,
+            children: [new PageBreak()],
           }),
-          new Paragraph(`Reporting weeks: ${snapshot.recordCount}`),
-          new Paragraph(`Visitors: ${snapshot.totalVisitors}`),
-          new Paragraph(`Anomaly flags: ${snapshot.anomalyCount}`),
-          ...(snapshot.netPosition
-            ? [new Paragraph(`Net position: ${formatCurrency(snapshot.netPosition.total)}`)]
-            : []),
           new Paragraph({
             text: 'Metric Totals',
             heading: HeadingLevel.HEADING_1,
@@ -133,6 +133,9 @@ export async function buildGeneratedReportDocx(report: GeneratedReport) {
             ],
           }),
           new Paragraph({ text: '' }),
+          new Paragraph({
+            children: [new PageBreak()],
+          }),
           new Paragraph({
             text: 'Handler Accountability',
             heading: HeadingLevel.HEADING_1,
