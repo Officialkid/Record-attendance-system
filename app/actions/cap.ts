@@ -17,6 +17,7 @@ import {
   recordContributionPayment,
   setActiveUserContext,
   setEventVisibility,
+  updateEvent,
 } from '@/lib/cap/phase3';
 import {
   acceptDepartmentInvite,
@@ -884,6 +885,21 @@ export async function endEventAction(eventId: number) {
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Failed to end event.',
+    };
+  }
+}
+
+export async function updateEventAction(input: Parameters<typeof updateEvent>[1]) {
+  try {
+    const user = await requireSessionUser();
+    await updateEvent(user, input);
+    await revalidateProgramsEventPaths(input.eventId);
+    revalidatePath('/leadership');
+    return { success: true, message: 'Event details updated successfully.' };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to update event details.',
     };
   }
 }
