@@ -11,6 +11,7 @@ import {
   deleteEventAction,
   endEventAction,
   recordContributionPaymentAction,
+  updateEventAction,
 } from '@/app/actions/cap';
 import type { EventDetail } from '@/lib/cap/types';
 
@@ -85,6 +86,9 @@ export function ProgramsEventWorkspace({
   const [expenseActualAmount, setExpenseActualAmount] = useState('');
   const [expensePaidBy, setExpensePaidBy] = useState('');
   const [paymentStatus, setPaymentStatus] = useState<'paid' | 'reimbursement_pending' | 'reimbursed'>('paid');
+  const [eventName, setEventName] = useState(detail.event.name);
+  const [eventStatus, setEventStatus] = useState<'active' | 'ended'>(detail.event.status);
+  const [eventEndedAt, setEventEndedAt] = useState(detail.event.endedAt ? detail.event.endedAt.slice(0, 10) : '');
 
   const hasOrganizerAccess = detail.activeSide === 'organizer' || detail.canManageEvent;
   const hasFinanceAccess = detail.activeSide === 'finance' || detail.canManageEvent;
@@ -95,8 +99,8 @@ export function ProgramsEventWorkspace({
   const totalBalance = detail.financialSummary?.balanceRetained || 0;
   const totalExpected = detail.participants.reduce((sum, participant) => sum + participant.expectedAmount, 0);
   const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
-  const recentPayments = detail.payments.slice(0, 5);
-  const recentExpenses = detail.expenseItems.slice(0, 5);
+  const recentPayments = detail.payments.slice(0, 2);
+  const recentExpenses = detail.expenseItems.slice(0, 2);
   const selectedPaymentParticipant =
     detail.participants.find((participant) => String(participant.id) === paymentParticipantId) || null;
 
@@ -214,6 +218,71 @@ export function ProgramsEventWorkspace({
             <p className="mt-2 text-2xl font-semibold text-[#241c33]">{collectionCoverage}%</p>
           </div>
         </div>
+
+        {detail.canManageEvent ? (
+          <div className="mt-5 rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-[#241c33]">Event correction</h3>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  Super admins and event admins can still correct the event name, status, or end date even after closure.
+                </p>
+              </div>
+              <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                Admin only
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <input
+                value={eventName}
+                onChange={(event) => setEventName(event.target.value)}
+                placeholder="Event name"
+                className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
+              />
+              <select
+                value={eventStatus}
+                onChange={(event) => setEventStatus(event.target.value as 'active' | 'ended')}
+                className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
+              >
+                <option value="active">active</option>
+                <option value="ended">ended</option>
+              </select>
+              <input
+                type="date"
+                value={eventEndedAt}
+                onChange={(event) => setEventEndedAt(event.target.value)}
+                disabled={eventStatus === 'active'}
+                className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none disabled:opacity-60"
+              />
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={pending || eventName.trim().length < 3 || (eventStatus === 'ended' && !eventEndedAt)}
+                onClick={() =>
+                  runAction(() =>
+                    updateEventAction({
+                      eventId: detail.event.id,
+                      name: eventName.trim(),
+                      status: eventStatus,
+                      endedAt: eventStatus === 'ended' ? eventEndedAt : null,
+                    })
+                  )
+                }
+                className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                Save event details
+              </button>
+              <p className="text-sm text-[#5f5673]">
+                {eventStatus === 'active'
+                  ? 'The event will stay open and editable.'
+                  : 'Set the correct closure date before saving.'}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
@@ -259,6 +328,14 @@ export function ProgramsEventWorkspace({
                   );
                 })
               )}
+              {detail.payments.length > 2 ? (
+                <Link
+                  href={`/programs/events/${detail.event.id}?side=organizer`}
+                  className="inline-flex rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
+                >
+                  Open organizer page for the full list
+                </Link>
+              ) : null}
             </div>
           </details>
 
@@ -281,6 +358,14 @@ export function ProgramsEventWorkspace({
                   </div>
                 ))
               )}
+              {detail.expenseItems.length > 2 ? (
+                <Link
+                  href={`/programs/events/${detail.event.id}?side=finance`}
+                  className="inline-flex rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
+                >
+                  Open expenses page for the full list
+                </Link>
+              ) : null}
             </div>
           </details>
         </section>
