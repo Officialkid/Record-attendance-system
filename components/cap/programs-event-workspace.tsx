@@ -13,7 +13,6 @@ import {
   recordContributionPaymentAction,
 } from '@/app/actions/cap';
 import type { EventDetail } from '@/lib/cap/types';
-import { ProgramsEventSummaryChart } from './programs-event-summary-chart';
 
 function WorkspaceCard({
   title,
@@ -98,6 +97,8 @@ export function ProgramsEventWorkspace({
   const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
   const recentPayments = detail.payments.slice(0, 5);
   const recentExpenses = detail.expenseItems.slice(0, 5);
+  const selectedPaymentParticipant =
+    detail.participants.find((participant) => String(participant.id) === paymentParticipantId) || null;
 
   useEffect(() => {
     if (detail.participants.length === 0) {
@@ -194,6 +195,25 @@ export function ProgramsEventWorkspace({
             </Link>
           </div>
         </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Collected</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Spent</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Balance</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Coverage</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{collectionCoverage}%</p>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-2">
@@ -214,45 +234,6 @@ export function ProgramsEventWorkspace({
           badge={hasFinanceAccess ? 'Open workspace' : 'Access needed'}
         />
       </section>
-
-      {detail.canViewReconciliation && detail.financialSummary ? (
-        <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm" open>
-          <summary className="cursor-pointer list-none">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Detailed analysis</p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared event summary</h3>
-              </div>
-              <p className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
-                Coverage {collectionCoverage}%
-              </p>
-            </div>
-          </summary>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Collected</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Spent</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Balance</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
-            </div>
-          </div>
-
-          <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
-            <ProgramsEventSummaryChart
-              totalCollected={totalCollected}
-              totalSpent={totalSpent}
-              balanceRetained={totalBalance}
-            />
-          </div>
-        </details>
-      ) : null}
 
       {workspaceView === null ? (
         <section className="grid gap-4 md:grid-cols-2">
@@ -361,7 +342,7 @@ export function ProgramsEventWorkspace({
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Record payment</h4>
                 <p className="text-sm text-[#5f5673]">
-                  Choose the participant whose contribution you are recording.
+                  Choose the participant whose contribution you are recording, then save the exact amount and date.
                 </p>
                 <label className="text-xs font-medium uppercase tracking-[0.18em] text-[#7a7190]">Participant</label>
                 <select
@@ -373,10 +354,15 @@ export function ProgramsEventWorkspace({
                   <option value="">{detail.participants.length === 0 ? 'Add a participant first' : 'Choose participant'}</option>
                   {detail.participants.map((participant) => (
                     <option key={participant.id} value={participant.id}>
-                      {participant.name}
+                      {participant.name} ({participant.amountPaid.toLocaleString()} paid)
                     </option>
                   ))}
                 </select>
+                <p className="text-sm text-[#5f5673]">
+                  {selectedPaymentParticipant
+                    ? `Recording for ${selectedPaymentParticipant.name}. Remaining balance: ${selectedPaymentParticipant.balance.toLocaleString()}.`
+                    : 'The dropdown is where you choose the exact participant receiving this payment entry.'}
+                </p>
                 <input
                   type="number"
                   min="1"
@@ -443,27 +429,27 @@ export function ProgramsEventWorkspace({
               Participants list
             </summary>
             <div className="mt-3 space-y-3">
-              {detail.participants.map((participant) => (
-                <div key={participant.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="font-semibold text-[#241c33]">{participant.name}</p>
-                      <p className="text-sm text-[#5f5673]">
-                        Expected: {participant.expectedAmount.toLocaleString()} • Paid:{' '}
-                        {participant.amountPaid.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
-                      Balance: {participant.balance.toLocaleString()}
-                    </div>
+            {detail.participants.map((participant) => (
+              <div key={participant.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-[#241c33]">{participant.name}</p>
+                    <p className="text-sm text-[#5f5673]">
+                      Expected: {participant.expectedAmount.toLocaleString()} • Paid:{' '}
+                      {participant.amountPaid.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                    Balance: {participant.balance.toLocaleString()}
                   </div>
                 </div>
-              ))}
-              {detail.participants.length === 0 ? (
-                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                  No contribution participants yet.
-                </p>
-              ) : null}
+              </div>
+            ))}
+            {detail.participants.length === 0 ? (
+              <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                No contribution participants yet.
+              </p>
+            ) : null}
             </div>
           </details>
         </section>
@@ -599,20 +585,20 @@ export function ProgramsEventWorkspace({
               Expense items
             </summary>
             <div className="mt-3 space-y-3">
-              {detail.expenseItems.map((item) => (
-                <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                  <p className="font-semibold text-[#241c33]">{item.description}</p>
-                  <p className="mt-1 text-sm text-[#5f5673]">
-                    Expected: {item.expectedAmount ?? '-'} • Actual: {item.actualAmount ?? '-'} • Status:{' '}
-                    {item.paymentStatus}
-                  </p>
-                </div>
-              ))}
-              {detail.expenseItems.length === 0 ? (
-                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                  No expense items yet.
+            {detail.expenseItems.map((item) => (
+              <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <p className="font-semibold text-[#241c33]">{item.description}</p>
+                <p className="mt-1 text-sm text-[#5f5673]">
+                  Expected: {item.expectedAmount ?? '-'} • Actual: {item.actualAmount ?? '-'} • Status:{' '}
+                  {item.paymentStatus}
                 </p>
-              ) : null}
+              </div>
+            ))}
+            {detail.expenseItems.length === 0 ? (
+              <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                No expense items yet.
+              </p>
+            ) : null}
             </div>
           </details>
         </section>
