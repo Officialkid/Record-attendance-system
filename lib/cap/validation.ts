@@ -226,6 +226,10 @@ export const endEventSchema = z.object({
   eventId: z.number().int().positive(),
 });
 
+export const deleteEventSchema = z.object({
+  eventId: z.number().int().positive(),
+});
+
 export const setEventVisibilitySchema = z.object({
   membershipId: z.number().int().positive(),
   remainVisible: z.boolean(),
