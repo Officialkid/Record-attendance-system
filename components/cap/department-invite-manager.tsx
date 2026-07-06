@@ -15,7 +15,7 @@ export function DepartmentInviteManager({
 }) {
   const [departmentId, setDepartmentId] = useState<number>(departments[0]?.id || 1);
   const [role, setRole] = useState<'member' | 'department_admin'>('member');
-  const [expiresInDays, setExpiresInDays] = useState(7);
+  const [expiresInDays, setExpiresInDays] = useState(0);
   const [note, setNote] = useState('');
   const [feedback, setFeedback] = useState('');
   const [latestInviteUrl, setLatestInviteUrl] = useState('');
@@ -26,6 +26,10 @@ export function DepartmentInviteManager({
     () => items.filter((invite) => invite.departmentId === departmentId),
     [departmentId, items]
   );
+  const formatExpiryLabel = (expiresAt: string) =>
+    new Date(expiresAt).getUTCFullYear() >= 2099
+      ? 'No expiry'
+      : `Expires ${new Date(expiresAt).toLocaleString()}`;
 
   return (
     <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
@@ -66,7 +70,6 @@ export function DepartmentInviteManager({
               setItems((current) => [
                 {
                   ...result.invite,
-                  inviteUrl: null,
                   usedAt: null,
                   usedByUserId: null,
                   usedByName: null,
@@ -106,30 +109,38 @@ export function DepartmentInviteManager({
             </select>
           </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-[#241c33]">Expires after</span>
-            <select
-              value={expiresInDays}
-              onChange={(event) => setExpiresInDays(Number(event.target.value))}
-              className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
-            >
-              <option value={1}>1 day</option>
-              <option value={3}>3 days</option>
-              <option value={7}>7 days</option>
-              <option value={14}>14 days</option>
-            </select>
-          </label>
+          <details className="rounded-2xl border border-[#e6def4] bg-white p-4">
+            <summary className="cursor-pointer list-none text-sm font-medium text-[#241c33]">
+              Advanced invite settings
+            </summary>
+            <div className="mt-4 space-y-4">
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-[#241c33]">Expires after</span>
+                <select
+                  value={expiresInDays}
+                  onChange={(event) => setExpiresInDays(Number(event.target.value))}
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
+                >
+                  <option value={0}>Never</option>
+                  <option value={1}>1 day</option>
+                  <option value={3}>3 days</option>
+                  <option value={7}>7 days</option>
+                  <option value={14}>14 days</option>
+                </select>
+              </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-[#241c33]">Note for the invitee</span>
-            <textarea
-              rows={3}
-              value={note}
-              onChange={(event) => setNote(event.target.value)}
-              placeholder="Optional onboarding note or context"
-              className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
-            />
-          </label>
+              <label className="block space-y-2">
+                <span className="text-sm font-medium text-[#241c33]">Note for the invitee</span>
+                <textarea
+                  rows={3}
+                  value={note}
+                  onChange={(event) => setNote(event.target.value)}
+                  placeholder="Optional onboarding note or context"
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
+                />
+              </label>
+            </div>
+          </details>
 
           <button
             type="submit"
@@ -164,7 +175,7 @@ export function DepartmentInviteManager({
           <div className="rounded-3xl border border-[#e6def4] bg-[#fbf9fe] p-4">
             <p className="text-sm font-medium text-[#241c33]">How this helps</p>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Share the department link with everyone meant to join that department. They can sign in or create an account and CIOM Portal will approve that department automatically.
+              Keep one reusable link ready for the department, then copy and share it again whenever a new member needs access.
             </p>
           </div>
 
@@ -179,7 +190,7 @@ export function DepartmentInviteManager({
                   <div>
                     <p className="text-sm font-semibold text-[#241c33]">{invite.departmentName}</p>
                     <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#8a7ca7]">
-                      {invite.role.replace('_', ' ')} - expires {new Date(invite.expiresAt).toLocaleString()}
+                      {invite.role.replace('_', ' ')} - {formatExpiryLabel(invite.expiresAt)}
                     </p>
                   </div>
                   <span
@@ -202,6 +213,19 @@ export function DepartmentInviteManager({
                       : 'Reusable link ready to be shared'}
                   </span>
                 </div>
+                {invite.inviteUrl ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(invite.inviteUrl!);
+                      setFeedback('Department link copied to your clipboard.');
+                    }}
+                    className="mt-3 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2 text-sm font-semibold text-[#4B248C]"
+                  >
+                    <Copy className="h-4 w-4" />
+                    <span>Copy link</span>
+                  </button>
+                ) : null}
               </div>
             ))
           )}
