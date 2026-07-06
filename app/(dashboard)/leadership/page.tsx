@@ -23,6 +23,10 @@ export default async function LeadershipPage() {
   }
 
   const snapshots = await getLeadershipSnapshots(session.user);
+  const activeEvents = snapshots.events.filter((event) => event.status === 'active');
+  const totalCollected = snapshots.events.reduce((sum, event) => sum + event.totalCollected, 0);
+  const totalSpent = snapshots.events.reduce((sum, event) => sum + event.totalSpent, 0);
+  const totalBalance = snapshots.events.reduce((sum, event) => sum + event.balanceRetained, 0);
 
   return (
     <section className="space-y-6">
@@ -34,6 +38,25 @@ export default async function LeadershipPage() {
           Programs and Protocol & Admin while still helping leadership review the same live story from each
           department.
         </p>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Departments</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{snapshots.departments.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Active events</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{activeEvents.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Collected</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Balance</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
@@ -189,6 +212,11 @@ export default async function LeadershipPage() {
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7a7190]">Balance</p>
                     <p className="mt-2 text-2xl font-semibold text-[#241c33]">{event.balanceRetained}</p>
                   </div>
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-[#efe6ff] bg-white p-4 text-sm text-[#5f5673]">
+                  Leadership view keeps this event readable without leaving the department workspace: collections,
+                  spending, retained balance, and whether the event still needs active follow-up.
                 </div>
               </div>
             ))
