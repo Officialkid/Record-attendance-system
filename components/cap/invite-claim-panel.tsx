@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
-import { useEffect, useState, useTransition } from 'react';
-import { ArrowRight, Eye, EyeOff, Link2 } from 'lucide-react';
+import { useState, useTransition } from 'react';
+import { ArrowRight, CheckCircle2, Eye, EyeOff, Link2, ShieldCheck } from 'lucide-react';
 
 import {
   acceptDepartmentInviteAction,
@@ -32,30 +32,8 @@ export function InviteClaimPanel({
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [feedback, setFeedback] = useState<{ success: boolean; message: string } | null>(null);
   const [pending, startTransition] = useTransition();
-  const [autoClaimStarted, setAutoClaimStarted] = useState(false);
 
   const expired = !!invite.expiresAt && new Date(invite.expiresAt).getTime() < Date.now();
-
-  useEffect(() => {
-    if (!signedInUser || expired || autoClaimStarted) {
-      return;
-    }
-
-    setAutoClaimStarted(true);
-    setFeedback({ success: true, message: 'Opening your department access and loading the right workspace...' });
-
-    startTransition(async () => {
-      const result = await acceptDepartmentInviteAction({ token });
-      setFeedback(result);
-      if (!result.success) {
-        setAutoClaimStarted(false);
-        return;
-      }
-
-      router.replace(result.result?.destinationUrl || '/dashboard');
-      router.refresh();
-    });
-  }, [autoClaimStarted, expired, router, signedInUser, startTransition, token]);
 
   return (
     <section className="rounded-[32px] border border-[#ddd3f0] bg-white p-6 shadow-sm sm:p-7">
@@ -66,6 +44,15 @@ export function InviteClaimPanel({
       <p className="mt-3 text-sm text-[#5f5673]">
         This secure department link can be shared with the right members of this department. CIOM Portal will approve access immediately each time it is used before expiry.
       </p>
+
+      <div className="mt-5 flex flex-wrap gap-2">
+        <span className="rounded-full border border-[#ddd3f0] bg-[#fbf9fe] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+          {invite.role === 'department_admin' ? 'Department admin access' : 'Member access'}
+        </span>
+        <span className="rounded-full border border-[#eadfb8] bg-[#fff8eb] px-3 py-1 text-xs font-semibold text-[#8a6113]">
+          {expired ? 'Expired link' : 'Reusable before expiry'}
+        </span>
+      </div>
 
       {invite.note ? (
         <div className="mt-5 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
@@ -88,6 +75,27 @@ export function InviteClaimPanel({
             </p>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-[#e6def4] bg-white p-4">
+              <div className="flex items-center gap-2 text-[#241c33]">
+                <ShieldCheck className="h-4 w-4 text-[#4B248C]" />
+                <p className="text-sm font-semibold">What will happen</p>
+              </div>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                CIOM Portal will attach this department to your account and send you to the right workspace.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-white p-4">
+              <div className="flex items-center gap-2 text-[#241c33]">
+                <CheckCircle2 className="h-4 w-4 text-[#4B248C]" />
+                <p className="text-sm font-semibold">Why this link matters</p>
+              </div>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                This link stays shareable for the department until expiry, so admins do not need to recreate it for every person.
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
             disabled={pending}
@@ -106,7 +114,7 @@ export function InviteClaimPanel({
             className="inline-flex items-center gap-2 rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
           >
             <Link2 className="h-4 w-4" />
-            <span>{pending ? 'Opening access...' : 'Use this department access now'}</span>
+            <span>{pending ? 'Opening access...' : 'Open this department access'}</span>
           </button>
         </div>
       ) : null}
