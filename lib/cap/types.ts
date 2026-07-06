@@ -630,6 +630,13 @@ export interface EndEventInput {
   eventId: number;
 }
 
+export interface UpdateEventInput {
+  eventId: number;
+  name: string;
+  status: EventStatus;
+  endedAt?: string | null;
+}
+
 export interface SetEventVisibilityInput {
   membershipId: number;
   remainVisible: boolean;
