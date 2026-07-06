@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation';
 
 import { getSession } from '@/lib/cap/auth';
 import {
+  getDepartmentFieldDefinitions,
   getInsightsForDepartment,
-  listDepartmentsForUser,
+  listRecordWorkflowDepartmentsForUser,
   listGeneratedReportsForDepartment,
 } from '@/lib/cap/services';
 import { GeneratedReportPanel } from '@/components/cap/generated-report-panel';
@@ -16,7 +17,37 @@ export default async function InsightsPage({
 }) {
   const params = await searchParams;
   const session = await getSession();
-  const departments = await listDepartmentsForUser(session!.user);
+  const allDepartments = await listRecordWorkflowDepartmentsForUser(session!.user);
+  const fieldDefinitionsByDepartment = Object.fromEntries(
+    await Promise.all(
+      allDepartments.map(async (department) => [department.id, await getDepartmentFieldDefinitions(department.id)])
+    )
+  );
+  const departments = allDepartments.filter(
+    (department) => (fieldDefinitionsByDepartment[department.id] || []).length > 0
+  );
+  const isSystemAdmin =
+    session!.user.systemRole === 'main_admin' || session!.user.systemRole === 'chief_admin';
+
+  if (departments.length === 0) {
+    return (
+      <section className="space-y-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Insight engine</p>
+          <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Department trends</h2>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Insight reporting is currently driven by departments that use the weekly record workflow.
+          </p>
+        </div>
+
+        <div className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 text-sm text-[#5f5673] shadow-sm">
+          Your current access does not include a records-enabled department. Programs analysis happens inside Programs
+          events, while Leadership uses its own workspace.
+        </div>
+      </section>
+    );
+  }
+
   const selectedDepartmentId = Number(params.departmentId || departments[0]?.id || 1);
   if (!departments.some((department) => department.id === selectedDepartmentId)) {
     notFound();
@@ -35,24 +66,63 @@ export default async function InsightsPage({
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Insight engine</p>
           <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">{insights.department.name} trends</h2>
           <p className="mt-2 text-sm text-[#5f5673]">
-            Track department metrics over time, net position where applicable, and handler accountability.
+            Track department metrics over time, review anomaly flags, and generate leadership-ready summaries from the
+            selected records range.
           </p>
         </div>
 
         <form className="flex flex-wrap gap-3 rounded-2xl border border-[#ddd3f0] bg-white p-3 shadow-sm">
-          <select name="departmentId" defaultValue={String(selectedDepartmentId)} className="rounded-xl border border-[#d9d0ec] bg-[#faf8ff] px-3 py-2 text-sm text-[#241c33]">
-            {departments.map((department) => (
-              <option key={department.id} value={department.id}>
-                {department.name}
-              </option>
-            ))}
-          </select>
+          {isSystemAdmin ? (
+            <select name="departmentId" defaultValue={String(selectedDepartmentId)} className="rounded-xl border border-[#d9d0ec] bg-[#faf8ff] px-3 py-2 text-sm text-[#241c33]">
+              {departments.map((department) => (
+                <option key={department.id} value={department.id}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <>
+              <input type="hidden" name="departmentId" value={String(selectedDepartmentId)} />
+              <div className="rounded-xl border border-[#d9d0ec] bg-[#faf8ff] px-3 py-2 text-sm font-medium text-[#241c33]">
+                {departments.find((department) => department.id === selectedDepartmentId)?.name || 'Department'}
+              </div>
+            </>
+          )}
           <input type="date" name="start" defaultValue={params.start} className="rounded-xl border border-[#d9d0ec] bg-[#faf8ff] px-3 py-2 text-sm text-[#241c33]" />
           <input type="date" name="end" defaultValue={params.end} className="rounded-xl border border-[#d9d0ec] bg-[#faf8ff] px-3 py-2 text-sm text-[#241c33]" />
           <button type="submit" className="rounded-xl bg-[#4B248C] px-4 py-2 text-sm font-medium text-white">
             Refresh
           </button>
         </form>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <article className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#b6841a]">What this page does</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Turns saved records into trends</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Insights reads the department records already submitted in Weekly Record and Records. It does not invent
+            figures. It summarizes what has been saved for the chosen period.
+          </p>
+        </article>
+
+        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">What the AI report uses</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Leadership summaries come from this range</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            When you generate a report, CIOM Portal passes this date range, totals, anomalies, and handler summary into
+            the report engine, then stores the resulting summary for later review and DOCX export.
+          </p>
+        </article>
+
+        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Current scope</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">This report flow is record-based today</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Meeting minutes, decisions, and action items live under Meetings. The current leadership report flow is
+            driven by records and trends first, while meeting-based reporting can be added as the next reporting pass.
+          </p>
+        </article>
       </div>
 
       <InsightsCharts insights={insights} />
