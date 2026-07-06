@@ -39,6 +39,8 @@ export default async function MeetingsPage({
     : null;
   const users = await listUsersVisibleTo(session!.user);
   const meetingSummaryDocuments = await listGeneratedMeetingSummaryDocuments(session!.user);
+  const totalActionItems = meetings.reduce((sum, meeting) => sum + meeting.actionItems.length, 0);
+  const totalAttachments = meetings.reduce((sum, meeting) => sum + meeting.attachments.length, 0);
 
   return (
     <section className="space-y-6">
@@ -55,6 +57,25 @@ export default async function MeetingsPage({
             Viewing {selectedDepartment.name} meetings
           </p>
         ) : null}
+
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <article className="rounded-2xl border border-[#ddd3f0] bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Meetings</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{meetings.length}</p>
+          </article>
+          <article className="rounded-2xl border border-[#ddd3f0] bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Action items</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalActionItems}</p>
+          </article>
+          <article className="rounded-2xl border border-[#ddd3f0] bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Attachments</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalAttachments}</p>
+          </article>
+          <article className="rounded-2xl border border-[#ddd3f0] bg-white p-4 shadow-sm">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Stored summaries</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{meetingSummaryDocuments.length}</p>
+          </article>
+        </div>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -119,6 +140,9 @@ export default async function MeetingsPage({
                 <p className="mt-2 text-sm text-[#5f5673]">
                   {formatDisplayDate(meeting.meetingDate)} - created by {meeting.createdByName}
                 </p>
+              </div>
+              <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                {meeting.actionItems.length} action items • {meeting.attachments.length} attachments
               </div>
               <div className="space-y-2">
                 <AttachmentUpload meetingId={meeting.id} />
