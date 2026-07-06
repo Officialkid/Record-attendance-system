@@ -303,6 +303,17 @@ export function MeetingForm({
       onSubmit={handleSubmit}
       className="grid gap-4 rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm xl:grid-cols-2"
     >
+      <div className="rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-5 xl:col-span-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Meeting flow</p>
+        <h3 className="mt-2 text-xl font-semibold text-[#241c33]">
+          Capture the meeting once, then let the archive and generated documents carry the rest.
+        </h3>
+        <p className="mt-2 text-sm text-[#5f5673]">
+          Keep the title, agenda, AI summary, and decisions short enough to be readable in leadership review, then add
+          action items only where true follow-up is needed.
+        </p>
+      </div>
+
       <label className="space-y-2">
         <span className="text-sm font-medium text-[#241c33]">Meeting title</span>
         <input
