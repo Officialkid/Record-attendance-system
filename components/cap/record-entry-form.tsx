@@ -4,7 +4,11 @@ import { useMemo, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 
-import { createDepartmentRecordAction, updateDepartmentRecordAction } from '@/app/actions/cap';
+import {
+  createDepartmentRecordAction,
+  importProtocolRecordsAction,
+  updateDepartmentRecordAction,
+} from '@/app/actions/cap';
 import { CopySummaryButton } from './copy-summary-button';
 import type {
   Department,
@@ -76,10 +80,18 @@ export function RecordEntryForm({
   const [visitors, setVisitors] = useState<VisitorRow[]>(toVisitorRows(existingRecord));
   const [feedback, setFeedback] = useState<{ recordId: number; summary: string } | null>(null);
   const [error, setError] = useState('');
+  const [importFeedback, setImportFeedback] = useState('');
+  const [importError, setImportError] = useState('');
+  const [importText, setImportText] = useState('');
+  const [importFile, setImportFile] = useState<File | null>(null);
   const [pending, startTransition] = useTransition();
 
   const fields = useMemo(() => fieldDefinitions[departmentId] || [], [departmentId, fieldDefinitions]);
   const members = useMemo(() => departmentMembers[departmentId] || [], [departmentId, departmentMembers]);
+  const supportsProtocolImport = useMemo(
+    () => ['offering', 'tithe', 'expenses', 'headcount'].every((fieldKey) => fields.some((field) => field.fieldKey === fieldKey)),
+    [fields]
+  );
 
   const handleFieldChange = (fieldKey: string, value: string) => {
     setValues((current) => ({ ...current, [fieldKey]: value }));
@@ -187,8 +199,99 @@ export function RecordEntryForm({
     });
   };
 
+  const handleImport = () => {
+    setImportError('');
+    setImportFeedback('');
+    setFeedback(null);
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set('departmentId', String(departmentId));
+      formData.set('handledByUserId', String(handledByUserId));
+      formData.set('pastedText', importText);
+      if (importFile) {
+        formData.set('document', importFile);
+      }
+
+      const result = await importProtocolRecordsAction(formData);
+      if (!result.success) {
+        setImportError(result.message);
+        return;
+      }
+
+      setImportFeedback(result.message);
+      setImportText('');
+      setImportFile(null);
+      router.refresh();
+    });
+  };
+
   return (
     <div className="space-y-6">
+      {supportsProtocolImport ? (
+        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Quick import</p>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Load protocol records from a document</h3>
+              <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
+                Paste the extracted accounts table or upload the source file. CIOM Portal will read the rows, ignore
+                balance, and create or update the matching weekly dates for this department.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+              Imports use the selected department and handled-by member above.
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+            <label className="space-y-2">
+              <span className="text-sm font-medium text-[#241c33]">Paste extracted table</span>
+              <textarea
+                value={importText}
+                onChange={(event) => setImportText(event.target.value)}
+                rows={10}
+                className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                placeholder="DATE    OFFERING    TITHE    EXPENSES    BALANCE    HEADCOUNT"
+              />
+            </label>
+
+            <div className="space-y-4 rounded-[24px] border border-dashed border-[#d9cfee] bg-[#fbf9fe] p-4">
+              <div>
+                <p className="text-sm font-medium text-[#241c33]">Or upload a file</p>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  Supports `.txt`, `.md`, `.docx`, and `.pdf` files that contain the extracted weekly accounts table.
+                </p>
+              </div>
+              <input
+                type="file"
+                accept=".txt,.md,.docx,.pdf"
+                onChange={(event) => setImportFile(event.target.files?.[0] || null)}
+                className="block w-full text-sm text-[#241c33]"
+              />
+              <p className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
+                {importFile ? `Ready to import: ${importFile.name}` : 'No file selected yet.'}
+              </p>
+              <button
+                type="button"
+                disabled={pending || (!importText.trim() && !importFile)}
+                onClick={handleImport}
+                className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {pending ? 'Importing records...' : 'Import protocol records'}
+              </button>
+            </div>
+          </div>
+
+          {importError ? (
+            <p className="mt-4 rounded-2xl bg-[#fff1ec] px-4 py-3 text-sm text-[#a63e1c]">{importError}</p>
+          ) : null}
+          {importFeedback ? (
+            <p className="mt-4 rounded-2xl bg-[#f4fff4] px-4 py-3 text-sm text-[#255b2f]">{importFeedback}</p>
+          ) : null}
+        </section>
+      ) : null}
+
       <form onSubmit={handleSubmit} className="space-y-6 rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
         <div className="grid gap-4 md:grid-cols-3">
           <label className="space-y-2">
