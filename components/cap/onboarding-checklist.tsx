@@ -20,16 +20,15 @@ export function OnboardingChecklist({
   const remainingCount = steps.length - completedCount;
 
   return (
-    <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#fffdfa_0%,#f8f4ff_48%,#f3edff_100%)] p-6 shadow-sm">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <details className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#fffdfa_0%,#f8f4ff_48%,#f3edff_100%)] p-6 shadow-sm">
+      <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Onboarding guide</p>
           <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">
             Step-by-step, {name || 'friend'}.
           </h2>
           <p className="mt-3 text-sm text-[#5f5673]">
-            Use this checklist to move from first sign-in into confident ministry use. It stays practical: capture
-            your first record, document your first meeting, review the archive, and connect the tools you need next.
+            Open only when you need the guided setup again.
           </p>
         </div>
 
@@ -41,7 +40,7 @@ export function OnboardingChecklist({
             {remainingCount === 0 ? 'You are ready to run the workflow.' : `${remainingCount} step(s) still worth doing.`}
           </p>
         </div>
-      </div>
+      </summary>
 
       <div className="mt-6 grid gap-4 xl:grid-cols-2">
         {steps.map((step, index) => (
@@ -84,6 +83,6 @@ export function OnboardingChecklist({
           </article>
         ))}
       </div>
-    </section>
+    </details>
   );
 }
