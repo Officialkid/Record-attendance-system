@@ -20,6 +20,10 @@ function formatMetricNumber(value: number) {
   return Number.isInteger(value) ? value.toLocaleString() : value.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
+function formatTooltipMetric(value: number | string | undefined) {
+  return formatMetricNumber(Number(value ?? 0));
+}
+
 export function InsightsCharts({ insights }: { insights: InsightsPayload }) {
   return (
     <div className="space-y-6">
@@ -48,7 +52,7 @@ export function InsightsCharts({ insights }: { insights: InsightsPayload }) {
                     <CartesianGrid strokeDasharray="3 3" stroke="#ece4f8" />
                     <XAxis dataKey="recordDate" stroke="#5f5673" />
                     <YAxis stroke="#5f5673" />
-                    <Tooltip formatter={(value: number) => formatMetricNumber(Number(value || 0))} />
+                    <Tooltip formatter={formatTooltipMetric} />
                     <Line
                       type="monotone"
                       dataKey="value"
@@ -96,7 +100,7 @@ export function InsightsCharts({ insights }: { insights: InsightsPayload }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#ece4f8" />
                 <XAxis dataKey="recordDate" stroke="#5f5673" />
                 <YAxis stroke="#5f5673" />
-                <Tooltip formatter={(value: number) => formatMetricNumber(Number(value || 0))} />
+                <Tooltip formatter={formatTooltipMetric} />
                 <Area type="monotone" dataKey="weeklyNet" name="Weekly net" stroke="#C9A461" fill="#f2e4c1" />
                 <Area
                   type="monotone"
