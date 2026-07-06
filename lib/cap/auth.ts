@@ -90,7 +90,7 @@ async function getApprovedDepartmentAccess(userId: number) {
     return {
       departmentIds: allDepartmentIds,
       departmentRoles: Object.fromEntries(
-        allDepartmentIds.map((departmentId) => [departmentId, membershipDepartmentRoles[departmentId] || 'member'])
+        allDepartmentIds.map((departmentId) => [departmentId, membershipDepartmentRoles[departmentId] || 'department_admin'])
       ) as Record<number, DepartmentMembershipRole>,
     };
   }
