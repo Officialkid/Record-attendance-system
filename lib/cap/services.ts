@@ -174,6 +174,53 @@ function buildInviteUrl(token: string) {
   return `${getBaseUrl()}/invite/${token}`;
 }
 
+function resolveInviteExpiryDate(expiresInDays: number) {
+  return expiresInDays <= 0
+    ? new Date('2099-12-31T23:59:59.000Z').toISOString()
+    : addDays(new Date(), expiresInDays).toISOString();
+}
+
+async function resolveInviteClaimUserId(currentUser: SessionLikeUser) {
+  const currentUserId = Number(currentUser.id);
+  if (Number.isFinite(currentUserId) && currentUserId > 0) {
+    const existingById = await firstRow<{ id: number }>(
+      `SELECT id
+       FROM users
+       WHERE id = ?`,
+      currentUserId
+    );
+
+    if (existingById?.id) {
+      return existingById.id;
+    }
+  }
+
+  const normalizedEmail = normalizeEmail(currentUser.email || '');
+  if (!normalizedEmail) {
+    throw new Error('Your signed-in account is missing an email address. Sign in again and retry the invite.');
+  }
+
+  const existingByEmail = await firstRow<{ id: number }>(
+    `SELECT id
+     FROM users
+     WHERE lower(email) = lower(?)`,
+    normalizedEmail
+  );
+
+  if (existingByEmail?.id) {
+    return existingByEmail.id;
+  }
+
+  const created = await runStatement(
+    `INSERT INTO users (name, email, role, password_hash, must_change_password, status, system_role)
+     VALUES (?, ?, 'member', '', 0, 'pending', 'none')`,
+    currentUser.name?.trim() || normalizedEmail,
+    normalizedEmail
+  );
+
+  return Number(created.lastInsertRowid);
+}
+
 function buildDepartmentLandingUrl(departmentId: number) {
   return `/records/new?departmentId=${departmentId}&invite=claimed`;
 }
@@ -291,6 +338,7 @@ function mapDepartmentInvite(row: {
   department_id: number;
   department_name: string;
   role: DepartmentMembershipRole;
+  token?: string | null;
   note: string | null;
   expires_at: string;
   used_at: string | null;
@@ -305,7 +353,8 @@ function mapDepartmentInvite(row: {
     departmentId: row.department_id,
     departmentName: row.department_name,
     role: row.role,
-    inviteUrl: null,
+    inviteUrl: row.token ? buildInviteUrl(row.token) : null,
+    token: row.token || null,
     note: row.note,
     expiresAt: row.expires_at,
     usedAt: row.used_at,
@@ -347,7 +396,7 @@ async function mapUser(row: {
     const allDepartments = await listAllDepartments();
     departmentIds = allDepartments.map((department) => department.id);
     departmentRoles = Object.fromEntries(
-      departmentIds.map((departmentId) => [departmentId, departmentRoles[departmentId] || 'member'])
+      departmentIds.map((departmentId) => [departmentId, departmentRoles[departmentId] || 'department_admin'])
     ) as Record<number, DepartmentMembershipRole>;
   }
 
@@ -387,7 +436,7 @@ function mapRecord(row: {
     handledByUserId: row.handled_by_user_id,
     handledByName: row.handled_by_name,
     values: parseJsonValue<Record<string, unknown>>(row.values_json, {}),
-    visitorCount: row.visitor_count,
+    visitorCount: Number(row.visitor_count || 0),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -1224,6 +1273,7 @@ export async function listDepartmentInvites(currentUser: SessionLikeUser, depart
     department_id: number;
     department_name: string;
     role: DepartmentMembershipRole;
+    token: string | null;
     note: string | null;
     expires_at: string;
     used_at: string | null;
@@ -1238,6 +1288,7 @@ export async function listDepartmentInvites(currentUser: SessionLikeUser, depart
       department_invites.department_id,
       departments.name AS department_name,
       department_invites.role,
+      department_invites.token,
       department_invites.note,
       department_invites.expires_at,
       department_invites.used_at,
@@ -1655,16 +1706,17 @@ export async function getInsightsForDepartment(
 
   for (const metric of metrics) {
     const current = metricGroups.get(metric.field_key) || [];
+    const numericValue = Number(metric.numeric_value || 0);
     current.push({
       recordId: metric.record_id,
       recordDate: metric.record_date,
-      value: metric.numeric_value,
+      value: numericValue,
       label: metric.label,
     });
     metricGroups.set(metric.field_key, current);
 
     const recordMetrics = metricsByRecordId.get(metric.record_id) || new Map<string, number>();
-    recordMetrics.set(metric.field_key, metric.numeric_value);
+    recordMetrics.set(metric.field_key, numericValue);
     metricsByRecordId.set(metric.record_id, recordMetrics);
   }
 
@@ -2210,6 +2262,18 @@ export async function createDepartment(currentUser: SessionLikeUser, input: Crea
   );
 
   const departmentId = Number(result.lastInsertRowid);
+  await runStatement(
+    `INSERT INTO department_memberships
+     (department_id, user_id, role, status, added_directly, requested_at, decided_at)
+     VALUES (?, ?, 'department_admin', 'approved', 1, datetime('now'), datetime('now'))
+     ON CONFLICT(department_id, user_id) DO UPDATE SET
+       role = 'department_admin',
+       status = 'approved',
+       added_directly = 1,
+       decided_at = datetime('now')`,
+    departmentId,
+    Number(currentUser.id)
+  );
   await writeAuditLog(Number(currentUser.id), 'create', 'department', departmentId, parsed);
   return departmentId;
 }
@@ -2310,15 +2374,16 @@ export async function createDepartmentInvite(currentUser: SessionLikeUser, input
     throw new Error('Department not found.');
   }
 
-  const expiresAt = addDays(new Date(), parsed.expiresInDays).toISOString();
+  const expiresAt = resolveInviteExpiryDate(parsed.expiresInDays);
   const token = generateInviteToken();
   const result = await runStatement(
     `INSERT INTO department_invites
-     (department_id, role, note, token_hash, expires_at, created_by_user_id)
-     VALUES (?, ?, ?, ?, ?, ?)`,
+     (department_id, role, note, token, token_hash, expires_at, created_by_user_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     parsed.departmentId,
     parsed.role,
     parsed.note?.trim() || null,
+    token,
     hashInviteToken(token),
     expiresAt,
     Number(currentUser.id)
@@ -2339,6 +2404,7 @@ export async function createDepartmentInvite(currentUser: SessionLikeUser, input
     role: parsed.role,
     note: parsed.note?.trim() || null,
     expiresAt,
+    token,
     inviteUrl: buildInviteUrl(token),
   };
 }
@@ -2490,7 +2556,8 @@ export async function acceptDepartmentInvite(currentUser: SessionLikeUser, input
   assertAuthenticated(currentUser);
   const parsed = acceptDepartmentInviteSchema.parse(input);
 
-  const result = await applyDepartmentInviteToUser(Number(currentUser.id), Number(currentUser.id), parsed.token);
+  const resolvedUserId = await resolveInviteClaimUserId(currentUser);
+  const result = await applyDepartmentInviteToUser(resolvedUserId, resolvedUserId, parsed.token);
   return {
     ...result,
     email: currentUser.email || null,
@@ -2945,6 +3012,65 @@ export async function deleteDepartmentRecord(currentUser: SessionLikeUser, recor
     values: existing.values,
     visitors: existing.visitors,
   });
+}
+
+export async function importDepartmentRecords(
+  currentUser: SessionLikeUser,
+  input: {
+    departmentId: number;
+    handledByUserId: number;
+    rows: Array<{
+      recordDate: string;
+      values: Record<string, unknown>;
+    }>;
+  }
+) {
+  assertDepartmentAccess(currentUser, input.departmentId);
+  await assertRecordsWorkflowDepartmentId(input.departmentId);
+  await assertHandledByMembership(input.departmentId, input.handledByUserId);
+
+  let createdCount = 0;
+  let updatedCount = 0;
+
+  for (const row of input.rows) {
+    const existing = await firstRow<{ id: number }>(
+      `SELECT id
+       FROM department_records
+       WHERE department_id = ? AND record_date = ?
+       ORDER BY id ASC
+       LIMIT 1`,
+      input.departmentId,
+      row.recordDate
+    );
+
+    if (existing?.id) {
+      await updateDepartmentRecord(currentUser, {
+        recordId: existing.id,
+        departmentId: input.departmentId,
+        recordDate: row.recordDate,
+        handledByUserId: input.handledByUserId,
+        values: row.values,
+        visitors: [],
+      });
+      updatedCount += 1;
+      continue;
+    }
+
+    await createDepartmentRecord(currentUser, {
+      departmentId: input.departmentId,
+      recordDate: row.recordDate,
+      handledByUserId: input.handledByUserId,
+      values: row.values,
+      visitors: [],
+    });
+    createdCount += 1;
+  }
+
+  return {
+    createdCount,
+    updatedCount,
+    importedCount: createdCount + updatedCount,
+  };
 }
 
 async function createUserNotification(input: {
