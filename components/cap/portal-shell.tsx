@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { signOut } from 'next-auth/react';
-import { Bell, ChevronLeft, ChevronRight, Menu, ShieldCheck, X } from 'lucide-react';
+import { Bell, ChevronLeft, ChevronRight, CircleHelp, Menu, ShieldCheck, X } from 'lucide-react';
 
 import { PortalNav } from '@/components/cap/portal-nav';
 import { cn } from '@/lib/cap/utils';
@@ -160,10 +160,25 @@ export function PortalShell({
                   <span className="font-semibold text-[#241c33]">{systemRole !== 'none' ? systemRole : role}</span>{' '}
                   access.
                 </p>
-                <p className="mt-2 text-sm text-[#7a7190]">Signed in as {email}</p>
-                <p className="mt-4 max-w-2xl text-sm text-[#5f5673]">
-                  Use Weekly Record for new submissions, Records for history, Insights for trends, Meetings for follow-up, and Notifications for ministry updates.
-                </p>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <span className="rounded-full border border-[#e6def4] bg-[#fbf9fe] px-3 py-1 text-xs font-medium text-[#5f5673]">
+                    {departmentCount} departments
+                  </span>
+                  <details className="group relative">
+                    <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#e6def4] bg-white px-3 py-1 text-xs font-medium text-[#241c33]">
+                      <CircleHelp className="h-3.5 w-3.5 text-[#4B248C]" />
+                      <span>More</span>
+                    </summary>
+                    <div className="absolute left-0 top-[calc(100%+10px)] z-20 w-[290px] rounded-2xl border border-[#ddd3f0] bg-white p-4 text-sm text-[#5f5673] shadow-lg">
+                      <p>
+                        Signed in as <span className="font-semibold text-[#241c33]">{email}</span>
+                      </p>
+                      <p className="mt-2">
+                        Use Weekly Record for new submissions, Records for history, Insights for trends, Meetings for follow-up, and Notifications for ministry updates.
+                      </p>
+                    </div>
+                  </details>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -210,7 +225,7 @@ export function PortalShell({
                   )}
                   <span className="text-left">
                     <span className="block text-sm font-semibold text-[#241c33]">{name}</span>
-                    <span className="block text-xs text-[#7a7190]">Departments assigned: {departmentCount}</span>
+                    <span className="block text-xs text-[#7a7190]">Profile</span>
                   </span>
                 </Link>
               </div>
