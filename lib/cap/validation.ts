@@ -81,7 +81,7 @@ export const createDepartmentInviteSchema = z.object({
   departmentId: z.number().int().positive(),
   role: z.enum(['department_admin', 'member']).default('member'),
   note: z.string().max(240).optional().default(''),
-  expiresInDays: z.number().int().min(1).max(30).default(7),
+  expiresInDays: z.number().int().min(0).max(36500).default(7),
 });
 
 export const acceptDepartmentInviteSchema = z.object({
