@@ -161,12 +161,31 @@ export default async function LeadershipPage() {
       <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs Analysis</p>
-            <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Live event summaries for leadership</h3>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Shared Analysis</p>
+            <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Programs summaries for leadership only</h3>
           </div>
           <p className="text-sm text-[#5f5673]">
-            This is the same event story the department sees inside Programs, now visible here for leadership.
+            Event-level shared analysis stays here in Leadership so department workspaces can remain simpler.
           </p>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <div className="rounded-2xl border border-[#efe6ff] bg-[#fbf9fe] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7a7190]">Events</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{snapshots.events.length}</p>
+          </div>
+          <div className="rounded-2xl border border-[#efe6ff] bg-[#fbf9fe] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7a7190]">Collected</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-[#efe6ff] bg-[#fbf9fe] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7a7190]">Spent</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
+          </div>
+          <div className="rounded-2xl border border-[#efe6ff] bg-[#fbf9fe] p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7a7190]">Balance</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
+          </div>
         </div>
 
         <div className="mt-5 space-y-4">
@@ -215,8 +234,8 @@ export default async function LeadershipPage() {
                 </div>
 
                 <div className="mt-4 rounded-2xl border border-[#efe6ff] bg-white p-4 text-sm text-[#5f5673]">
-                  Leadership view keeps this event readable without leaving the department workspace: collections,
-                  spending, retained balance, and whether the event still needs active follow-up.
+                  Leadership view keeps this event readable without crowding the Programs workspace. This is the place
+                  to compare current events with older ones and review the combined spending story.
                 </div>
               </div>
             ))
