@@ -226,6 +226,13 @@ export const endEventSchema = z.object({
   eventId: z.number().int().positive(),
 });
 
+export const updateEventSchema = z.object({
+  eventId: z.number().int().positive(),
+  name: z.string().min(3, 'Enter an event name.'),
+  status: z.enum(['active', 'ended']),
+  endedAt: optionalIsoDate.nullable().optional(),
+});
+
 export const deleteEventSchema = z.object({
   eventId: z.number().int().positive(),
 });
