@@ -53,6 +53,7 @@ export interface DepartmentInvite {
   departmentName: string;
   role: DepartmentMembershipRole;
   inviteUrl: string | null;
+  token?: string | null;
   note: string | null;
   expiresAt: string;
   usedAt: string | null;
