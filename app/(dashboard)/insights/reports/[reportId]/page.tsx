@@ -41,6 +41,10 @@ export default async function GeneratedReportPrintPage({
           <p className="mt-2 text-sm text-[#5f5673]">
             Use your browser print dialog to save this page as PDF, or download the DOCX copy.
           </p>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            This export is for the generated leadership report. Uploaded meeting minutes files remain attached to the
+            relevant meeting inside the Meetings workflow.
+          </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <a
@@ -95,14 +99,14 @@ export default async function GeneratedReportPrintPage({
           </div>
         </div>
 
-        <section className="mt-8">
+        <section className="mt-10 break-before-page print:mt-0">
           <h2 className="text-2xl font-semibold text-[#241c33]">Executive Summary</h2>
           <div className="mt-4 rounded-3xl bg-[#fffaf0] p-6">
             <p className="whitespace-pre-wrap text-sm leading-8 text-[#3d3452]">{report.summaryText}</p>
           </div>
         </section>
 
-        <section className="mt-8">
+        <section className="mt-10 break-before-page print:mt-0">
           <h2 className="text-2xl font-semibold text-[#241c33]">Metric Totals</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             {snapshot.totals.map((metric) => (
@@ -120,7 +124,7 @@ export default async function GeneratedReportPrintPage({
           </div>
         </section>
 
-        <section className="mt-8">
+        <section className="mt-10 break-before-page print:mt-0">
           <h2 className="text-2xl font-semibold text-[#241c33]">Handler Accountability</h2>
           <div className="mt-4 overflow-x-auto rounded-3xl border border-[#e6def4]">
             <table className="min-w-full divide-y divide-[#ece4f8] text-sm">
