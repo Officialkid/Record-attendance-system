@@ -189,57 +189,57 @@ export default async function DashboardPage() {
       <OnboardingChecklist name={session!.user.name || 'friend'} steps={onboardingSteps} />
 
       {hasRecordAccess ? (
-        <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_58%,#f2ebff_100%)] p-7 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-5">
-            <div className="max-w-3xl">
-              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Daily focus</p>
-              <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">Today&apos;s ministry workflow</h2>
-              <p className="mt-3 text-sm text-[#5f5673]">
-                Keep weekly submissions current, review older records without confusion, and move from raw ministry data
-                into trends and follow-up with less friction.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
-              Signed in as <span className="font-semibold text-[#241c33]">{session!.user.email}</span>
-            </div>
+      <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_58%,#f2ebff_100%)] p-7 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Daily focus</p>
+            <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">Today&apos;s ministry workflow</h2>
+            <p className="mt-3 text-sm text-[#5f5673]">
+              Keep weekly submissions current, review older records without confusion, and move from raw ministry data
+              into trends and follow-up with less friction.
+            </p>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            <Link
-              href="/records/new"
-              className="group rounded-3xl border border-[#eadfb8] bg-[#fff8eb] p-5 transition-transform hover:-translate-y-0.5"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#b6841a]">Weekly record</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Submit this week&apos;s figures</h3>
-                  <p className="mt-2 text-sm text-[#5f5673]">
-                    Open the entry form for today&apos;s or the latest service record, visitors, and accountability figures.
-                  </p>
-                </div>
-                <ClipboardList className="h-6 w-6 text-[#b6841a]" />
-              </div>
-            </Link>
-
-            <Link
-              href="/records"
-              className="group rounded-3xl border border-[#ddd3f0] bg-[#f8f5fd] p-5 transition-transform hover:-translate-y-0.5"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4B248C]">Records archive</p>
-                  <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Review previous submissions</h3>
-                  <p className="mt-2 text-sm text-[#5f5673]">
-                    Browse the full history, check visitor counts, and edit older records without mixing that screen up
-                    with the weekly entry form.
-                  </p>
-                </div>
-                <BookCopy className="h-6 w-6 text-[#4B248C]" />
-              </div>
-            </Link>
+          <div className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
+            Signed in as <span className="font-semibold text-[#241c33]">{session!.user.email}</span>
           </div>
-        </section>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <Link
+            href="/records/new"
+            className="group rounded-3xl border border-[#eadfb8] bg-[#fff8eb] p-5 transition-transform hover:-translate-y-0.5"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#b6841a]">Weekly record</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Submit this week&apos;s figures</h3>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  Open the entry form for today&apos;s or the latest service record, visitors, and accountability figures.
+                </p>
+              </div>
+              <ClipboardList className="h-6 w-6 text-[#b6841a]" />
+            </div>
+          </Link>
+
+          <Link
+            href="/records"
+            className="group rounded-3xl border border-[#ddd3f0] bg-[#f8f5fd] p-5 transition-transform hover:-translate-y-0.5"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4B248C]">Records archive</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Review previous submissions</h3>
+                <p className="mt-2 text-sm text-[#5f5673]">
+                  Browse the full history, check visitor counts, and edit older records without mixing that screen up
+                  with the weekly entry form.
+                </p>
+              </div>
+              <BookCopy className="h-6 w-6 text-[#4B248C]" />
+            </div>
+          </Link>
+        </div>
+      </section>
       ) : null}
 
       <section className={`grid gap-4 md:grid-cols-2 ${hasRecordAccess ? 'xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
@@ -299,67 +299,69 @@ export default async function DashboardPage() {
 
       <section className={`grid gap-6 ${hasRecordAccess ? 'xl:grid-cols-[1.1fr_0.9fr]' : ''}`}>
         {hasRecordAccess ? (
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">
-                  Recent accountability
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Latest submitted records</h2>
-                <p className="mt-2 text-sm text-[#5f5673]">Latest snapshot only.</p>
-              </div>
-              <Link href="/records" className="inline-flex items-center gap-2 text-sm font-medium text-[#4B248C]">
-                <span>View all</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
+        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">
+                Recent accountability
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Latest submitted records</h2>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Latest snapshot only.
+              </p>
             </div>
+            <Link href="/records" className="inline-flex items-center gap-2 text-sm font-medium text-[#4B248C]">
+              <span>View all</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
 
-            <div className="mt-5 space-y-3">
-              {summary.latestRecords.length === 0 ? (
-                <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
-                  No records yet. Add one from Weekly Record and it will appear here automatically.
-                </div>
-              ) : summary.latestRecords.map((record) => {
-                const values = record.values as Record<string, number | string | string[]>;
-                const fieldDefinitions = fieldDefinitionsByDepartment[record.departmentId] || [];
-                const previewFields = fieldDefinitions.slice(0, 4);
+          <div className="mt-5 space-y-3">
+            {summary.latestRecords.length === 0 ? (
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+                No records yet. Add one from Weekly Record and it will appear here automatically.
+              </div>
+            ) : summary.latestRecords.slice(0, 2).map((record) => {
+              const values = record.values as Record<string, number | string | string[]>;
+              const fieldDefinitions = fieldDefinitionsByDepartment[record.departmentId] || [];
+              const previewFields = fieldDefinitions.slice(0, 3);
 
-                return (
-                  <div key={record.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div>
-                        <h3 className="text-lg font-semibold text-[#241c33]">{record.departmentName}</h3>
-                        <p className="text-sm text-[#5f5673]">
-                          {formatDisplayDate(record.recordDate)} - handled by {record.handledByName}
-                        </p>
-                      </div>
-                      <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461]">
-                        {record.visitorCount} visitors
-                      </div>
+              return (
+                <div key={record.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-lg font-semibold text-[#241c33]">{record.departmentName}</h3>
+                      <p className="text-sm text-[#5f5673]">
+                        {formatDisplayDate(record.recordDate)} - handled by {record.handledByName}
+                      </p>
                     </div>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                      {previewFields.map((field) => {
-                        const rawValue = values[field.fieldKey];
-                        const displayValue =
-                          field.fieldType === 'currency'
-                            ? formatCurrency(Number(rawValue || 0))
-                            : Array.isArray(rawValue)
-                              ? rawValue.join(', ')
-                              : rawValue ?? '-';
-
-                        return (
-                          <div key={`${record.id}-${field.fieldKey}`} className="rounded-2xl bg-white p-3">
-                            <p className="text-xs text-[#5f5673]">{field.label}</p>
-                            <p className="mt-1 text-lg font-semibold text-[#241c33]">{String(displayValue)}</p>
-                          </div>
-                        );
-                      })}
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461]">
+                      {record.visitorCount} visitors
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </article>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                    {previewFields.map((field) => {
+                      const rawValue = values[field.fieldKey];
+                      const displayValue =
+                        field.fieldType === 'currency'
+                          ? formatCurrency(Number(rawValue || 0))
+                          : Array.isArray(rawValue)
+                            ? rawValue.join(', ')
+                            : rawValue ?? '-';
+
+                      return (
+                        <div key={`${record.id}-${field.fieldKey}`} className="rounded-2xl bg-white p-3">
+                          <p className="text-xs text-[#5f5673]">{field.label}</p>
+                          <p className="mt-1 text-lg font-semibold text-[#241c33]">{String(displayValue)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </article>
         ) : null}
 
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
@@ -390,9 +392,25 @@ export default async function DashboardPage() {
                         {meeting.departmentName ? ` - ${meeting.departmentName}` : ' - Cross-department'}
                       </p>
                     </div>
-                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461]">
-                      {meeting.actionItems.filter((item) => item.status === 'open').length} open actions
-                    </div>
+                    {meeting.actionItems.filter((item) => item.status === 'open').length > 0 ? (
+                      <details className="group">
+                        <summary className="list-none rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461] cursor-pointer">
+                          {meeting.actionItems.filter((item) => item.status === 'open').length} open actions
+                        </summary>
+                        <div className="mt-3 space-y-2 rounded-2xl border border-[#efe7fb] bg-white p-3 text-xs text-[#5f5673]">
+                          {meeting.actionItems
+                            .filter((item) => item.status === 'open')
+                            .slice(0, 3)
+                            .map((item) => (
+                              <p key={item.id}>{item.description}</p>
+                            ))}
+                        </div>
+                      </details>
+                    ) : (
+                      <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8a7ca7]">
+                        No open actions
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
