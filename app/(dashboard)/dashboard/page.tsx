@@ -19,6 +19,7 @@ import {
   getDashboardSummary,
   getDepartmentFieldDefinitions,
   listAllDepartments,
+  listDepartmentsForUser,
 } from '@/lib/cap/services';
 import type { DepartmentFieldDefinition } from '@/lib/cap/types';
 import { formatCurrency, formatDisplayDate } from '@/lib/cap/utils';
@@ -93,6 +94,12 @@ export default async function DashboardPage() {
 
   const summary = await getDashboardSummary(session!.user);
   const calendarConnection = await getCalendarConnectionForUser(Number(session!.user.id));
+  const departmentsForUser = await listDepartmentsForUser(session!.user);
+  const departmentSlugs = departmentsForUser.map((department) => department.slug);
+  const hasRecordAccess =
+    session!.user.systemRole === 'main_admin' ||
+    session!.user.systemRole === 'chief_admin' ||
+    departmentSlugs.some((slug) => slug === 'protocol-admin' || slug === 'protocol' || slug === 'admin');
   const allDepartments =
     session!.user.systemRole === 'main_admin' || session!.user.systemRole === 'chief_admin'
       ? await listAllDepartments()
@@ -113,92 +120,120 @@ export default async function DashboardPage() {
     { label: 'Visitors logged', value: summary.visitorCount, icon: TrendingUp },
   ];
 
-  const onboardingSteps = [
-    {
-      title: 'Submit your first weekly record',
-      description: "Capture this week's ministry figures so your archive, insights, and summaries all start from real data.",
-      href: '/records/new',
-      actionLabel: 'Open Weekly Record',
-      done: summary.recordCount > 0,
-    },
-    {
-      title: 'Document your first meeting and action items',
-      description: 'Store ministry decisions, minutes, and follow-up ownership so teams know what happens next.',
-      href: '/meetings',
-      actionLabel: 'Open Meetings',
-      done: summary.upcomingMeetings.length > 0 || summary.openActionItemCount > 0,
-    },
-    {
-      title: 'Review history and trends',
-      description: 'Open Records and Insights to confirm where history lives and how leadership summaries are generated.',
-      href: '/insights',
-      actionLabel: 'Open Insights',
-      done: summary.recordCount > 0,
-    },
-    {
-      title: 'Connect Google Calendar when you are ready',
-      description: 'Calendar connection is optional, but it prepares the account for future reminder and event mirroring.',
-      href: '/settings/profile',
-      actionLabel: 'Open Profile',
-      done: Boolean(calendarConnection),
-    },
-  ];
+  const onboardingSteps = hasRecordAccess
+    ? [
+        {
+          title: 'Submit your first weekly record',
+          description:
+            "Capture this week's ministry figures so your archive, insights, and summaries all start from real data.",
+          href: '/records/new',
+          actionLabel: 'Open Weekly Record',
+          done: summary.recordCount > 0,
+        },
+        {
+          title: 'Document your first meeting and action items',
+          description: 'Store ministry decisions, minutes, and follow-up ownership so teams know what happens next.',
+          href: '/meetings',
+          actionLabel: 'Open Meetings',
+          done: summary.upcomingMeetings.length > 0 || summary.openActionItemCount > 0,
+        },
+        {
+          title: 'Review history and trends',
+          description: 'Open Records and Insights to confirm where history lives and how leadership summaries are generated.',
+          href: '/insights',
+          actionLabel: 'Open Insights',
+          done: summary.recordCount > 0,
+        },
+        {
+          title: 'Connect Google Calendar when you are ready',
+          description:
+            'Calendar connection is optional, but it prepares the account for future reminder and event mirroring.',
+          href: '/settings/profile',
+          actionLabel: 'Open Profile',
+          done: Boolean(calendarConnection),
+        },
+      ]
+    : [
+        {
+          title: 'Open your department workspace',
+          description: 'Go straight to your main ministry area so the portal stays focused and light.',
+          href: departmentSlugs.includes('programs') ? '/programs' : '/meetings',
+          actionLabel: departmentSlugs.includes('programs') ? 'Open Programs' : 'Open Meetings',
+          done: true,
+        },
+        {
+          title: 'Capture the next meeting',
+          description: 'Use Meetings to store decisions, minutes, and follow-up without mixing in record tools.',
+          href: '/meetings',
+          actionLabel: 'Open Meetings',
+          done: summary.upcomingMeetings.length > 0 || summary.openActionItemCount > 0,
+        },
+        {
+          title: 'Review your account setup',
+          description: 'Keep profile details and optional calendar connection ready for later coordination.',
+          href: '/settings/profile',
+          actionLabel: 'Open Profile',
+          done: Boolean(calendarConnection),
+        },
+      ];
 
   return (
     <div className="space-y-6">
       <OnboardingChecklist name={session!.user.name || 'friend'} steps={onboardingSteps} />
 
-      <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_58%,#f2ebff_100%)] p-7 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-5">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Daily focus</p>
-            <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">Today&apos;s ministry workflow</h2>
-            <p className="mt-3 text-sm text-[#5f5673]">
-              Keep weekly submissions current, review older records without confusion, and move from raw ministry data
-              into trends and follow-up with less friction.
-            </p>
+      {hasRecordAccess ? (
+        <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#f8f4ff_58%,#f2ebff_100%)] p-7 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-5">
+            <div className="max-w-3xl">
+              <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#C9A461]">Daily focus</p>
+              <h2 className="mt-3 text-3xl font-semibold text-[#241c33]">Today&apos;s ministry workflow</h2>
+              <p className="mt-3 text-sm text-[#5f5673]">
+                Keep weekly submissions current, review older records without confusion, and move from raw ministry data
+                into trends and follow-up with less friction.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
+              Signed in as <span className="font-semibold text-[#241c33]">{session!.user.email}</span>
+            </div>
           </div>
 
-          <div className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
-            Signed in as <span className="font-semibold text-[#241c33]">{session!.user.email}</span>
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <Link
+              href="/records/new"
+              className="group rounded-3xl border border-[#eadfb8] bg-[#fff8eb] p-5 transition-transform hover:-translate-y-0.5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#b6841a]">Weekly record</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Submit this week&apos;s figures</h3>
+                  <p className="mt-2 text-sm text-[#5f5673]">
+                    Open the entry form for today&apos;s or the latest service record, visitors, and accountability figures.
+                  </p>
+                </div>
+                <ClipboardList className="h-6 w-6 text-[#b6841a]" />
+              </div>
+            </Link>
+
+            <Link
+              href="/records"
+              className="group rounded-3xl border border-[#ddd3f0] bg-[#f8f5fd] p-5 transition-transform hover:-translate-y-0.5"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4B248C]">Records archive</p>
+                  <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Review previous submissions</h3>
+                  <p className="mt-2 text-sm text-[#5f5673]">
+                    Browse the full history, check visitor counts, and edit older records without mixing that screen up
+                    with the weekly entry form.
+                  </p>
+                </div>
+                <BookCopy className="h-6 w-6 text-[#4B248C]" />
+              </div>
+            </Link>
           </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <Link
-            href="/records/new"
-            className="group rounded-3xl border border-[#eadfb8] bg-[#fff8eb] p-5 transition-transform hover:-translate-y-0.5"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#b6841a]">Weekly record</p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Submit this week&apos;s figures</h3>
-                <p className="mt-2 text-sm text-[#5f5673]">
-                  Open the entry form for today&apos;s or the latest service record, visitors, and accountability figures.
-                </p>
-              </div>
-              <ClipboardList className="h-6 w-6 text-[#b6841a]" />
-            </div>
-          </Link>
-
-          <Link
-            href="/records"
-            className="group rounded-3xl border border-[#ddd3f0] bg-[#f8f5fd] p-5 transition-transform hover:-translate-y-0.5"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#4B248C]">Records archive</p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Review previous submissions</h3>
-                <p className="mt-2 text-sm text-[#5f5673]">
-                  Browse the full history, check visitor counts, and edit older records without mixing that screen up
-                  with the weekly entry form.
-                </p>
-              </div>
-              <BookCopy className="h-6 w-6 text-[#4B248C]" />
-            </div>
-          </Link>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => {
@@ -255,70 +290,70 @@ export default async function DashboardPage() {
         </section>
       ) : null}
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">
-                Recent accountability
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Latest submitted records</h2>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                Latest snapshot only.
-              </p>
-            </div>
-            <Link href="/records" className="inline-flex items-center gap-2 text-sm font-medium text-[#4B248C]">
-              <span>View all</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {summary.latestRecords.length === 0 ? (
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
-                No records yet. Add one from Weekly Record and it will appear here automatically.
+      <section className={`grid gap-6 ${hasRecordAccess ? 'xl:grid-cols-[1.1fr_0.9fr]' : ''}`}>
+        {hasRecordAccess ? (
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">
+                  Recent accountability
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold text-[#241c33]">Latest submitted records</h2>
+                <p className="mt-2 text-sm text-[#5f5673]">Latest snapshot only.</p>
               </div>
-            ) : summary.latestRecords.map((record) => {
-              const values = record.values as Record<string, number | string | string[]>;
-              const fieldDefinitions = fieldDefinitionsByDepartment[record.departmentId] || [];
-              const previewFields = fieldDefinitions.slice(0, 4);
+              <Link href="/records" className="inline-flex items-center gap-2 text-sm font-medium text-[#4B248C]">
+                <span>View all</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
 
-              return (
-                <div key={record.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-[#241c33]">{record.departmentName}</h3>
-                      <p className="text-sm text-[#5f5673]">
-                        {formatDisplayDate(record.recordDate)} - handled by {record.handledByName}
-                      </p>
-                    </div>
-                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461]">
-                      {record.visitorCount} visitors
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    {previewFields.map((field) => {
-                      const rawValue = values[field.fieldKey];
-                      const displayValue =
-                        field.fieldType === 'currency'
-                          ? formatCurrency(Number(rawValue || 0))
-                          : Array.isArray(rawValue)
-                            ? rawValue.join(', ')
-                            : rawValue ?? '-';
-
-                      return (
-                        <div key={`${record.id}-${field.fieldKey}`} className="rounded-2xl bg-white p-3">
-                          <p className="text-xs text-[#5f5673]">{field.label}</p>
-                          <p className="mt-1 text-lg font-semibold text-[#241c33]">{String(displayValue)}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
+            <div className="mt-5 space-y-3">
+              {summary.latestRecords.length === 0 ? (
+                <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+                  No records yet. Add one from Weekly Record and it will appear here automatically.
                 </div>
-              );
-            })}
-          </div>
-        </article>
+              ) : summary.latestRecords.map((record) => {
+                const values = record.values as Record<string, number | string | string[]>;
+                const fieldDefinitions = fieldDefinitionsByDepartment[record.departmentId] || [];
+                const previewFields = fieldDefinitions.slice(0, 4);
+
+                return (
+                  <div key={record.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#241c33]">{record.departmentName}</h3>
+                        <p className="text-sm text-[#5f5673]">
+                          {formatDisplayDate(record.recordDate)} - handled by {record.handledByName}
+                        </p>
+                      </div>
+                      <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#C9A461]">
+                        {record.visitorCount} visitors
+                      </div>
+                    </div>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                      {previewFields.map((field) => {
+                        const rawValue = values[field.fieldKey];
+                        const displayValue =
+                          field.fieldType === 'currency'
+                            ? formatCurrency(Number(rawValue || 0))
+                            : Array.isArray(rawValue)
+                              ? rawValue.join(', ')
+                              : rawValue ?? '-';
+
+                        return (
+                          <div key={`${record.id}-${field.fieldKey}`} className="rounded-2xl bg-white p-3">
+                            <p className="text-xs text-[#5f5673]">{field.label}</p>
+                            <p className="mt-1 text-lg font-semibold text-[#241c33]">{String(displayValue)}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        ) : null}
 
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
