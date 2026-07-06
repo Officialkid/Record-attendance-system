@@ -28,9 +28,13 @@ type StandaloneLedgers = {
   expenseLedgers: Array<{ id: number; name: string; status: string }>;
 };
 
+function formatCount(value: number) {
+  return value.toLocaleString();
+}
+
 function EventCard({ event }: { event: EventListItem }) {
   return (
-    <div className="rounded-[28px] border border-[#e6def4] bg-[#fbf9fe] p-5">
+    <div className="rounded-[28px] border border-[#e6def4] bg-[linear-gradient(180deg,#fcfbff_0%,#f8f4fd_100%)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <div className="flex flex-wrap items-center gap-2">
@@ -63,15 +67,15 @@ function EventCard({ event }: { event: EventListItem }) {
       <div className="mt-4 grid gap-3 lg:grid-cols-4">
         <div className="rounded-2xl bg-white p-3">
           <p className="text-xs text-[#5f5673]">Collected</p>
-          <p className="mt-1 text-lg font-semibold text-[#241c33]">{event.totalCollected.toLocaleString()}</p>
+          <p className="mt-1 text-lg font-semibold text-[#241c33]">{formatCount(event.totalCollected)}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-xs text-[#5f5673]">Spent</p>
-          <p className="mt-1 text-lg font-semibold text-[#241c33]">{event.totalSpent.toLocaleString()}</p>
+          <p className="mt-1 text-lg font-semibold text-[#241c33]">{formatCount(event.totalSpent)}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-xs text-[#5f5673]">Balance</p>
-          <p className="mt-1 text-lg font-semibold text-[#241c33]">{event.balanceRetained.toLocaleString()}</p>
+          <p className="mt-1 text-lg font-semibold text-[#241c33]">{formatCount(event.balanceRetained)}</p>
         </div>
         <div className="rounded-2xl bg-white p-3">
           <p className="text-xs text-[#5f5673]">Activity</p>
@@ -140,6 +144,7 @@ export function ProgramsHub({
   const recentEvents = events.filter((event) => event.status === 'active');
   const pastEvents = events.filter((event) => event.status === 'ended');
   const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
+  const movementTotal = totalCollected + totalSpent;
 
   const runAction = (task: () => Promise<{ success: boolean; message: string }>, onSuccess?: () => void) => {
     setError('');
@@ -192,6 +197,23 @@ export function ProgramsHub({
                 </Link>
               </div>
             ) : null}
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-2xl border border-[#e6def4] bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Live events</p>
+                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(recentEvents.length)}</p>
+              </div>
+              <div className="rounded-2xl border border-[#e6def4] bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Tracked flow</p>
+                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(movementTotal)}</p>
+              </div>
+              <div className="rounded-2xl border border-[#e6def4] bg-white/80 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Committee view</p>
+                <p className="mt-2 text-sm font-semibold text-[#241c33]">
+                  One dashboard for creation, reporting, and event analysis.
+                </p>
+              </div>
+            </div>
           </div>
 
           <article className="rounded-[28px] border border-[#e6def4] bg-white/90 p-5">
@@ -244,6 +266,11 @@ export function ProgramsHub({
                 Programs members can review events here. Event creation is available to Programs admins and super admins.
               </div>
             )}
+
+            <div className="mt-4 rounded-2xl border border-dashed border-[#ddd3f0] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+              Give every event a clear ministry-facing name. Once created, the dashboard below becomes the room where
+              teams can show collections, expenses, and balance without building a separate manual report.
+            </div>
           </article>
         </div>
       </section>
@@ -270,20 +297,20 @@ export function ProgramsHub({
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
               <p className="text-xs text-[#5f5673]">Total collected</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
+              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalCollected)}</p>
             </div>
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
               <p className="text-xs text-[#5f5673]">Total spent</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
+              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalSpent)}</p>
             </div>
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
               <p className="text-xs text-[#5f5673]">Balance retained</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
+              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalBalance)}</p>
             </div>
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
               <p className="text-xs text-[#5f5673]">Activity footprint</p>
               <p className="mt-2 text-sm font-semibold text-[#241c33]">
-                {totalParticipants} participants • {totalExpenseItems} expenses
+                {formatCount(totalParticipants)} participants • {formatCount(totalExpenseItems)} expenses
               </p>
             </div>
           </div>
@@ -468,6 +495,24 @@ export function ProgramsHub({
                   </div>
                 ))
               )}
+            </div>
+          </article>
+
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <h3 className="text-xl font-semibold text-[#241c33]">Presentation notes</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              Use the event dashboard when a team is gathered. It keeps the organizer story, the expenses story, and
+              the shared balance in one visible flow.
+            </p>
+            <div className="mt-4 space-y-3">
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+                Open the event first, then let the room choose whether they need the Organizer workspace or the
+                Expenses workspace.
+              </div>
+              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
+                Leadership sees the same financial story from its own page, which removes the need for duplicate
+                committee summaries.
+              </div>
             </div>
           </article>
         </div>
