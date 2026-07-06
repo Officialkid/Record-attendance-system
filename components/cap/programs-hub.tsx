@@ -33,6 +33,10 @@ function formatCount(value: number) {
   return value.toLocaleString();
 }
 
+function formatCurrencyShort(value: number) {
+  return value.toLocaleString();
+}
+
 function EventCard({
   event,
   canManagePrograms,
@@ -146,8 +150,6 @@ export function ProgramsHub({
   const recentEvents = events.filter((event) => event.status === 'active');
   const pastEvents = events.filter((event) => event.status === 'ended');
   const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
-  const movementTotal = totalCollected + totalSpent;
-
   const runAction = (task: () => Promise<{ success: boolean; message: string }>, onSuccess?: () => void) => {
     setError('');
     setMessage('');
@@ -167,7 +169,7 @@ export function ProgramsHub({
   return (
     <div className="space-y-6">
       <section className="rounded-[32px] border border-[#ddd3f0] bg-[linear-gradient(135deg,#ffffff_0%,#faf6ff_52%,#f3ebff_100%)] p-6 shadow-sm">
-        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs hub</p>
             <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Programs dashboard</h2>
@@ -196,20 +198,14 @@ export function ProgramsHub({
               </div>
             ) : null}
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:max-w-3xl">
               <div className="rounded-2xl border border-[#e6def4] bg-white/80 p-4">
                 <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Live events</p>
                 <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(recentEvents.length)}</p>
               </div>
               <div className="rounded-2xl border border-[#e6def4] bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Tracked flow</p>
-                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(movementTotal)}</p>
-              </div>
-              <div className="rounded-2xl border border-[#e6def4] bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Committee view</p>
-                <p className="mt-2 text-sm font-semibold text-[#241c33]">
-                  One dashboard for creation, reporting, and event analysis.
-                </p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Net balance</p>
+                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalBalance)}</p>
               </div>
             </div>
           </div>
@@ -261,7 +257,6 @@ export function ProgramsHub({
                 Programs members can review events here. Event creation is available to Programs admins and super admins.
               </div>
             )}
-
           </article>
         </div>
       </section>
@@ -269,62 +264,48 @@ export function ProgramsHub({
       {message ? <p className="rounded-2xl bg-[#f4fff4] px-4 py-3 text-sm text-[#255b2f]">{message}</p> : null}
       {error ? <p className="rounded-2xl bg-[#fff1ec] px-4 py-3 text-sm text-[#a63e1c]">{error}</p> : null}
 
-      <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-        <article>
-          <div className="flex flex-wrap items-start justify-between gap-4">
+      <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm" open>
+        <summary className="cursor-pointer list-none">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Department analysis</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Department analysis</h3>
-              <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
-                A quick shared view of collections, expenses, and balance.
-              </p>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared analysis</h3>
             </div>
             <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
               {recentEvents.length} recent • {pastEvents.length} past
             </div>
           </div>
+        </summary>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Total collected</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalCollected)}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Total spent</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalSpent)}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Balance retained</p>
-              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalBalance)}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Activity footprint</p>
-              <p className="mt-2 text-sm font-semibold text-[#241c33]">
-                {formatCount(totalParticipants)} participants • {formatCount(totalExpenseItems)} expenses
-              </p>
-            </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs text-[#5f5673]">Collected</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCurrencyShort(totalCollected)}</p>
           </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs text-[#5f5673]">Spent</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCurrencyShort(totalSpent)}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <p className="text-xs text-[#5f5673]">Balance</p>
+            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCurrencyShort(totalBalance)}</p>
+          </div>
+        </div>
 
-          <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-[#241c33]">Detailed analysis board</p>
-                <p className="text-xs text-[#7a7190]">
-                  Collections, spending, and remaining balance for committee meetings and leadership review.
-                </p>
-              </div>
-              <p className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
-                Spend coverage: {collectionCoverage}%
-              </p>
-            </div>
-            <ProgramsEventSummaryChart
-              totalCollected={totalCollected}
-              totalSpent={totalSpent}
-              balanceRetained={totalBalance}
-            />
+        <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-[#241c33]">Committee chart</p>
+            <p className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
+              Coverage {collectionCoverage}%
+            </p>
           </div>
-        </article>
-      </section>
+          <ProgramsEventSummaryChart
+            totalCollected={totalCollected}
+            totalSpent={totalSpent}
+            balanceRetained={totalBalance}
+          />
+        </div>
+      </details>
 
       <section id="recent-events" className="space-y-6">
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
@@ -518,88 +499,88 @@ export function ProgramsHub({
             Finance tools
           </summary>
           <section className="mt-4 grid gap-6 xl:grid-cols-2">
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-[#fcfbff] p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-[#241c33]">Standalone contribution ledger</h3>
-            <p className="mt-2 text-sm text-[#5f5673]">
-              Keep finance work that is not tied to one event in its own reusable contribution ledger.
-            </p>
-            <div className="mt-4 space-y-3">
-              <input
-                value={contributionLedgerName}
-                onChange={(event) => setContributionLedgerName(event.target.value)}
-                placeholder="Building Fund Contributions"
-                className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-              />
-              <input
-                type="number"
-                min="1"
-                value={expectedAmount}
-                onChange={(event) => setExpectedAmount(event.target.value)}
-                placeholder="Default expected amount"
-                className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-              />
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() =>
-                  runAction(
-                    () =>
-                      createStandaloneContributionLedgerAction({
-                        name: contributionLedgerName,
-                        defaultExpectedAmount: Number(expectedAmount),
-                      }),
-                    () => setContributionLedgerName('')
-                  )
-                }
-                className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                Create contribution ledger
-              </button>
-            </div>
-            <div className="mt-4 space-y-2">
-              {standaloneLedgers.contributionLedgers.map((ledger) => (
-                <div key={ledger.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]">
-                  {ledger.name} • {ledger.status}
-                </div>
-              ))}
-            </div>
-          </article>
+            <article className="rounded-[28px] border border-[#ddd3f0] bg-[#fcfbff] p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#241c33]">Standalone contribution ledger</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Keep finance work that is not tied to one event in its own reusable contribution ledger.
+              </p>
+              <div className="mt-4 space-y-3">
+                <input
+                  value={contributionLedgerName}
+                  onChange={(event) => setContributionLedgerName(event.target.value)}
+                  placeholder="Building Fund Contributions"
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                />
+                <input
+                  type="number"
+                  min="1"
+                  value={expectedAmount}
+                  onChange={(event) => setExpectedAmount(event.target.value)}
+                  placeholder="Default expected amount"
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                />
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() =>
+                    runAction(
+                      () =>
+                        createStandaloneContributionLedgerAction({
+                          name: contributionLedgerName,
+                          defaultExpectedAmount: Number(expectedAmount),
+                        }),
+                      () => setContributionLedgerName('')
+                    )
+                  }
+                  className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  Create contribution ledger
+                </button>
+              </div>
+              <div className="mt-4 space-y-2">
+                {standaloneLedgers.contributionLedgers.map((ledger) => (
+                  <div key={ledger.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]">
+                    {ledger.name} • {ledger.status}
+                  </div>
+                ))}
+              </div>
+            </article>
 
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-[#fcfbff] p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-[#241c33]">Standalone expense ledger</h3>
-            <p className="mt-2 text-sm text-[#5f5673]">
-              Use this when Finance needs a ledger that stands outside an event but still belongs in the same platform.
-            </p>
-            <div className="mt-4 space-y-3">
-              <input
-                value={expenseLedgerName}
-                onChange={(event) => setExpenseLedgerName(event.target.value)}
-                placeholder="Building Fund Expenses"
-                className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
-              />
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() =>
-                  runAction(
-                    () => createStandaloneExpenseLedgerAction({ name: expenseLedgerName }),
-                    () => setExpenseLedgerName('')
-                  )
-                }
-                className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                Create expense ledger
-              </button>
-            </div>
-            <div className="mt-4 space-y-2">
-              {standaloneLedgers.expenseLedgers.map((ledger) => (
-                <div key={ledger.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]">
-                  {ledger.name} • {ledger.status}
-                </div>
-              ))}
-            </div>
-          </article>
-        </section>
+            <article className="rounded-[28px] border border-[#ddd3f0] bg-[#fcfbff] p-6 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#241c33]">Standalone expense ledger</h3>
+              <p className="mt-2 text-sm text-[#5f5673]">
+                Use this when Finance needs a ledger that stands outside an event but still belongs in the same platform.
+              </p>
+              <div className="mt-4 space-y-3">
+                <input
+                  value={expenseLedgerName}
+                  onChange={(event) => setExpenseLedgerName(event.target.value)}
+                  placeholder="Building Fund Expenses"
+                  className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none"
+                />
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() =>
+                    runAction(
+                      () => createStandaloneExpenseLedgerAction({ name: expenseLedgerName }),
+                      () => setExpenseLedgerName('')
+                    )
+                  }
+                  className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  Create expense ledger
+                </button>
+              </div>
+              <div className="mt-4 space-y-2">
+                {standaloneLedgers.expenseLedgers.map((ledger) => (
+                  <div key={ledger.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33]">
+                    {ledger.name} • {ledger.status}
+                  </div>
+                ))}
+              </div>
+            </article>
+          </section>
         </details>
       ) : null}
     </div>
