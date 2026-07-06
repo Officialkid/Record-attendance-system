@@ -41,6 +41,10 @@ export default async function MeetingsPage({
   const meetingSummaryDocuments = await listGeneratedMeetingSummaryDocuments(session!.user);
   const totalActionItems = meetings.reduce((sum, meeting) => sum + meeting.actionItems.length, 0);
   const totalAttachments = meetings.reduce((sum, meeting) => sum + meeting.attachments.length, 0);
+  const canManageMeetings =
+    session!.user.systemRole === 'main_admin' ||
+    session!.user.systemRole === 'chief_admin' ||
+    Object.values(session!.user.departmentRoles || {}).includes('department_admin');
 
   return (
     <section className="space-y-6">
@@ -78,34 +82,14 @@ export default async function MeetingsPage({
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <article className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#b6841a]">Step 1</p>
-          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Bring your notes in any practical form</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Raw point form works. Full minutes work too. If you already have a file, upload it directly and process it
-            inside the meeting form.
-          </p>
-        </article>
-
-        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Step 2</p>
-          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Let the AI draft the follow-up</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            The assistant can now prefill the title, dates, agenda, summary, decisions, and action-item suggestions so
-            you mainly review and adjust the ministry details instead of typing everything from scratch.
-          </p>
-        </article>
-
-        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Step 3</p>
-          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Store the source minutes safely</h3>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Source minutes files and bulky attachments live in R2, while the database keeps the searchable meeting
-            details, summaries, action items, and metadata clean.
-          </p>
-        </article>
-      </div>
+      <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Meeting flow</p>
+        <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Bring notes, let the assistant help, then save once</h3>
+        <p className="mt-2 max-w-4xl text-sm text-[#5f5673]">
+          You can paste raw notes or upload the source file, let CIOM Portal draft the summary and action items, then
+          keep the stored record here for follow-up without filling the page with extra explanation blocks.
+        </p>
+      </article>
 
       <MeetingForm
         departments={departments}
@@ -147,7 +131,7 @@ export default async function MeetingsPage({
               <div className="space-y-2">
                 <AttachmentUpload meetingId={meeting.id} />
                 <EditMeetingLink meetingId={meeting.id} />
-                <DeleteMeetingButton meetingId={meeting.id} />
+                {canManageMeetings ? <DeleteMeetingButton meetingId={meeting.id} /> : null}
               </div>
             </div>
 
@@ -204,7 +188,7 @@ export default async function MeetingsPage({
                         return (
                           <div key={attachment.id} className="flex items-center gap-2 rounded-full bg-white px-3 py-1">
                             <span className="text-xs text-[#5f5673]">{attachment.filename}</span>
-                            <DeleteAttachmentButton attachmentId={attachment.id} />
+                            {canManageMeetings ? <DeleteAttachmentButton attachmentId={attachment.id} /> : null}
                           </div>
                         );
                       }
@@ -219,7 +203,7 @@ export default async function MeetingsPage({
                           >
                             {attachment.filename}
                           </a>
-                          <DeleteAttachmentButton attachmentId={attachment.id} />
+                          {canManageMeetings ? <DeleteAttachmentButton attachmentId={attachment.id} /> : null}
                         </div>
                       );
                     })}
