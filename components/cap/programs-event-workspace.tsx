@@ -93,6 +93,7 @@ export function ProgramsEventWorkspace({
   const totalCollected = detail.financialSummary?.totalCollected || 0;
   const totalSpent = detail.financialSummary?.totalSpent || 0;
   const totalBalance = detail.financialSummary?.balanceRetained || 0;
+  const totalExpected = detail.participants.reduce((sum, participant) => sum + participant.expectedAmount, 0);
   const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
   const recentPayments = detail.payments.slice(0, 5);
   const recentExpenses = detail.expenseItems.slice(0, 5);
@@ -170,82 +171,56 @@ export function ProgramsEventWorkspace({
       </section>
 
       {detail.canViewReconciliation && detail.financialSummary ? (
-        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Detailed analysis</p>
-                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared event summary</h3>
-                <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
-                  This is the analysis zone for the event itself. Department members can use it for discussion and
-                  leadership can read the same story from the numbers.
-                </p>
-              </div>
-              <p className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
-                Spend coverage: {collectionCoverage}%
+        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Detailed analysis</p>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared event summary</h3>
+              <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
+                One shared financial view for the department and leadership.
               </p>
             </div>
+            <p className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+              Spend coverage: {collectionCoverage}%
+            </p>
+          </div>
 
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="text-xs text-[#5f5673]">Total collected</p>
-                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
-              </div>
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="text-xs text-[#5f5673]">Total spent</p>
-                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
-              </div>
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="text-xs text-[#5f5673]">Balance retained</p>
-                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
-              </div>
+          <div className="mt-5 grid gap-3 md:grid-cols-4">
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Collected</p>
+              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
             </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Spent</p>
+              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Balance</p>
+              <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Activity</p>
+              <p className="mt-2 text-sm font-semibold text-[#241c33]">
+                {detail.participants.length} participants • {detail.expenseItems.length} expenses
+              </p>
+            </div>
+          </div>
 
-            <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
-              <ProgramsEventSummaryChart
-                totalCollected={totalCollected}
-                totalSpent={totalSpent}
-                balanceRetained={totalBalance}
-              />
-            </div>
-          </article>
-
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Quick read</p>
-            <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">What the room can see fast</h3>
-            <div className="mt-5 space-y-3">
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="text-sm font-semibold text-[#241c33]">Organizer side</p>
-                <p className="mt-2 text-sm text-[#5f5673]">
-                  {detail.participants.length} participants are currently registered for this event.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="text-sm font-semibold text-[#241c33]">Finance side</p>
-                <p className="mt-2 text-sm text-[#5f5673]">
-                  {detail.expenseItems.length} expense items are logged across {detail.categories.length} categories.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="text-sm font-semibold text-[#241c33]">Balance visibility</p>
-                <p className="mt-2 text-sm text-[#5f5673]">
-                  The event keeps a live balance so the department does not have to manually combine organizer and
-                  finance reports during meetings.
-                </p>
-              </div>
-            </div>
-          </article>
+          <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
+            <ProgramsEventSummaryChart
+              totalCollected={totalCollected}
+              totalSpent={totalSpent}
+              balanceRetained={totalBalance}
+            />
+          </div>
         </section>
       ) : null}
 
       {workspaceView === null ? (
-        <section className="grid gap-6 xl:grid-cols-2">
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <h3 className="text-2xl font-semibold text-[#241c33]">Recent organizer activity</h3>
-            <p className="mt-2 text-sm text-[#5f5673]">
-              Use the Organizer card above to enter deeper contribution work for this event.
-            </p>
-            <div className="mt-5 space-y-3">
+        <section className="grid gap-4 md:grid-cols-2">
+          <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+            <p className="text-sm font-semibold text-[#241c33]">Recent collections</p>
+            <div className="mt-3 space-y-3">
               {recentPayments.length === 0 ? (
                 <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
                   No payments recorded yet.
@@ -266,12 +241,9 @@ export function ProgramsEventWorkspace({
             </div>
           </article>
 
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <h3 className="text-2xl font-semibold text-[#241c33]">Recent expense activity</h3>
-            <p className="mt-2 text-sm text-[#5f5673]">
-              Use the Expenses card above to enter deeper finance work for this event.
-            </p>
-            <div className="mt-5 space-y-3">
+          <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+            <p className="text-sm font-semibold text-[#241c33]">Recent expenses</p>
+            <div className="mt-3 space-y-3">
               {recentExpenses.length === 0 ? (
                 <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
                   No expense items recorded yet.
@@ -302,6 +274,21 @@ export function ProgramsEventWorkspace({
             </div>
             <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
               {detail.participants.length} participants
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Expected</p>
+              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalExpected.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Collected</p>
+              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Outstanding</p>
+              <p className="mt-2 text-xl font-semibold text-[#241c33]">{Math.max(totalExpected - totalCollected, 0).toLocaleString()}</p>
             </div>
           </div>
 
@@ -345,11 +332,16 @@ export function ProgramsEventWorkspace({
 
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Record payment</h4>
+                <p className="text-sm text-[#5f5673]">
+                  Choose the participant whose contribution you are recording.
+                </p>
                 <select
                   value={paymentParticipantId}
                   onChange={(event) => setPaymentParticipantId(event.target.value)}
+                  disabled={detail.participants.length === 0}
                   className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
                 >
+                  <option value="">{detail.participants.length === 0 ? 'Add a participant first' : 'Choose participant'}</option>
                   {detail.participants.map((participant) => (
                     <option key={participant.id} value={participant.id}>
                       {participant.name}
