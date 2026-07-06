@@ -51,7 +51,21 @@ export function parseJsonValue<T>(value: string, fallback: T): T {
 }
 
 export function getTimeBasedGreeting(baseDate = new Date()) {
-  const hour = baseDate.getHours();
+  const timeZone = process.env.CAP_DEFAULT_TIMEZONE || 'Africa/Nairobi';
+  const hourText = new Intl.DateTimeFormat('en-GB', {
+    hour: 'numeric',
+    hour12: false,
+    timeZone,
+  }).format(baseDate);
+  const hour = Number(hourText);
+
+  if (!Number.isFinite(hour)) {
+    return 'Hello';
+  }
+
+  if (hour < 5) {
+    return 'Good night';
+  }
 
   if (hour < 12) {
     return 'Good morning';
@@ -61,7 +75,11 @@ export function getTimeBasedGreeting(baseDate = new Date()) {
     return 'Good afternoon';
   }
 
-  return 'Good evening';
+  if (hour < 22) {
+    return 'Good evening';
+  }
+
+  return 'Good night';
 }
 
 export function isIsoDateString(value: string) {
