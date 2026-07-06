@@ -9,6 +9,7 @@ import {
   createEventAction,
   createStandaloneContributionLedgerAction,
   createStandaloneExpenseLedgerAction,
+  deleteEventAction,
   setEventVisibilityAction,
 } from '@/app/actions/cap';
 import type { EventListItem, UserRecord } from '@/lib/cap/types';
@@ -32,7 +33,17 @@ function formatCount(value: number) {
   return value.toLocaleString();
 }
 
-function EventCard({ event }: { event: EventListItem }) {
+function EventCard({
+  event,
+  canManagePrograms,
+  pending,
+  onDelete,
+}: {
+  event: EventListItem;
+  canManagePrograms: boolean;
+  pending: boolean;
+  onDelete: (eventId: number) => void;
+}) {
   return (
     <div className="rounded-[28px] border border-[#e6def4] bg-[linear-gradient(180deg,#fcfbff_0%,#f8f4fd_100%)] p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -46,12 +57,24 @@ function EventCard({ event }: { event: EventListItem }) {
           <p className="mt-2 text-sm text-[#5f5673]">Open the event dashboard to continue work.</p>
         </div>
 
-        <Link
-          href={`/programs/events/${event.id}`}
-          className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
-        >
-          Open event dashboard
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href={`/programs/events/${event.id}`}
+            className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
+          >
+            Open event dashboard
+          </Link>
+          {canManagePrograms ? (
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() => onDelete(event.id)}
+              className="rounded-2xl border border-[#f0c7bf] bg-white px-4 py-3 text-sm font-semibold text-[#9b3e2f] disabled:opacity-60"
+            >
+              Delete event
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -324,7 +347,15 @@ export function ProgramsHub({
                 No active events yet. Create the first event above and it will become the first dashboard on this page.
               </div>
             ) : (
-              recentEvents.map((event) => <EventCard key={event.id} event={event} />)
+              recentEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  canManagePrograms={canManagePrograms}
+                  pending={pending}
+                  onDelete={(eventId) => runAction(() => deleteEventAction(eventId))}
+                />
+              ))
             )}
           </div>
         </article>
@@ -468,7 +499,15 @@ export function ProgramsHub({
               No past events yet. Ended events will stay here for archive viewing and later reporting.
             </div>
           ) : (
-            pastEvents.map((event) => <EventCard key={event.id} event={event} />)
+            pastEvents.map((event) => (
+              <EventCard
+                key={event.id}
+                event={event}
+                canManagePrograms={canManagePrograms}
+                pending={pending}
+                onDelete={(eventId) => runAction(() => deleteEventAction(eventId))}
+              />
+            ))
           )}
         </div>
       </section>
