@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 
 import {
   addContributionParticipantAction,
   addExpenseCategoryAction,
   addExpenseItemAction,
+  deleteEventAction,
   endEventAction,
   recordContributionPaymentAction,
 } from '@/app/actions/cap';
@@ -98,6 +99,36 @@ export function ProgramsEventWorkspace({
   const recentPayments = detail.payments.slice(0, 5);
   const recentExpenses = detail.expenseItems.slice(0, 5);
 
+  useEffect(() => {
+    if (detail.participants.length === 0) {
+      setPaymentParticipantId('');
+      return;
+    }
+
+    const stillExists = detail.participants.some(
+      (participant) => String(participant.id) === paymentParticipantId
+    );
+
+    if (!stillExists) {
+      setPaymentParticipantId(String(detail.participants[0]!.id));
+    }
+  }, [detail.participants, paymentParticipantId]);
+
+  useEffect(() => {
+    if (detail.categories.length === 0) {
+      setExpenseCategoryId('');
+      return;
+    }
+
+    const stillExists = detail.categories.some(
+      (category) => String(category.id) === expenseCategoryId
+    );
+
+    if (!stillExists) {
+      setExpenseCategoryId(String(detail.categories[0]!.id));
+    }
+  }, [detail.categories, expenseCategoryId]);
+
   const runAction = (task: () => Promise<{ success: boolean; message: string }>, onSuccess?: () => void) => {
     setError('');
     setMessage('');
@@ -139,6 +170,20 @@ export function ProgramsEventWorkspace({
                 className="rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#7a5a12]"
               >
                 End event and lock ledgers
+              </button>
+            ) : null}
+            {detail.canManageEvent ? (
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() =>
+                  runAction(() => deleteEventAction(detail.event.id), () => {
+                    router.push('/programs');
+                  })
+                }
+                className="rounded-2xl border border-[#f0c7bf] bg-white px-4 py-3 text-sm font-semibold text-[#9b3e2f] disabled:opacity-60"
+              >
+                Delete event
               </button>
             ) : null}
             <Link
@@ -277,25 +322,11 @@ export function ProgramsEventWorkspace({
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Expected</p>
-              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalExpected.toLocaleString()}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Collected</p>
-              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Outstanding</p>
-              <p className="mt-2 text-xl font-semibold text-[#241c33]">{Math.max(totalExpected - totalCollected, 0).toLocaleString()}</p>
-            </div>
-          </div>
-
           {hasOrganizerAccess && detail.contributionLedger ? (
             <div className="mt-5 grid gap-4 lg:grid-cols-2">
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Add participant</h4>
+                <p className="text-sm text-[#5f5673]">Start here, then record the payment once the participant appears below.</p>
                 <input
                   value={participantName}
                   onChange={(event) => setParticipantName(event.target.value)}
@@ -312,7 +343,7 @@ export function ProgramsEventWorkspace({
                 />
                 <button
                   type="button"
-                  disabled={pending}
+                  disabled={pending || !participantName.trim() || Number(participantExpectedAmount) <= 0}
                   onClick={() =>
                     runAction(
                       () =>
@@ -335,6 +366,7 @@ export function ProgramsEventWorkspace({
                 <p className="text-sm text-[#5f5673]">
                   Choose the participant whose contribution you are recording.
                 </p>
+                <label className="text-xs font-medium uppercase tracking-[0.18em] text-[#7a7190]">Participant</label>
                 <select
                   value={paymentParticipantId}
                   onChange={(event) => setPaymentParticipantId(event.target.value)}
@@ -364,7 +396,12 @@ export function ProgramsEventWorkspace({
                 />
                 <button
                   type="button"
-                  disabled={pending || !paymentParticipantId}
+                  disabled={
+                    pending ||
+                    !paymentParticipantId ||
+                    Number(paymentAmount) <= 0 ||
+                    paymentDate.trim().length === 0
+                  }
                   onClick={() =>
                     runAction(
                       () =>
@@ -386,6 +423,23 @@ export function ProgramsEventWorkspace({
               </div>
             </div>
           ) : null}
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Expected</p>
+              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalExpected.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Collected</p>
+              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
+            </div>
+            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+              <p className="text-xs text-[#5f5673]">Outstanding</p>
+              <p className="mt-2 text-xl font-semibold text-[#241c33]">
+                {Math.max(totalExpected - totalCollected, 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
 
           <div className="mt-5 space-y-3">
             {detail.participants.map((participant) => (
