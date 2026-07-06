@@ -44,9 +44,7 @@ export default async function EventWorkspacePage({
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs workspace</p>
           <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Event dashboard</h2>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Enter the event first, then move into Organizer or Expenses from the event cards below.
-          </p>
+          <p className="mt-2 text-sm text-[#5f5673]">Open the side you need and keep the event view simple.</p>
         </div>
 
         <Link
