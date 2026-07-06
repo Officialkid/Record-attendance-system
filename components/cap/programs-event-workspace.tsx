@@ -216,21 +216,20 @@ export function ProgramsEventWorkspace({
       </section>
 
       {detail.canViewReconciliation && detail.financialSummary ? (
-        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Detailed analysis</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared event summary</h3>
-              <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
-                One shared financial view for the department and leadership.
+        <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm" open>
+          <summary className="cursor-pointer list-none">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Detailed analysis</p>
+                <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared event summary</h3>
+              </div>
+              <p className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                Coverage {collectionCoverage}%
               </p>
             </div>
-            <p className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
-              Spend coverage: {collectionCoverage}%
-            </p>
-          </div>
+          </summary>
 
-          <div className="mt-5 grid gap-3 md:grid-cols-4">
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
             <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
               <p className="text-xs text-[#5f5673]">Collected</p>
               <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
@@ -243,12 +242,6 @@ export function ProgramsEventWorkspace({
               <p className="text-xs text-[#5f5673]">Balance</p>
               <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
             </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Activity</p>
-              <p className="mt-2 text-sm font-semibold text-[#241c33]">
-                {detail.participants.length} participants • {detail.expenseItems.length} expenses
-              </p>
-            </div>
           </div>
 
           <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
@@ -258,13 +251,15 @@ export function ProgramsEventWorkspace({
               balanceRetained={totalBalance}
             />
           </div>
-        </section>
+        </details>
       ) : null}
 
       {workspaceView === null ? (
         <section className="grid gap-4 md:grid-cols-2">
-          <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-[#241c33]">Recent collections</p>
+          <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+              Recent collections
+            </summary>
             <div className="mt-3 space-y-3">
               {recentPayments.length === 0 ? (
                 <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
@@ -284,10 +279,12 @@ export function ProgramsEventWorkspace({
                 })
               )}
             </div>
-          </article>
+          </details>
 
-          <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-            <p className="text-sm font-semibold text-[#241c33]">Recent expenses</p>
+          <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+              Recent expenses
+            </summary>
             <div className="mt-3 space-y-3">
               {recentExpenses.length === 0 ? (
                 <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
@@ -304,7 +301,7 @@ export function ProgramsEventWorkspace({
                 ))
               )}
             </div>
-          </article>
+          </details>
         </section>
       ) : null}
 
@@ -441,29 +438,34 @@ export function ProgramsEventWorkspace({
             </div>
           </div>
 
-          <div className="mt-5 space-y-3">
-            {detail.participants.map((participant) => (
-              <div key={participant.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-[#241c33]">{participant.name}</p>
-                    <p className="text-sm text-[#5f5673]">
-                      Expected: {participant.expectedAmount.toLocaleString()} • Paid:{' '}
-                      {participant.amountPaid.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
-                    Balance: {participant.balance.toLocaleString()}
+          <details className="mt-5 rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+              Participants list
+            </summary>
+            <div className="mt-3 space-y-3">
+              {detail.participants.map((participant) => (
+                <div key={participant.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-[#241c33]">{participant.name}</p>
+                      <p className="text-sm text-[#5f5673]">
+                        Expected: {participant.expectedAmount.toLocaleString()} • Paid:{' '}
+                        {participant.amountPaid.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                      Balance: {participant.balance.toLocaleString()}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {detail.participants.length === 0 ? (
-              <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                No contribution participants yet.
-              </p>
-            ) : null}
-          </div>
+              ))}
+              {detail.participants.length === 0 ? (
+                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                  No contribution participants yet.
+                </p>
+              ) : null}
+            </div>
+          </details>
         </section>
       ) : null}
 
@@ -592,22 +594,27 @@ export function ProgramsEventWorkspace({
             </div>
           ) : null}
 
-          <div className="mt-5 space-y-3">
-            {detail.expenseItems.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="font-semibold text-[#241c33]">{item.description}</p>
-                <p className="mt-1 text-sm text-[#5f5673]">
-                  Expected: {item.expectedAmount ?? '-'} • Actual: {item.actualAmount ?? '-'} • Status:{' '}
-                  {item.paymentStatus}
+          <details className="mt-5 rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-4">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+              Expense items
+            </summary>
+            <div className="mt-3 space-y-3">
+              {detail.expenseItems.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                  <p className="font-semibold text-[#241c33]">{item.description}</p>
+                  <p className="mt-1 text-sm text-[#5f5673]">
+                    Expected: {item.expectedAmount ?? '-'} • Actual: {item.actualAmount ?? '-'} • Status:{' '}
+                    {item.paymentStatus}
+                  </p>
+                </div>
+              ))}
+              {detail.expenseItems.length === 0 ? (
+                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                  No expense items yet.
                 </p>
-              </div>
-            ))}
-            {detail.expenseItems.length === 0 ? (
-              <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                No expense items yet.
-              </p>
-            ) : null}
-          </div>
+              ) : null}
+            </div>
+          </details>
         </section>
       ) : null}
     </div>
