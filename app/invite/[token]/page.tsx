@@ -1,15 +1,26 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { AuthMarketingPanel } from '@/components/cap/auth-marketing-panel';
 import { InviteClaimPanel } from '@/components/cap/invite-claim-panel';
 import { getSession, isGoogleAuthConfigured } from '@/lib/cap/auth';
-import { getDepartmentInviteByToken } from '@/lib/cap/services';
+import { acceptDepartmentInvite, getDepartmentInviteByToken } from '@/lib/cap/services';
 
 export const dynamic = 'force-dynamic';
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const [session, invite] = await Promise.all([getSession(), getDepartmentInviteByToken(token)]);
+  let autoClaimError: string | null = null;
+
+  if (invite && session?.user) {
+    try {
+      const result = await acceptDepartmentInvite(session.user, { token });
+      redirect(result.destinationUrl || '/dashboard');
+    } catch (error) {
+      autoClaimError = error instanceof Error ? error.message : 'Could not open this department automatically.';
+    }
+  }
 
   return (
     <main className="min-h-screen px-6 py-10">
@@ -22,6 +33,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
             token={token}
             signedInUser={session?.user ? { name: session.user.name, email: session.user.email } : null}
             googleEnabled={isGoogleAuthConfigured()}
+            autoClaimError={autoClaimError}
           />
         ) : (
           <section className="rounded-[32px] border border-[#ddd3f0] bg-white p-6 shadow-sm sm:p-7">
