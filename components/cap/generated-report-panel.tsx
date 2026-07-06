@@ -19,11 +19,13 @@ export function GeneratedReportPanel({
   initialStart,
   initialEnd,
   reports,
+  canManageReports = false,
 }: {
   departmentId: number;
   initialStart?: string;
   initialEnd?: string;
   reports: GeneratedReport[];
+  canManageReports?: boolean;
 }) {
   const [periodType, setPeriodType] = useState<ReportPeriodType>('monthly');
   const [start, setStart] = useState(initialStart || '');
@@ -44,7 +46,8 @@ export function GeneratedReportPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Groq reporting</p>
           <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Generate executive summary</h3>
           <p className="mt-2 text-sm text-[#5f5673]">
-            CIOM Portal computes the numbers first, then turns them into a leadership-ready summary.
+            CIOM Portal computes the numbers first, then turns them into a leadership-ready summary that can be saved,
+            reopened, printed, or downloaded again as a Word document.
           </p>
         </div>
 
@@ -131,7 +134,8 @@ export function GeneratedReportPanel({
           </div>
           {reportCards.length === 0 ? (
             <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-4 text-sm text-[#5f5673]">
-              No reports generated yet for this department.
+              No reports generated yet for this department. Create the first one above, then use the archive to reopen
+              or export it again later.
             </p>
           ) : (
             reportCards.map((report) => (
@@ -162,6 +166,10 @@ export function GeneratedReportPanel({
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Executive output</p>
             <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Leadership report</h3>
+            <p className="mt-2 text-sm text-[#5f5673]">
+              This panel is for record-based leadership summaries. Meeting source files and minutes attachments stay in
+              the Meetings workflow, while report DOCX export is handled here.
+            </p>
           </div>
           {activeReport ? (
             <span className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-medium text-[#4B248C]">
@@ -197,35 +205,44 @@ export function GeneratedReportPanel({
               >
                 Download DOCX
               </a>
-              <Link
-                href={`/insights/reports/${activeReport.id}`}
-                className="rounded-2xl border border-[#d9cfee] px-4 py-2 text-sm font-semibold text-[#241c33]"
-              >
-                Open Print View
-              </Link>
-              <button
-                type="button"
-                disabled={deleting}
-                onClick={() => {
-                  setFeedback('');
-                  startDeleteTransition(async () => {
-                    const result = await deleteGeneratedReportAction(activeReport.id);
-                    setFeedback(result.message);
-                    if (!result.success) {
-                      return;
-                    }
+              <details className="group relative">
+                <summary className="list-none rounded-2xl border border-[#d9cfee] px-4 py-2 text-sm font-semibold text-[#241c33] cursor-pointer">
+                  More actions
+                </summary>
+                <div className="absolute right-0 top-[calc(100%+0.5rem)] z-10 min-w-[220px] rounded-2xl border border-[#e6def4] bg-white p-2 shadow-lg">
+                  <Link
+                    href={`/insights/reports/${activeReport.id}`}
+                    className="block rounded-xl px-3 py-2 text-sm text-[#241c33] hover:bg-[#fbf9fe]"
+                  >
+                    Open Print View
+                  </Link>
+                  {canManageReports ? (
+                    <button
+                      type="button"
+                      disabled={deleting}
+                      onClick={() => {
+                        setFeedback('');
+                        startDeleteTransition(async () => {
+                          const result = await deleteGeneratedReportAction(activeReport.id);
+                          setFeedback(result.message);
+                          if (!result.success) {
+                            return;
+                          }
 
-                    setLocalReports((current) => {
-                      const next = current.filter((item) => item.id !== activeReport.id);
-                      setActiveReport(next[0] || null);
-                      return next;
-                    });
-                  });
-                }}
-                className="rounded-2xl border border-[#f0d6d6] px-4 py-2 text-sm font-semibold text-[#8c2436] disabled:opacity-60"
-              >
-                {deleting ? 'Deleting...' : 'Delete report'}
-              </button>
+                          setLocalReports((current) => {
+                            const next = current.filter((item) => item.id !== activeReport.id);
+                            setActiveReport(next[0] || null);
+                            return next;
+                          });
+                        });
+                      }}
+                      className="mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm font-semibold text-[#8c2436] hover:bg-[#fff6f6] disabled:opacity-60"
+                    >
+                      {deleting ? 'Deleting...' : 'Delete report'}
+                    </button>
+                  ) : null}
+                </div>
+              </details>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
@@ -282,7 +299,8 @@ export function GeneratedReportPanel({
           </div>
         ) : (
           <div className="mt-5 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-8 text-sm text-[#5f5673]">
-            Generate a report to see the executive summary here.
+            Generate a report to see the executive summary here, then open the print view or download the DOCX copy for
+            leadership sharing.
           </div>
         )}
       </article>
