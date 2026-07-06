@@ -43,9 +43,7 @@ function EventCard({ event }: { event: EventListItem }) {
               {event.status === 'active' ? 'Recent event' : 'Past event'}
             </span>
           </div>
-          <p className="mt-2 text-sm text-[#5f5673]">
-            Open the event dashboard first, then choose Organizer or Expenses from inside the event itself.
-          </p>
+          <p className="mt-2 text-sm text-[#5f5673]">Open the event dashboard to continue work.</p>
         </div>
 
         <Link
@@ -83,25 +81,6 @@ function EventCard({ event }: { event: EventListItem }) {
             {event.participantCount} participants • {event.expenseItemCount} expenses
           </p>
         </div>
-      </div>
-
-      <div className="mt-4 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-[#241c33]">Detailed analysis preview</p>
-            <p className="text-xs text-[#7a7190]">
-              This is the same financial story leadership can review when the event is opened.
-            </p>
-          </div>
-          <p className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
-            {event.status === 'active' ? 'Live event' : 'Archive view'}
-          </p>
-        </div>
-        <ProgramsEventSummaryChart
-          totalCollected={event.totalCollected}
-          totalSpent={event.totalSpent}
-          balanceRetained={event.balanceRetained}
-        />
       </div>
     </div>
   );
@@ -168,12 +147,8 @@ export function ProgramsHub({
         <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs hub</p>
-            <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Events, meetings, and live department reporting</h2>
-            <p className="mt-3 max-w-3xl text-sm text-[#5f5673]">
-              This page is now the Programs dashboard inside the wider portal. Create events here, open each event to
-              move into Organizer or Expenses, and keep the department&apos;s analysis ready for leadership and committee
-              conversations.
-            </p>
+            <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Programs dashboard</h2>
+            <p className="mt-3 max-w-3xl text-sm text-[#5f5673]">Create events, open them, and track the shared numbers.</p>
 
             {programsDepartmentId ? (
               <div className="mt-5 flex flex-wrap gap-3">
@@ -219,10 +194,7 @@ export function ProgramsHub({
           <article className="rounded-[28px] border border-[#e6def4] bg-white/90 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Create first</p>
             <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Create an event name</h3>
-            <p className="mt-2 text-sm text-[#5f5673]">
-              Once saved, the event becomes its own mini-dashboard with Organizer, Expenses, recent activity, and
-              analysis in one place.
-            </p>
+            <p className="mt-2 text-sm text-[#5f5673]">Once saved, the event opens into Organizer and Expenses.</p>
 
             {canManagePrograms ? (
               <div className="mt-4 space-y-3">
@@ -267,10 +239,6 @@ export function ProgramsHub({
               </div>
             )}
 
-            <div className="mt-4 rounded-2xl border border-dashed border-[#ddd3f0] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
-              Give every event a clear ministry-facing name. Once created, the dashboard below becomes the room where
-              teams can show collections, expenses, and balance without building a separate manual report.
-            </div>
           </article>
         </div>
       </section>
@@ -278,15 +246,14 @@ export function ProgramsHub({
       {message ? <p className="rounded-2xl bg-[#f4fff4] px-4 py-3 text-sm text-[#255b2f]">{message}</p> : null}
       {error ? <p className="rounded-2xl bg-[#fff1ec] px-4 py-3 text-sm text-[#a63e1c]">{error}</p> : null}
 
-      <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+      <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <article>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Department analysis</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">The Programs dashboard for presentations</h3>
+              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Department analysis</h3>
               <p className="mt-2 max-w-2xl text-sm text-[#5f5673]">
-                This is the department-level view for payments, expenses, and balances so organizers and leadership can
-                explain what is happening without jumping through many pages.
+                A quick shared view of collections, expenses, and balance.
               </p>
             </div>
             <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
@@ -334,34 +301,9 @@ export function ProgramsHub({
             />
           </div>
         </article>
-
-        <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">How it works</p>
-          <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Architecture of the Programs flow</h3>
-          <div className="mt-5 space-y-3">
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">1. Create the event</p>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                Start here with the event name and the portal generates the event shell plus both ledgers.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">2. Open the event dashboard</p>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                Each event opens into its own mini-dashboard with two pathways: Organizer and Expenses.
-              </p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-sm font-semibold text-[#241c33]">3. Present the numbers</p>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                The analysis area remains visible so department members and leadership can review one shared story.
-              </p>
-            </div>
-          </div>
-        </article>
       </section>
 
-      <section id="recent-events" className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <section id="recent-events" className="space-y-6">
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -387,13 +329,14 @@ export function ProgramsHub({
           </div>
         </article>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {canManagePrograms && users.length > 0 ? (
-            <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-[#241c33]">Grant event-side access</h3>
-              <p className="mt-2 text-sm text-[#5f5673]">
-                One member can be an admin in one department and a normal member elsewhere, so event-side access stays
-                separate and deliberate here.
+            <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+              <summary className="cursor-pointer list-none text-xl font-semibold text-[#241c33]">
+                Admin tools
+              </summary>
+              <p className="mt-3 text-sm text-[#5f5673]">
+                Grant event-side access only when needed.
               </p>
               <div className="mt-4 space-y-3">
                 <select
@@ -444,19 +387,24 @@ export function ProgramsHub({
                   Grant side access
                 </button>
               </div>
-            </article>
+            </details>
           ) : canManagePrograms ? (
-            <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+              <summary className="cursor-pointer list-none text-xl font-semibold text-[#241c33]">
+                Admin tools
+              </summary>
               <h3 className="text-xl font-semibold text-[#241c33]">Grant event-side access</h3>
               <p className="mt-2 text-sm text-[#5f5673]">
                 Event management is enabled, but the full cross-platform user list is only exposed from the super-admin
                 side. Open the super-admin account when you want to assign event-side access directly.
               </p>
-            </article>
+            </details>
           ) : null}
 
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-[#241c33]">Ended event visibility</h3>
+          <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <summary className="cursor-pointer list-none text-xl font-semibold text-[#241c33]">
+              Event visibility tools
+            </summary>
             <p className="mt-2 text-sm text-[#5f5673]">
               Keep archived dashboards visible in your switcher or hide them when you want a cleaner daily workspace.
             </p>
@@ -496,25 +444,7 @@ export function ProgramsHub({
                 ))
               )}
             </div>
-          </article>
-
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-[#241c33]">Presentation notes</h3>
-            <p className="mt-2 text-sm text-[#5f5673]">
-              Use the event dashboard when a team is gathered. It keeps the organizer story, the expenses story, and
-              the shared balance in one visible flow.
-            </p>
-            <div className="mt-4 space-y-3">
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
-                Open the event first, then let the room choose whether they need the Organizer workspace or the
-                Expenses workspace.
-              </div>
-              <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4 text-sm text-[#5f5673]">
-                Leadership sees the same financial story from its own page, which removes the need for duplicate
-                committee summaries.
-              </div>
-            </div>
-          </article>
+          </details>
         </div>
       </section>
 
@@ -544,8 +474,12 @@ export function ProgramsHub({
       </section>
 
       {hasFinanceAccess ? (
-        <section className="grid gap-6 xl:grid-cols-2">
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <summary className="cursor-pointer list-none text-xl font-semibold text-[#241c33]">
+            Finance tools
+          </summary>
+          <section className="mt-4 grid gap-6 xl:grid-cols-2">
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-[#fcfbff] p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Standalone contribution ledger</h3>
             <p className="mt-2 text-sm text-[#5f5673]">
               Keep finance work that is not tied to one event in its own reusable contribution ledger.
@@ -592,7 +526,7 @@ export function ProgramsHub({
             </div>
           </article>
 
-          <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+          <article className="rounded-[28px] border border-[#ddd3f0] bg-[#fcfbff] p-6 shadow-sm">
             <h3 className="text-xl font-semibold text-[#241c33]">Standalone expense ledger</h3>
             <p className="mt-2 text-sm text-[#5f5673]">
               Use this when Finance needs a ledger that stands outside an event but still belongs in the same platform.
@@ -627,6 +561,7 @@ export function ProgramsHub({
             </div>
           </article>
         </section>
+        </details>
       ) : null}
     </div>
   );
