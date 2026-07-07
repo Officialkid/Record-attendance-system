@@ -6,7 +6,7 @@ declare module 'next-auth' {
       id: string;
       role: 'admin' | 'leader' | 'member';
       systemRole: 'main_admin' | 'chief_admin' | 'none';
-      status: 'pending' | 'approved' | 'rejected' | 'active';
+      status: 'pending' | 'approved' | 'rejected' | 'active' | 'deactivated';
       departmentIds: number[];
       departmentRoles: Record<number, 'department_admin' | 'member'>;
       avatarUrl: string | null;
@@ -18,7 +18,7 @@ declare module 'next-auth' {
     id: string;
     role: 'admin' | 'leader' | 'member';
     systemRole: 'main_admin' | 'chief_admin' | 'none';
-    status: 'pending' | 'approved' | 'rejected' | 'active';
+    status: 'pending' | 'approved' | 'rejected' | 'active' | 'deactivated';
     departmentIds: number[];
     departmentRoles: Record<number, 'department_admin' | 'member'>;
     avatarUrl: string | null;
@@ -30,7 +30,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     role?: 'admin' | 'leader' | 'member';
     systemRole?: 'main_admin' | 'chief_admin' | 'none';
-    status?: 'pending' | 'approved' | 'rejected' | 'active';
+    status?: 'pending' | 'approved' | 'rejected' | 'active' | 'deactivated';
     departmentIds?: number[];
     departmentRoles?: Record<number, 'department_admin' | 'member'>;
     avatarUrl?: string | null;
