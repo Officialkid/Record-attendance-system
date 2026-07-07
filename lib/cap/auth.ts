@@ -15,7 +15,7 @@ type AuthRow = {
   email: string;
   role: GlobalRole;
   system_role: SystemRole;
-  status: 'pending' | 'approved' | 'rejected' | 'active';
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'deactivated';
   avatar_url: string | null;
   password_hash: string;
   google_sub: string | null;
@@ -24,6 +24,10 @@ type AuthRow = {
 
 function hasCalendarScope(scope?: string | null) {
   return typeof scope === 'string' && scope.split(/\s+/).includes('https://www.googleapis.com/auth/calendar.events');
+}
+
+function isDeactivatedStatus(status: AuthRow['status'] | string | undefined | null) {
+  return status === 'deactivated';
 }
 
 async function upsertCalendarConnection(userId: number, refreshToken: string) {
@@ -200,10 +204,14 @@ async function syncGoogleUser({
 
   const db = await getDb();
   const existingByGoogle = (await db
-    .prepare('SELECT id FROM users WHERE google_sub = ?')
-    .get(googleSub)) as { id: number } | undefined;
+    .prepare('SELECT id, status FROM users WHERE google_sub = ?')
+    .get(googleSub)) as { id: number; status: AuthRow['status'] } | undefined;
 
   if (existingByGoogle) {
+    if (isDeactivatedStatus(existingByGoogle.status)) {
+      return null;
+    }
+
     await db
       .prepare(
         `UPDATE users
@@ -216,9 +224,13 @@ async function syncGoogleUser({
 
   const existingByEmail = (await db
     .prepare('SELECT id, system_role, status FROM users WHERE lower(email) = lower(?)')
-    .get(email)) as { id: number; system_role: SystemRole; status: string } | undefined;
+    .get(email)) as { id: number; system_role: SystemRole; status: AuthRow['status'] } | undefined;
 
   if (existingByEmail) {
+    if (isDeactivatedStatus(existingByEmail.status)) {
+      return null;
+    }
+
     await db
       .prepare(
         `UPDATE users
@@ -280,7 +292,7 @@ if (isCredentialsFallbackEnabled()) {
         }
 
         const user = await getAuthRowByEmail(credentials.email);
-        if (!user || !user.password_hash) {
+        if (!user || !user.password_hash || isDeactivatedStatus(user.status)) {
           return null;
         }
 
@@ -329,14 +341,14 @@ export const authOptions: NextAuthOptions = {
           }
 
           const authRow = await getAuthRowById(googleUserId);
-          if (authRow) {
+          if (authRow && !isDeactivatedStatus(authRow.status)) {
             resolvedUser = await buildSessionUser(authRow);
             token.sub = String(googleUserId);
           }
         }
       } else if (!resolvedUser && token.sub) {
         const authRow = await getAuthRowById(Number(token.sub));
-        if (authRow) {
+        if (authRow && !isDeactivatedStatus(authRow.status)) {
           resolvedUser = await buildSessionUser(authRow);
         }
       }
