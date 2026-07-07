@@ -619,7 +619,7 @@ export interface AddExpenseCategoryInput {
 
 export interface AddExpenseItemInput {
   categoryId: number;
-  description: string;
+  description?: string;
   expectedAmount?: number | null;
   actualAmount?: number | null;
   paidBy?: string;
