@@ -20,7 +20,7 @@ export interface UserRecord {
   email: string;
   role: GlobalRole;
   systemRole: SystemRole;
-  status: MembershipStatus | 'active';
+  status: MembershipStatus | 'active' | 'deactivated';
   departmentIds: number[];
   departmentRoles: Record<number, DepartmentMembershipRole>;
   avatarUrl: string | null;
