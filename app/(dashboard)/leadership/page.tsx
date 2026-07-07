@@ -39,14 +39,20 @@ export default async function LeadershipPage() {
   const totalCollected = snapshots.events.reduce((sum, event) => sum + event.totalCollected, 0);
   const totalSpent = snapshots.events.reduce((sum, event) => sum + event.totalSpent, 0);
   const totalBalance = snapshots.events.reduce((sum, event) => sum + event.balanceRetained, 0);
-  const visibleDepartments = snapshots.departments.filter(
-    (department) =>
-      department.departmentName === 'Leadership' ||
-      department.recordCount > 0 ||
-      department.openActionItemCount > 0 ||
-      Boolean(department.latestRecordDate) ||
-      Boolean(department.latestMeetingDate)
-  );
+  const visibleDepartments = snapshots.departments
+    .filter(
+      (department) =>
+        department.departmentName === 'Leadership' ||
+        department.recordCount > 0 ||
+        department.openActionItemCount > 0 ||
+        Boolean(department.latestRecordDate) ||
+        Boolean(department.latestMeetingDate)
+    )
+    .sort((left, right) => {
+      const leftScore = left.recordCount * 3 + left.openActionItemCount * 2 + Number(Boolean(left.latestMeetingDate));
+      const rightScore = right.recordCount * 3 + right.openActionItemCount * 2 + Number(Boolean(right.latestMeetingDate));
+      return rightScore - leftScore;
+    });
   const maxDepartmentRecords = Math.max(...visibleDepartments.map((department) => department.recordCount), 1);
   const maxDepartmentActions = Math.max(
     ...visibleDepartments.map((department) => department.openActionItemCount),
@@ -67,17 +73,25 @@ export default async function LeadershipPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Leadership</p>
             <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Leadership decision workspace</h2>
             <p className="mt-2 text-sm text-[#5f5673]">
-              See the ministry story quickly, then open the deeper pages only when you need to investigate.
+              Read the ministry story quickly, compare signals visually, and open the deeper analysis only when you need to investigate.
             </p>
           </div>
 
-          <details className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 lg:max-w-sm">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-[#4B248C]">More</summary>
-            <div className="mt-3 space-y-2 text-sm text-[#5f5673]">
-              <p>Leadership reads department signals, meeting follow-up, and shared programs balances from one place.</p>
-              <p>The heavier admin controls stay outside this page so the workspace remains simple.</p>
-            </div>
-          </details>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/insights/full"
+              className="rounded-2xl bg-[#4B248C] px-4 py-3 text-sm font-semibold text-white"
+            >
+              Open full insights
+            </Link>
+            <details className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 lg:max-w-sm">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-[#4B248C]">More</summary>
+              <div className="mt-3 space-y-2 text-sm text-[#5f5673]">
+                <p>Leadership stays focused on signals, meetings, and event balances instead of heavy administration.</p>
+                <p>Use Programs and Meetings as the working spaces, then come back here for decisions.</p>
+              </div>
+            </details>
+          </div>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-4">
@@ -100,13 +114,13 @@ export default async function LeadershipPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.88fr_1.12fr]">
+      <div className="grid gap-6 xl:grid-cols-[0.84fr_1.16fr]">
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-2xl font-semibold text-[#241c33]">Leadership shortcuts</h3>
               <p className="mt-2 text-sm text-[#5f5673]">
-                Keep the main entry points visible and leave the rest tucked away.
+                Keep only the main action points here, and push the rest into the lighter follow-up layer.
               </p>
             </div>
             <div className="rounded-full bg-[#f4effb] px-3 py-1 text-xs font-semibold text-[#4B248C]">
@@ -114,7 +128,7 @@ export default async function LeadershipPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="mt-5 grid gap-3">
             <Link
               href="/meetings"
               className="rounded-2xl bg-[#4B248C] px-4 py-4 text-sm font-semibold text-white"
@@ -135,16 +149,16 @@ export default async function LeadershipPage() {
             </summary>
             <div className="mt-3 flex flex-wrap gap-3">
               <Link
+                href="/insights"
+                className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
+              >
+                Insights summary
+              </Link>
+              <Link
                 href="/notifications"
                 className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
               >
                 Notifications
-              </Link>
-              <Link
-                href="/insights"
-                className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
-              >
-                Insights
               </Link>
             </div>
           </details>
@@ -157,7 +171,7 @@ export default async function LeadershipPage() {
               <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Independent department snapshots</h3>
             </div>
             <p className="text-sm text-[#5f5673]">
-              Each card stays short but still shows the visual weight of activity.
+              Short cards, visible weight, and just enough context for decision making.
             </p>
           </div>
 
@@ -216,14 +230,22 @@ export default async function LeadershipPage() {
       </div>
 
       <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Shared Analysis</p>
             <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Programs summaries for leadership only</h3>
           </div>
-          <p className="text-sm text-[#5f5673]">
-            This is the decision layer: collections, spending, and retained balance per event.
-          </p>
+          <div className="flex flex-wrap gap-3">
+            <p className="text-sm text-[#5f5673] md:max-w-md">
+              This is the decision layer: collections, spending, retained balance, and event-level comparisons from one place.
+            </p>
+            <Link
+              href="/insights/full"
+              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-semibold text-[#241c33]"
+            >
+              View full insights
+            </Link>
+          </div>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-4">
