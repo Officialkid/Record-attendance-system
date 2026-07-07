@@ -59,7 +59,7 @@ export default async function AdminPage({
         </h2>
         <p className="mt-2 text-sm text-[#5f5673]">
           {isSystemAdmin
-            ? 'Manage departments, field definitions, direct member access, and reusable department access links from one workspace.'
+            ? 'Keep the normal ministry flow simple. Use this page mainly for links, access control, and controlled setup work.'
             : 'Create reusable department access links for your departments and guide members into the right ministry workspace.'}
         </p>
       </div>
@@ -107,9 +107,7 @@ export default async function AdminPage({
       <div className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5 text-sm text-[#5f5673]">
         <p className="font-semibold text-[#241c33]">Recommended ministry flow</p>
         <p className="mt-2">
-          Use department access links as the normal onboarding path. Direct user creation and manual membership changes
-          are still available for recovery, exceptional admin cases, or controlled setup work, but shared department links should
-          be the default way real members enter the system.
+          Use department access links as the normal onboarding path. Direct user creation, new department setup, and manual membership changes should stay tucked away for controlled admin work only.
         </p>
       </div>
 
@@ -120,17 +118,22 @@ export default async function AdminPage({
       {isSystemAdmin ? (
         <div className="grid gap-6 xl:grid-cols-3">
           {isMainAdmin ? (
-            <form action={submitDepartmentFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-              <h3 className="text-xl font-semibold text-[#241c33]">Create department</h3>
-              <div className="mt-4 space-y-3">
+            <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+              <summary className="cursor-pointer list-none text-xl font-semibold text-[#241c33]">
+                Create department
+              </summary>
+              <p className="mt-3 text-sm text-[#5f5673]">
+                Keep this collapsed unless you are doing rare system expansion work. Everyday administration should happen through invites and membership controls.
+              </p>
+              <form action={submitDepartmentFormAction} className="mt-4 space-y-3">
                 <input name="name" required placeholder="Department name" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
                 <input name="slug" required placeholder="department-slug" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
-                <textarea name="description" rows={3} placeholder="Description" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
+                <textarea name="description" rows={3} placeholder="Short description" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
                 <button type="submit" className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white">
                   Create department
                 </button>
-              </div>
-            </form>
+              </form>
+            </details>
           ) : (
             <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-[#241c33]">Department creation</h3>
@@ -141,9 +144,14 @@ export default async function AdminPage({
             </article>
           )}
 
-          <form action={submitFieldDefinitionFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-[#241c33]">Add field definition</h3>
-            <div className="mt-4 space-y-3">
+          <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <summary className="cursor-pointer list-none text-xl font-semibold text-[#241c33]">
+              Add field definition
+            </summary>
+            <p className="mt-3 text-sm text-[#5f5673]">
+              Open this only when you are changing how a department captures records.
+            </p>
+            <form action={submitFieldDefinitionFormAction} className="mt-4 space-y-3">
               <select name="departmentId" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none">
                 {departments.map((department) => (
                   <option key={department.id} value={department.id}>
@@ -168,16 +176,17 @@ export default async function AdminPage({
               <button type="submit" className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white">
                 Add field
               </button>
-            </div>
-          </form>
+            </form>
+          </details>
 
-          <form action={submitUserFormAction} className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
-            <h3 className="text-xl font-semibold text-[#241c33]">Admin-add user</h3>
-            <p className="mt-2 text-sm text-[#5f5673]">
-              Keep this for controlled admin setup or recovery work. Normal ministry onboarding should use department links
-              above.
+          <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+            <summary className="cursor-pointer list-none text-xl font-semibold text-[#241c33]">
+              Admin-add user
+            </summary>
+            <p className="mt-3 text-sm text-[#5f5673]">
+              Keep this for controlled setup or recovery. Normal ministry onboarding should use department links above.
             </p>
-            <div className="mt-4 space-y-3">
+            <form action={submitUserFormAction} className="mt-4 space-y-3">
               <input name="name" required placeholder="Full name" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
               <input name="email" type="email" required placeholder="Email address" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none" />
               <select name="systemRole" className="w-full rounded-2xl border border-[#d9cfee] bg-[#fbf9fe] px-4 py-3 text-sm text-[#241c33] outline-none">
@@ -199,8 +208,8 @@ export default async function AdminPage({
               <button type="submit" className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white">
                 Add user
               </button>
-            </div>
-          </form>
+            </form>
+          </details>
         </div>
       ) : null}
 
