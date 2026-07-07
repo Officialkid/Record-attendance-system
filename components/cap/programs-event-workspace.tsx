@@ -19,44 +19,39 @@ function WorkspaceCard({
   title,
   body,
   href,
-  active,
-  disabled,
   badge,
+  accent,
 }: {
   title: string;
   body: string;
   href: string;
-  active: boolean;
-  disabled: boolean;
   badge: string;
+  accent: 'purple' | 'gold';
 }) {
-  if (disabled) {
-    return (
-      <article className="rounded-[28px] border border-[#e6def4] bg-[#f8f5fd] p-5 opacity-70">
-        <div className="flex items-center justify-between gap-3">
-          <h3 className="text-xl font-semibold text-[#241c33]">{title}</h3>
-          <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#7a7190]">{badge}</span>
-        </div>
-        <p className="mt-3 text-sm text-[#5f5673]">{body}</p>
-      </article>
-    );
-  }
+  const accentClasses =
+    accent === 'purple'
+      ? 'border-[#4B248C] bg-[linear-gradient(135deg,#f7f1ff_0%,#efe6ff_100%)]'
+      : 'border-[#e6def4] bg-white';
 
   return (
-    <Link
-      href={href}
-      className={`block rounded-[28px] border p-5 transition-transform hover:-translate-y-0.5 ${
-        active
-          ? 'border-[#4B248C] bg-[linear-gradient(135deg,#f7f1ff_0%,#efe6ff_100%)]'
-          : 'border-[#e6def4] bg-[#fbf9fe]'
-      }`}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-xl font-semibold text-[#241c33]">{title}</h3>
-        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">{badge}</span>
+    <Link href={href} className={`block rounded-[28px] border p-6 transition-transform hover:-translate-y-0.5 ${accentClasses}`}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-2xl font-semibold text-[#241c33]">{title}</h3>
+          <p className="mt-3 max-w-3xl text-sm text-[#5f5673]">{body}</p>
+        </div>
+        <span className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-[#4B248C]">{badge}</span>
       </div>
-      <p className="mt-3 text-sm text-[#5f5673]">{body}</p>
     </Link>
+  );
+}
+
+function SurfaceCard({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">{title}</p>
+      <p className="mt-2 text-2xl font-semibold text-[#241c33]">{value}</p>
+    </div>
   );
 }
 
@@ -94,6 +89,7 @@ export function ProgramsEventWorkspace({
   const hasFinanceAccess = detail.activeSide === 'finance' || detail.canManageEvent;
   const workspaceView =
     selectedView || (detail.canManageEvent ? null : detail.activeSide === 'finance' ? 'finance' : 'organizer');
+
   const totalCollected = detail.financialSummary?.totalCollected || 0;
   const totalSpent = detail.financialSummary?.totalSpent || 0;
   const totalBalance = detail.financialSummary?.balanceRetained || 0;
@@ -103,6 +99,11 @@ export function ProgramsEventWorkspace({
   const recentExpenses = detail.expenseItems.slice(0, 2);
   const selectedPaymentParticipant =
     detail.participants.find((participant) => String(participant.id) === paymentParticipantId) || null;
+  const alternateWorkspaceHref =
+    workspaceView === 'organizer'
+      ? `/programs/events/${detail.event.id}?side=finance`
+      : `/programs/events/${detail.event.id}?side=organizer`;
+  const alternateWorkspaceLabel = workspaceView === 'organizer' ? 'Open expenses workspace' : 'Open organizer workspace';
 
   useEffect(() => {
     if (detail.participants.length === 0) {
@@ -161,20 +162,35 @@ export function ProgramsEventWorkspace({
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Programs event</p>
             <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">{detail.event.name}</h2>
             <p className="mt-2 text-sm text-[#5f5673]">
-              Status: {detail.event.status} • Current access view:{' '}
-              <span className="font-semibold text-[#241c33]">{detail.activeSide}</span>
+              Status: {detail.event.status} • Access view: <span className="font-semibold text-[#241c33]">{detail.activeSide}</span>
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
+            {workspaceView ? (
+              <Link
+                href={`/programs/events/${detail.event.id}`}
+                className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
+              >
+                Back to event home
+              </Link>
+            ) : null}
+            {workspaceView && ((workspaceView === 'organizer' && hasFinanceAccess) || (workspaceView === 'finance' && hasOrganizerAccess)) ? (
+              <Link
+                href={alternateWorkspaceHref}
+                className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
+              >
+                {alternateWorkspaceLabel}
+              </Link>
+            ) : null}
             {detail.canManageEvent && detail.event.status === 'active' ? (
               <button
                 type="button"
                 disabled={pending}
                 onClick={() => runAction(() => endEventAction(detail.event.id))}
-                className="rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#7a5a12]"
+                className="rounded-2xl border border-[#eadfb8] bg-[#fff8eb] px-4 py-3 text-sm font-semibold text-[#7a5a12] disabled:opacity-60"
               >
-                End event and lock ledgers
+                End event
               </button>
             ) : null}
             {detail.canManageEvent ? (
@@ -191,41 +207,26 @@ export function ProgramsEventWorkspace({
                 Delete event
               </button>
             ) : null}
-            <Link
-              href={`/programs/events/${detail.event.id}`}
-              className="rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
-            >
-              Event home
-            </Link>
           </div>
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-4">
-          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Collected</p>
-            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
-          </div>
-          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Spent</p>
-            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalSpent.toLocaleString()}</p>
-          </div>
-          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Balance</p>
-            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{totalBalance.toLocaleString()}</p>
-          </div>
-          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Coverage</p>
-            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{collectionCoverage}%</p>
-          </div>
+          <SurfaceCard title="Collected" value={totalCollected.toLocaleString()} />
+          <SurfaceCard title="Spent" value={totalSpent.toLocaleString()} />
+          <SurfaceCard title="Balance" value={totalBalance.toLocaleString()} />
+          <SurfaceCard title="Coverage" value={`${collectionCoverage}%`} />
         </div>
 
         {detail.canManageEvent ? (
-          <div className="mt-5 rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
+          <details className="mt-5 rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-5">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+              More event admin tools
+            </summary>
+            <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
               <div>
                 <h3 className="text-lg font-semibold text-[#241c33]">Event correction</h3>
                 <p className="mt-2 text-sm text-[#5f5673]">
-                  Super admins and event admins can still correct the event name, status, or end date even after closure.
+                  Adjust the event name, status, or end date without keeping these controls fully open on every visit.
                 </p>
               </div>
               <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
@@ -277,107 +278,95 @@ export function ProgramsEventWorkspace({
               </button>
               <p className="text-sm text-[#5f5673]">
                 {eventStatus === 'active'
-                  ? 'The event will stay open and editable.'
+                  ? 'The event stays open and editable.'
                   : 'Set the correct closure date before saving.'}
               </p>
             </div>
-          </div>
+          </details>
         ) : null}
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <WorkspaceCard
-          title="Organizer page"
-          body="Manage participant names, expected amounts, collected payments, and the live contribution picture for this event."
-          href={`/programs/events/${detail.event.id}?side=organizer`}
-          active={workspaceView === 'organizer'}
-          disabled={!hasOrganizerAccess}
-          badge={hasOrganizerAccess ? 'Open workspace' : 'Access needed'}
-        />
-        <WorkspaceCard
-          title="Expenses page"
-          body="Manage categories, expense items, actual amounts, reimbursements, and the finance-side spending story."
-          href={`/programs/events/${detail.event.id}?side=finance`}
-          active={workspaceView === 'finance'}
-          disabled={!hasFinanceAccess}
-          badge={hasFinanceAccess ? 'Open workspace' : 'Access needed'}
-        />
-      </section>
-
       {workspaceView === null ? (
-        <section className="grid gap-4 md:grid-cols-2">
-          <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
-              Recent collections
-            </summary>
-            <div className="mt-3 space-y-3">
-              {recentPayments.length === 0 ? (
-                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                  No payments recorded yet.
-                </p>
-              ) : (
-                recentPayments.map((payment) => {
-                  const participant = detail.participants.find((item) => item.id === payment.participantId);
-                  return (
-                    <div key={payment.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                      <p className="font-semibold text-[#241c33]">{participant?.name || 'Participant'}</p>
+        <>
+          <section className="grid gap-4 xl:grid-cols-2">
+            {hasOrganizerAccess ? (
+              <WorkspaceCard
+                title="Organizer page"
+                body="Manage participant names, expected amounts, collected payments, and the live contribution picture for this event."
+                href={`/programs/events/${detail.event.id}?side=organizer`}
+                badge="Open workspace"
+                accent="purple"
+              />
+            ) : null}
+            {hasFinanceAccess ? (
+              <WorkspaceCard
+                title="Expenses page"
+                body="Manage categories, expense items, planned amounts, actual amounts, reimbursements, and the finance-side spending story."
+                href={`/programs/events/${detail.event.id}?side=finance`}
+                badge="Open workspace"
+                accent="gold"
+              />
+            ) : null}
+          </section>
+
+          <section className="grid gap-4 md:grid-cols-2">
+            <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+                Recent collections
+              </summary>
+              <div className="mt-3 space-y-3">
+                {recentPayments.length === 0 ? (
+                  <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                    No payments recorded yet.
+                  </p>
+                ) : (
+                  recentPayments.map((payment) => {
+                    const participant = detail.participants.find((item) => item.id === payment.participantId);
+                    return (
+                      <div key={payment.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                        <p className="font-semibold text-[#241c33]">{participant?.name || 'Participant'}</p>
+                        <p className="mt-1 text-sm text-[#5f5673]">
+                          Paid {payment.amount.toLocaleString()} on {payment.paymentDate}
+                        </p>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </details>
+
+            <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+                Recent expenses
+              </summary>
+              <div className="mt-3 space-y-3">
+                {recentExpenses.length === 0 ? (
+                  <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                    No expense items recorded yet.
+                  </p>
+                ) : (
+                  recentExpenses.map((item) => (
+                    <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                      <p className="font-semibold text-[#241c33]">{item.description}</p>
                       <p className="mt-1 text-sm text-[#5f5673]">
-                        Paid {payment.amount.toLocaleString()} on {payment.paymentDate}
+                        Actual: {item.actualAmount ?? '-'} • Status: {item.paymentStatus}
                       </p>
                     </div>
-                  );
-                })
-              )}
-              {detail.payments.length > 2 ? (
-                <Link
-                  href={`/programs/events/${detail.event.id}?side=organizer`}
-                  className="inline-flex rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
-                >
-                  Open organizer page for the full list
-                </Link>
-              ) : null}
-            </div>
-          </details>
-
-          <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
-              Recent expenses
-            </summary>
-            <div className="mt-3 space-y-3">
-              {recentExpenses.length === 0 ? (
-                <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                  No expense items recorded yet.
-                </p>
-              ) : (
-                recentExpenses.map((item) => (
-                  <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                    <p className="font-semibold text-[#241c33]">{item.description}</p>
-                    <p className="mt-1 text-sm text-[#5f5673]">
-                      Actual: {item.actualAmount ?? '-'} • Status: {item.paymentStatus}
-                    </p>
-                  </div>
-                ))
-              )}
-              {detail.expenseItems.length > 2 ? (
-                <Link
-                  href={`/programs/events/${detail.event.id}?side=finance`}
-                  className="inline-flex rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm font-medium text-[#241c33]"
-                >
-                  Open expenses page for the full list
-                </Link>
-              ) : null}
-            </div>
-          </details>
-        </section>
+                  ))
+                )}
+              </div>
+            </details>
+          </section>
+        </>
       ) : null}
 
       {workspaceView === 'organizer' ? (
-        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <section className="space-y-5 rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-2xl font-semibold text-[#241c33]">Organizer workspace</h3>
               <p className="mt-2 text-sm text-[#5f5673]">
-                Add participants, track collections, and keep the contribution side ready for review.
+                This page stays focused on participants and collections only.
               </p>
             </div>
             <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
@@ -386,10 +375,9 @@ export function ProgramsEventWorkspace({
           </div>
 
           {hasOrganizerAccess && detail.contributionLedger ? (
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 lg:grid-cols-2">
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Add participant</h4>
-                <p className="text-sm text-[#5f5673]">Start here, then record the payment once the participant appears below.</p>
                 <input
                   value={participantName}
                   onChange={(event) => setParticipantName(event.target.value)}
@@ -426,10 +414,6 @@ export function ProgramsEventWorkspace({
 
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Record payment</h4>
-                <p className="text-sm text-[#5f5673]">
-                  Choose the participant whose contribution you are recording, then save the exact amount and date.
-                </p>
-                <label className="text-xs font-medium uppercase tracking-[0.18em] text-[#7a7190]">Participant</label>
                 <select
                   value={paymentParticipantId}
                   onChange={(event) => setPaymentParticipantId(event.target.value)}
@@ -446,7 +430,7 @@ export function ProgramsEventWorkspace({
                 <p className="text-sm text-[#5f5673]">
                   {selectedPaymentParticipant
                     ? `Recording for ${selectedPaymentParticipant.name}. Remaining balance: ${selectedPaymentParticipant.balance.toLocaleString()}.`
-                    : 'The dropdown is where you choose the exact participant receiving this payment entry.'}
+                    : 'Use the dropdown to choose the exact participant receiving this payment entry.'}
                 </p>
                 <input
                   type="number"
@@ -464,12 +448,7 @@ export function ProgramsEventWorkspace({
                 />
                 <button
                   type="button"
-                  disabled={
-                    pending ||
-                    !paymentParticipantId ||
-                    Number(paymentAmount) <= 0 ||
-                    paymentDate.trim().length === 0
-                  }
+                  disabled={pending || !paymentParticipantId || Number(paymentAmount) <= 0 || paymentDate.trim().length === 0}
                   onClick={() =>
                     runAction(
                       () =>
@@ -492,61 +471,49 @@ export function ProgramsEventWorkspace({
             </div>
           ) : null}
 
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Expected</p>
-              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalExpected.toLocaleString()}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Collected</p>
-              <p className="mt-2 text-xl font-semibold text-[#241c33]">{totalCollected.toLocaleString()}</p>
-            </div>
-            <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-              <p className="text-xs text-[#5f5673]">Outstanding</p>
-              <p className="mt-2 text-xl font-semibold text-[#241c33]">
-                {Math.max(totalExpected - totalCollected, 0).toLocaleString()}
-              </p>
-            </div>
+          <div className="grid gap-3 md:grid-cols-3">
+            <SurfaceCard title="Expected" value={totalExpected.toLocaleString()} />
+            <SurfaceCard title="Collected" value={totalCollected.toLocaleString()} />
+            <SurfaceCard title="Outstanding" value={Math.max(totalExpected - totalCollected, 0).toLocaleString()} />
           </div>
 
-          <details className="mt-5 rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-4">
+          <details className="rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-4">
             <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
               Participants list
             </summary>
             <div className="mt-3 space-y-3">
-            {detail.participants.map((participant) => (
-              <div key={participant.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-semibold text-[#241c33]">{participant.name}</p>
-                    <p className="text-sm text-[#5f5673]">
-                      Expected: {participant.expectedAmount.toLocaleString()} • Paid:{' '}
-                      {participant.amountPaid.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
-                    Balance: {participant.balance.toLocaleString()}
+              {detail.participants.map((participant) => (
+                <div key={participant.id} className="rounded-2xl border border-[#e6def4] bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-[#241c33]">{participant.name}</p>
+                      <p className="text-sm text-[#5f5673]">
+                        Expected: {participant.expectedAmount.toLocaleString()} • Paid: {participant.amountPaid.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="rounded-full bg-[#f4effb] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+                      Balance: {participant.balance.toLocaleString()}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {detail.participants.length === 0 ? (
-              <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                No contribution participants yet.
-              </p>
-            ) : null}
+              ))}
+              {detail.participants.length === 0 ? (
+                <p className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
+                  No contribution participants yet.
+                </p>
+              ) : null}
             </div>
           </details>
         </section>
       ) : null}
 
       {workspaceView === 'finance' ? (
-        <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <section className="space-y-5 rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h3 className="text-2xl font-semibold text-[#241c33]">Expenses workspace</h3>
               <p className="mt-2 text-sm text-[#5f5673]">
-                Build categories, record actuals, and track reimbursements or paid items from the finance side.
+                This page stays focused on categories, planning figures, actuals, and reimbursements.
               </p>
             </div>
             <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
@@ -555,7 +522,7 @@ export function ProgramsEventWorkspace({
           </div>
 
           {hasFinanceAccess && detail.expenseLedger ? (
-            <div className="mt-5 space-y-4">
+            <div className="space-y-4">
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
                 <h4 className="font-semibold text-[#241c33]">Add category</h4>
                 <input
@@ -566,7 +533,7 @@ export function ProgramsEventWorkspace({
                 />
                 <button
                   type="button"
-                  disabled={pending}
+                  disabled={pending || !categoryName.trim()}
                   onClick={() =>
                     runAction(
                       () =>
@@ -584,12 +551,18 @@ export function ProgramsEventWorkspace({
               </div>
 
               <div className="space-y-3 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <h4 className="font-semibold text-[#241c33]">Add expense item</h4>
+                <div>
+                  <h4 className="font-semibold text-[#241c33]">Add expense item</h4>
+                  <p className="mt-1 text-sm text-[#5f5673]">
+                    Description, actual amount, and paid-by details can be filled later. Planning entries can start with the expected amount only.
+                  </p>
+                </div>
                 <select
                   value={expenseCategoryId}
                   onChange={(event) => setExpenseCategoryId(event.target.value)}
                   className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
                 >
+                  <option value="">Choose category</option>
                   {detail.categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -599,7 +572,7 @@ export function ProgramsEventWorkspace({
                 <input
                   value={expenseDescription}
                   onChange={(event) => setExpenseDescription(event.target.value)}
-                  placeholder="Kitchen supplies"
+                  placeholder="Optional description"
                   className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
                 />
                 <input
@@ -615,7 +588,7 @@ export function ProgramsEventWorkspace({
                   min="0"
                   value={expenseActualAmount}
                   onChange={(event) => setExpenseActualAmount(event.target.value)}
-                  placeholder="Actual amount"
+                  placeholder="Actual amount (optional for now)"
                   className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
                 />
                 <input
@@ -665,25 +638,24 @@ export function ProgramsEventWorkspace({
             </div>
           ) : null}
 
-          <details className="mt-5 rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-4">
+          <details className="rounded-[24px] border border-[#e6def4] bg-[#fbf9fe] p-4">
             <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
               Expense items
             </summary>
             <div className="mt-3 space-y-3">
-            {detail.expenseItems.map((item) => (
-              <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                <p className="font-semibold text-[#241c33]">{item.description}</p>
-                <p className="mt-1 text-sm text-[#5f5673]">
-                  Expected: {item.expectedAmount ?? '-'} • Actual: {item.actualAmount ?? '-'} • Status:{' '}
-                  {item.paymentStatus}
+              {detail.expenseItems.map((item) => (
+                <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-white p-4">
+                  <p className="font-semibold text-[#241c33]">{item.description}</p>
+                  <p className="mt-1 text-sm text-[#5f5673]">
+                    Expected: {item.expectedAmount ?? '-'} • Actual: {item.actualAmount ?? '-'} • Status: {item.paymentStatus}
+                  </p>
+                </div>
+              ))}
+              {detail.expenseItems.length === 0 ? (
+                <p className="rounded-2xl border border-[#e6def4] bg-white px-4 py-3 text-sm text-[#5f5673]">
+                  No expense items yet.
                 </p>
-              </div>
-            ))}
-            {detail.expenseItems.length === 0 ? (
-              <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                No expense items yet.
-              </p>
-            ) : null}
+              ) : null}
             </div>
           </details>
         </section>
