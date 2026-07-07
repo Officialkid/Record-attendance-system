@@ -200,72 +200,67 @@ export function ProfileCard({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#f0d8d2] bg-[#fff7f4] p-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-[#7a2413]">Account controls</p>
-              <p className="mt-1 max-w-2xl text-sm text-[#8a4a3f]">
-                Deactivate keeps the account recoverable later. Delete permanently removes sign-in access and anonymizes the history so reports, records, and meetings stay intact.
-              </p>
-            </div>
-            {protectedAccount ? (
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#7a2413]">
-                Protected admin account
-              </span>
-            ) : null}
-          </div>
-
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={pending || uploading || accountPending || protectedAccount}
-              onClick={() => {
-                if (!window.confirm('Deactivate this account now? You will be signed out and an admin will need to restore access later.')) {
-                  return;
-                }
-
-                setFeedback(null);
-                startAccountTransition(async () => {
-                  const result = await deactivateOwnAccountAction();
-                  setFeedback(result);
-                  if (result.success) {
-                    await signOut({ callbackUrl: '/login' });
-                  }
-                });
-              }}
-              className="rounded-2xl border border-[#d8b7b0] bg-white px-5 py-3 text-sm font-semibold text-[#7a2413] disabled:opacity-60"
-            >
-              {accountPending ? 'Processing...' : 'Deactivate account'}
-            </button>
-            <button
-              type="button"
-              disabled={pending || uploading || accountPending || protectedAccount}
-              onClick={() => {
-                if (!window.confirm('Delete this account permanently? Sign-in access will be removed and your historical activity will be anonymized.')) {
-                  return;
-                }
-
-                setFeedback(null);
-                startAccountTransition(async () => {
-                  const result = await deleteOwnAccountAction();
-                  setFeedback(result);
-                  if (result.success) {
-                    await signOut({ callbackUrl: '/login' });
-                  }
-                });
-              }}
-              className="rounded-2xl bg-[#7a2413] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
-            >
-              {accountPending ? 'Processing...' : 'Delete permanently'}
-            </button>
-          </div>
-
-          {protectedAccount ? (
-            <p className="mt-3 text-sm text-[#8a4a3f]">
-              Protected super-admin accounts cannot remove themselves from Profile because that could lock the portal. Use a second protected admin account for the handoff.
+        <details className="rounded-2xl border border-[#f0d8d2] bg-[#fff7f4] p-4">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-[#7a2413]">
+            Account controls
+          </summary>
+          <div className="mt-3 space-y-4">
+            <p className="text-sm text-[#8a4a3f]">
+              Deactivate keeps the account recoverable later. Delete permanently removes sign-in access and anonymizes the history so reports, records, and meetings stay intact.
             </p>
-          ) : null}
-        </div>
+
+            {protectedAccount ? (
+              <div className="rounded-2xl border border-[#ead8d3] bg-white p-4 text-sm text-[#8a4a3f]">
+                This protected super-admin account cannot remove itself from Profile because that could lock the whole portal. Use a second protected admin account for the handoff.
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={pending || uploading || accountPending}
+                  onClick={() => {
+                    if (!window.confirm('Deactivate this account now? You will be signed out and an admin will need to restore access later.')) {
+                      return;
+                    }
+
+                    setFeedback(null);
+                    startAccountTransition(async () => {
+                      const result = await deactivateOwnAccountAction();
+                      setFeedback(result);
+                      if (result.success) {
+                        await signOut({ callbackUrl: '/login' });
+                      }
+                    });
+                  }}
+                  className="rounded-2xl border border-[#d8b7b0] bg-white px-5 py-3 text-sm font-semibold text-[#7a2413] disabled:opacity-60"
+                >
+                  {accountPending ? 'Processing...' : 'Deactivate account'}
+                </button>
+                <button
+                  type="button"
+                  disabled={pending || uploading || accountPending}
+                  onClick={() => {
+                    if (!window.confirm('Delete this account permanently? Sign-in access will be removed and your historical activity will be anonymized.')) {
+                      return;
+                    }
+
+                    setFeedback(null);
+                    startAccountTransition(async () => {
+                      const result = await deleteOwnAccountAction();
+                      setFeedback(result);
+                      if (result.success) {
+                        await signOut({ callbackUrl: '/login' });
+                      }
+                    });
+                  }}
+                  className="rounded-2xl bg-[#7a2413] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {accountPending ? 'Processing...' : 'Delete permanently'}
+                </button>
+              </div>
+            )}
+          </div>
+        </details>
 
         {feedback ? (
           <p className={`rounded-2xl px-4 py-3 text-sm ${feedback.success ? 'bg-[#f4effb] text-[#4B248C]' : 'bg-[#fff1ec] text-[#a63e1c]'}`}>
