@@ -215,7 +215,7 @@ export const addExpenseCategorySchema = z.object({
 
 export const addExpenseItemSchema = z.object({
   categoryId: z.number().int().positive(),
-  description: z.string().min(3, 'Enter an expense description.'),
+  description: z.string().max(240).optional().default(''),
   expectedAmount: z.coerce.number().nonnegative().nullable().optional(),
   actualAmount: z.coerce.number().nonnegative().nullable().optional(),
   paidBy: z.string().max(160).optional().default(''),
