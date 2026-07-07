@@ -1117,12 +1117,14 @@ export async function addExpenseItem(user: SessionLikeUser, input: AddExpenseIte
     await assertFinanceAccess(user);
   }
 
+  const normalizedDescription = parsed.description?.trim() || 'Planned expense item';
+
   const result = await runStatement(
     `INSERT INTO expense_items
      (category_id, description, expected_amount, actual_amount, paid_by, payment_status, recorded_by_user_id)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     parsed.categoryId,
-    parsed.description,
+    normalizedDescription,
     parsed.expectedAmount ?? null,
     parsed.actualAmount ?? null,
     parsed.paidBy || null,
