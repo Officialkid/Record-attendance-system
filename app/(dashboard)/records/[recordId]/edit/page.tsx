@@ -6,7 +6,7 @@ import {
   getDepartmentFieldDefinitions,
   getDepartmentRecordById,
   listDepartmentsForUser,
-  listUsers,
+  listUsersVisibleTo,
 } from '@/lib/cap/services';
 
 export default async function EditRecordPage({
@@ -22,13 +22,18 @@ export default async function EditRecordPage({
   }
 
   const session = await getSession();
-  const departments = await listDepartmentsForUser(session!.user);
-  const users = await listUsers();
+  const allDepartments = await listDepartmentsForUser(session!.user);
+  const users = await listUsersVisibleTo(session!.user);
+  const isSystemAdmin =
+    session!.user.systemRole === 'main_admin' || session!.user.systemRole === 'chief_admin';
 
   const fieldDefinitions = Object.fromEntries(
     await Promise.all(
-      departments.map(async (department) => [department.id, await getDepartmentFieldDefinitions(department.id)])
+      allDepartments.map(async (department) => [department.id, await getDepartmentFieldDefinitions(department.id)])
     )
+  );
+  const departments = allDepartments.filter(
+    (department) => (fieldDefinitions[department.id] || []).length > 0
   );
 
   const departmentMembers = Object.fromEntries(
@@ -58,7 +63,8 @@ export default async function EditRecordPage({
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Phase 1</p>
         <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Edit weekly department record</h2>
         <p className="mt-2 text-sm text-[#5f5673]">
-          Update the saved values, visitors, and handler assignment for this weekly submission.
+          Update the saved values, visitors, and handler assignment for this weekly submission without crossing into a
+          different department workflow.
         </p>
       </div>
 
@@ -69,6 +75,8 @@ export default async function EditRecordPage({
         defaultDepartmentId={record.departmentId}
         defaultRecordDate={record.recordDate}
         currentUserId={Number(session!.user.id)}
+        allowHandledBySelection={session!.user.role !== 'member'}
+        allowDepartmentSelection={isSystemAdmin}
         existingRecord={record}
       />
     </section>

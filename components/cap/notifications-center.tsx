@@ -5,6 +5,7 @@ import { useState, useTransition } from 'react';
 
 import {
   markNotificationReadAction,
+  markNotificationUnreadAction,
   runMeetingRemindersAction,
 } from '@/app/actions/cap';
 import type { UserNotification } from '@/lib/cap/types';
@@ -120,7 +121,32 @@ export function NotificationsCenter({
                     >
                       Mark read
                     </button>
-                  ) : null}
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => {
+                        startTransition(async () => {
+                          const result = await markNotificationUnreadAction(notification.id);
+                          setFeedback(result.message);
+                          if (!result.success) {
+                            return;
+                          }
+
+                          setItems((current) =>
+                            current.map((item) =>
+                              item.id === notification.id
+                                ? { ...item, readAt: null }
+                                : item
+                            )
+                          );
+                        });
+                      }}
+                      className="rounded-2xl border border-[#ddd3f0] px-4 py-2 text-sm font-medium text-[#4B248C] disabled:opacity-60"
+                    >
+                      Mark unread
+                    </button>
+                  )}
                 </div>
               </div>
             </article>

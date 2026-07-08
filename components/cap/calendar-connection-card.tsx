@@ -18,7 +18,8 @@ export function CalendarConnectionCard({
     <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
       <h3 className="text-xl font-semibold text-[#241c33]">Calendar connection</h3>
       <p className="mt-2 text-sm text-[#5f5673]">
-        Connect Google Calendar so CIOM Portal can later mirror ministry meeting reminders directly onto your personal calendar.
+        Connect your own Google Calendar so CIOM Portal can mirror ministry meeting reminders onto your personal
+        calendar when needed.
       </p>
 
       <div className="mt-4 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
@@ -27,8 +28,8 @@ export function CalendarConnectionCard({
         </p>
         <p className="mt-2 text-sm text-[#5f5673]">
           {isConnected
-            ? `Connected on ${connectedAt}. CIOM Portal has stored your Google Calendar refresh token for later event sync features.`
-            : 'CIOM Portal reminders already work without calendar sync. Connect here to enable Google Calendar token storage for future direct event mirroring.'}
+            ? `Connected on ${connectedAt}. CIOM Portal has stored your Google Calendar refresh token for later event sync features on this account only.`
+            : 'CIOM Portal reminders already work without calendar sync. Each person who wants events mirrored to Google Calendar connects once from their own profile.'}
         </p>
       </div>
 

@@ -1951,32 +1951,82 @@ function mapGeneratedReport(row: {
   generated_by_name: string | null;
   generated_at: string;
 }): GeneratedReport {
+  const parsedSnapshot = parseJsonValue<GeneratedReportSnapshot>(row.data_snapshot_json, {
+    departmentId: row.department_id,
+    departmentName: '',
+    periodType: row.period_type,
+    periodStart: row.period_start,
+    periodEnd: row.period_end,
+    previousPeriodStart: row.period_start,
+    previousPeriodEnd: row.period_end,
+    generatedAt: row.generated_at,
+    recordCount: 0,
+    previousRecordCount: 0,
+    totalVisitors: 0,
+    previousTotalVisitors: 0,
+    totals: [],
+    anomalyCount: 0,
+    anomalyFields: [],
+    netPosition: null,
+    handlerSummary: [],
+  });
+  const toFiniteNumber = (value: unknown) => {
+    const normalized =
+      typeof value === 'string' ? Number(value.replace(/,/g, '').trim() || '0') : Number(value ?? 0);
+    return Number.isFinite(normalized) ? normalized : 0;
+  };
+  const normalizedSnapshot: GeneratedReportSnapshot = {
+    ...parsedSnapshot,
+    departmentId: toFiniteNumber(parsedSnapshot.departmentId),
+    recordCount: toFiniteNumber(parsedSnapshot.recordCount),
+    previousRecordCount: toFiniteNumber(parsedSnapshot.previousRecordCount),
+    totalVisitors: toFiniteNumber(parsedSnapshot.totalVisitors),
+    previousTotalVisitors: toFiniteNumber(parsedSnapshot.previousTotalVisitors),
+    totals: Array.isArray(parsedSnapshot.totals)
+      ? parsedSnapshot.totals.map((metric) => ({
+          ...metric,
+          total: toFiniteNumber(metric.total),
+          average: toFiniteNumber(metric.average),
+          previousTotal: toFiniteNumber(metric.previousTotal),
+          changePercent:
+            metric.changePercent === null ? null : toFiniteNumber(metric.changePercent),
+        }))
+      : [],
+    anomalyCount: toFiniteNumber(parsedSnapshot.anomalyCount),
+    netPosition: parsedSnapshot.netPosition
+      ? {
+          total: toFiniteNumber(parsedSnapshot.netPosition.total),
+          previousTotal: toFiniteNumber(parsedSnapshot.netPosition.previousTotal),
+          changePercent:
+            parsedSnapshot.netPosition.changePercent === null
+              ? null
+              : toFiniteNumber(parsedSnapshot.netPosition.changePercent),
+        }
+      : null,
+    handlerSummary: Array.isArray(parsedSnapshot.handlerSummary)
+      ? parsedSnapshot.handlerSummary.map((handler) => ({
+          ...handler,
+          handledByUserId: toFiniteNumber(handler.handledByUserId),
+          weeksHandled: toFiniteNumber(handler.weeksHandled),
+          totalVisitors: toFiniteNumber(handler.totalVisitors),
+          metricTotals: Array.isArray(handler.metricTotals)
+            ? handler.metricTotals.map((metric) => ({
+                ...metric,
+                value: toFiniteNumber(metric.value),
+              }))
+            : [],
+        }))
+      : [],
+  };
+
   return {
     id: row.id,
     departmentId: row.department_id,
     periodType: row.period_type,
     periodStart: row.period_start,
     periodEnd: row.period_end,
-    summaryText: row.summary_text,
-    dataSnapshot: parseJsonValue<GeneratedReportSnapshot>(row.data_snapshot_json, {
-      departmentId: row.department_id,
-      departmentName: '',
-      periodType: row.period_type,
-      periodStart: row.period_start,
-      periodEnd: row.period_end,
-      previousPeriodStart: row.period_start,
-      previousPeriodEnd: row.period_end,
-      generatedAt: row.generated_at,
-      recordCount: 0,
-      previousRecordCount: 0,
-      totalVisitors: 0,
-      previousTotalVisitors: 0,
-      totals: [],
-      anomalyCount: 0,
-      anomalyFields: [],
-      netPosition: null,
-      handlerSummary: [],
-    }),
+    summaryText: row.summary_text.replace(/\*\*/g, '').trim(),
+    dataSnapshot: normalizedSnapshot,
     generatedByUserId: row.generated_by_user_id,
     generatedByName: row.generated_by_name,
     generatedAt: row.generated_at,

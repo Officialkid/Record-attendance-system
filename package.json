@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "node scripts/run-next-build.js",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "reset:main-admin": "node scripts/reset-main-admin-only.mjs",
+    "verify:service-flow": "node scripts/run-service-flow-check.cjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1078.0",

@@ -10,6 +10,10 @@ function formatMetricValue(value: number) {
   return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
+function coerceNumber(value: number) {
+  return Number.isFinite(value) ? value : 0;
+}
+
 export default async function GeneratedReportPrintPage({
   params,
 }: {
@@ -81,15 +85,15 @@ export default async function GeneratedReportPrintPage({
         <div className="mt-8 grid gap-4 md:grid-cols-4">
           <div className="rounded-3xl bg-[#fbf9fe] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-[#8a7ca7]">Records</p>
-            <p className="mt-2 text-3xl font-semibold text-[#241c33]">{snapshot.recordCount}</p>
+            <p className="mt-2 text-3xl font-semibold text-[#241c33]">{coerceNumber(Number(snapshot.recordCount))}</p>
           </div>
           <div className="rounded-3xl bg-[#fbf9fe] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-[#8a7ca7]">Visitors</p>
-            <p className="mt-2 text-3xl font-semibold text-[#241c33]">{snapshot.totalVisitors}</p>
+            <p className="mt-2 text-3xl font-semibold text-[#241c33]">{coerceNumber(Number(snapshot.totalVisitors))}</p>
           </div>
           <div className="rounded-3xl bg-[#fbf9fe] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-[#8a7ca7]">Anomalies</p>
-            <p className="mt-2 text-3xl font-semibold text-[#241c33]">{snapshot.anomalyCount}</p>
+            <p className="mt-2 text-3xl font-semibold text-[#241c33]">{coerceNumber(Number(snapshot.anomalyCount))}</p>
           </div>
           <div className="rounded-3xl bg-[#fbf9fe] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-[#8a7ca7]">Net Position</p>

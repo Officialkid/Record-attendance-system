@@ -10,6 +10,7 @@ import {
   createStandaloneContributionLedgerAction,
   createStandaloneExpenseLedgerAction,
   deleteEventAction,
+  importCampBudgetWorkbookAction,
   setEventVisibilityAction,
 } from '@/app/actions/cap';
 import type { EventListItem, UserRecord } from '@/lib/cap/types';
@@ -141,6 +142,9 @@ export function ProgramsHub({
   const [selectedSide, setSelectedSide] = useState<'organizer' | 'finance' | 'admin'>('organizer');
   const [contributionLedgerName, setContributionLedgerName] = useState('');
   const [expenseLedgerName, setExpenseLedgerName] = useState('');
+  const [budgetEventName, setBudgetEventName] = useState('Jewels 2025');
+  const [budgetSheetPrefix, setBudgetSheetPrefix] = useState('Jewels');
+  const [budgetWorkbookFile, setBudgetWorkbookFile] = useState<File | null>(null);
 
   const totalCollected = events.reduce((sum, event) => sum + event.totalCollected, 0);
   const totalSpent = events.reduce((sum, event) => sum + event.totalSpent, 0);
@@ -257,6 +261,59 @@ export function ProgramsHub({
                 Programs members can review events here. Event creation is available to Programs admins and super admins.
               </div>
             )}
+
+            {canManagePrograms ? (
+              <details className="mt-5 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+                  Import fixed camp budget workbook
+                </summary>
+                <p className="mt-3 text-sm text-[#5f5673]">
+                  Use this for camp files that keep the same budget and actual-price-list structure. It imports the
+                  Programs expense side now and leaves contribution participants for later.
+                </p>
+                <div className="mt-4 space-y-3">
+                  <input
+                    value={budgetEventName}
+                    onChange={(event) => setBudgetEventName(event.target.value)}
+                    placeholder="Jewels 2025"
+                    className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
+                  />
+                  <input
+                    value={budgetSheetPrefix}
+                    onChange={(event) => setBudgetSheetPrefix(event.target.value)}
+                    placeholder="Jewels"
+                    className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
+                  />
+                  <input
+                    type="file"
+                    accept=".xlsx"
+                    onChange={(event) => setBudgetWorkbookFile(event.target.files?.[0] || null)}
+                    className="w-full rounded-2xl border border-[#d9cfee] bg-white px-4 py-3 text-sm text-[#241c33] outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={pending || !budgetEventName.trim() || !budgetSheetPrefix.trim() || !budgetWorkbookFile}
+                    onClick={() =>
+                      runAction(() => {
+                        const formData = new FormData();
+                        formData.set('name', budgetEventName.trim());
+                        formData.set('sheetPrefix', budgetSheetPrefix.trim());
+                        formData.set('defaultExpectedAmount', '1');
+                        if (budgetWorkbookFile) {
+                          formData.set('workbook', budgetWorkbookFile);
+                        }
+                        return importCampBudgetWorkbookAction(formData);
+                      }, () => {
+                        setBudgetWorkbookFile(null);
+                      })
+                    }
+                    className="rounded-2xl bg-[#4B248C] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
+                  >
+                    Import workbook into Programs
+                  </button>
+                </div>
+              </details>
+            ) : null}
           </article>
         </div>
       </section>

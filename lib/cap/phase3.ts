@@ -7,6 +7,7 @@ import {
   addExpenseCategorySchema,
   addExpenseItemSchema,
   createEventSchema,
+  importCampBudgetWorkbookSchema,
   createStandaloneContributionLedgerSchema,
   createStandaloneExpenseLedgerSchema,
   deleteEventSchema,
@@ -36,6 +37,7 @@ import type {
   EventRecord,
   ExpenseCategory,
   ExpenseItem,
+  ImportCampBudgetWorkbookInput,
   PaymentStatus,
   RecordContributionPaymentInput,
   SetActiveUserContextInput,
@@ -43,6 +45,7 @@ import type {
   UpdateEventInput,
   UserContextOption,
 } from './types';
+import { parseCampBudgetWorkbook } from './program-budget-import';
 
 type SessionLikeUser = {
   id: string;
@@ -419,6 +422,55 @@ async function assertLedgerActiveByEvent(eventId: number, table: 'contribution_l
   }
 }
 
+async function createEventWithLedgers(
+  user: SessionLikeUser,
+  input: { name: string; defaultExpectedAmount: number }
+) {
+  const programs = await getProgramsDepartment();
+
+  const eventResult = await runStatement(
+    `INSERT INTO events (department_id, name, created_by_user_id)
+     VALUES (?, ?, ?)`,
+    programs.id,
+    input.name,
+    Number(user.id)
+  );
+  const eventId = Number(eventResult.lastInsertRowid);
+
+  await runStatement(
+    `INSERT OR IGNORE INTO event_memberships
+     (event_id, user_id, side, status, joined_at)
+     VALUES (?, ?, 'admin', 'approved', datetime('now'))`,
+    eventId,
+    Number(user.id)
+  );
+
+  const contributionLedgerResult = await runStatement(
+    `INSERT INTO contribution_ledgers
+     (name, owner_department_id, event_id, default_expected_amount, status)
+     VALUES (?, ?, ?, ?, 'active')`,
+    `${input.name} - Contributions`,
+    programs.id,
+    eventId,
+    input.defaultExpectedAmount
+  );
+
+  const expenseLedgerResult = await runStatement(
+    `INSERT INTO expense_ledgers
+     (name, owner_department_id, event_id, status)
+     VALUES (?, ?, ?, 'active')`,
+    `${input.name} - Expenses`,
+    programs.id,
+    eventId
+  );
+
+  return {
+    eventId,
+    contributionLedgerId: Number(contributionLedgerResult.lastInsertRowid),
+    expenseLedgerId: Number(expenseLedgerResult.lastInsertRowid),
+  };
+}
+
 export async function listUserContextOptions(user: SessionLikeUser): Promise<UserContextOption[]> {
   assertAuthenticated(user);
   const stored = await getStoredContext(Number(user.id));
@@ -632,45 +684,66 @@ export async function listProgramEventsForUser(user: SessionLikeUser): Promise<E
 export async function createEvent(user: SessionLikeUser, input: CreateEventInput) {
   await assertProgramsAdminAccess(user);
   const parsed = createEventSchema.parse(input);
-  const programs = await getProgramsDepartment();
+  const result = await createEventWithLedgers(user, parsed);
+  return result.eventId;
+}
 
-  const eventResult = await runStatement(
-    `INSERT INTO events (department_id, name, created_by_user_id)
-     VALUES (?, ?, ?)`,
-    programs.id,
-    parsed.name,
-    Number(user.id)
+export async function importCampBudgetWorkbook(
+  user: SessionLikeUser,
+  input: ImportCampBudgetWorkbookInput & { workbook: File }
+) {
+  await assertProgramsAdminAccess(user);
+  const parsed = importCampBudgetWorkbookSchema.parse(input);
+
+  const existingEvent = await firstRow<{ id: number }>(
+    'SELECT id FROM events WHERE lower(name) = lower(?)',
+    parsed.name
   );
-  const eventId = Number(eventResult.lastInsertRowid);
+  if (existingEvent) {
+    throw new Error(`An event named "${parsed.name}" already exists. Choose a different event name first.`);
+  }
 
-  await runStatement(
-    `INSERT OR IGNORE INTO event_memberships
-     (event_id, user_id, side, status, joined_at)
-     VALUES (?, ?, 'admin', 'approved', datetime('now'))`,
+  const workbookBuffer = Buffer.from(await input.workbook.arrayBuffer());
+  const importedBudget = await parseCampBudgetWorkbook(workbookBuffer, parsed.sheetPrefix);
+  const { eventId, expenseLedgerId } = await createEventWithLedgers(user, parsed);
+
+  const categoryIds = new Map<string, number>();
+  for (const categoryName of importedBudget.categories) {
+    const result = await runStatement(
+      `INSERT INTO expense_categories (ledger_id, name)
+       VALUES (?, ?)`,
+      expenseLedgerId,
+      categoryName
+    );
+    categoryIds.set(categoryName, Number(result.lastInsertRowid));
+  }
+
+  for (const item of importedBudget.items) {
+    const categoryId = categoryIds.get(item.categoryName);
+    if (!categoryId) {
+      continue;
+    }
+
+    await runStatement(
+      `INSERT INTO expense_items
+       (category_id, description, expected_amount, actual_amount, paid_by, payment_status, recorded_by_user_id)
+       VALUES (?, ?, ?, ?, ?, 'paid', ?)`,
+      categoryId,
+      item.description,
+      item.expectedAmount,
+      item.actualAmount,
+      `${parsed.sheetPrefix} workbook import`,
+      Number(user.id)
+    );
+  }
+
+  return {
     eventId,
-    Number(user.id)
-  );
-
-  await runStatement(
-    `INSERT INTO contribution_ledgers
-     (name, owner_department_id, event_id, default_expected_amount, status)
-     VALUES (?, ?, ?, ?, 'active')`,
-    `${parsed.name} - Contributions`,
-    programs.id,
-    eventId,
-    parsed.defaultExpectedAmount
-  );
-
-  await runStatement(
-    `INSERT INTO expense_ledgers
-     (name, owner_department_id, event_id, status)
-     VALUES (?, ?, ?, 'active')`,
-    `${parsed.name} - Expenses`,
-    programs.id,
-    eventId
-  );
-
-  return eventId;
+    importedItemCount: importedBudget.items.length,
+    importedCategoryCount: importedBudget.categories.length,
+    expectedTotal: importedBudget.expectedTotal,
+    actualTotal: importedBudget.actualTotal,
+  };
 }
 
 export async function createStandaloneContributionLedger(

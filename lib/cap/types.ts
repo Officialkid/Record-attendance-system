@@ -585,6 +585,12 @@ export interface CreateEventInput {
   defaultExpectedAmount: number;
 }
 
+export interface ImportCampBudgetWorkbookInput {
+  name: string;
+  sheetPrefix: string;
+  defaultExpectedAmount?: number;
+}
+
 export interface CreateStandaloneContributionLedgerInput {
   name: string;
   defaultExpectedAmount: number;

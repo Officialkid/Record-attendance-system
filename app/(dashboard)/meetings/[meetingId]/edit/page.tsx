@@ -2,7 +2,11 @@ import { notFound } from 'next/navigation';
 
 import { MeetingForm } from '@/components/cap/meeting-form';
 import { getSession } from '@/lib/cap/auth';
-import { getMeetingById, listDepartmentsForUser, listUsers } from '@/lib/cap/services';
+import {
+  getMeetingById,
+  listDepartmentsForUser,
+  listUsersVisibleTo,
+} from '@/lib/cap/services';
 
 export default async function EditMeetingPage({
   params,
@@ -18,7 +22,7 @@ export default async function EditMeetingPage({
 
   const session = await getSession();
   const departments = await listDepartmentsForUser(session!.user);
-  const users = await listUsers();
+  const users = await listUsersVisibleTo(session!.user);
 
   let meeting;
   try {

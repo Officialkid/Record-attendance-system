@@ -28,7 +28,8 @@ export default async function ReportArchivePage({
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Report archive</p>
           <h2 className="mt-2 text-3xl font-semibold text-[#241c33]">Generated leadership reports</h2>
           <p className="mt-2 text-sm text-[#5f5673]">
-            Review every persisted executive summary generated from the CIOM Portal insights engine.
+            Review every persisted executive summary generated from the CIOM Portal insights engine and reopen the DOCX
+            export whenever leadership needs a shareable version.
           </p>
         </div>
 
@@ -54,6 +55,35 @@ export default async function ReportArchivePage({
             Back to Insights
           </Link>
         </form>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
+        <article className="rounded-[24px] border border-[#eadfb8] bg-[#fffaf0] p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#b6841a]">Stored output</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Every report keeps its snapshot</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Each saved report stores the summary text together with the figures, anomalies, and totals that produced
+            it, so leadership can trace what the report was based on.
+          </p>
+        </article>
+
+        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">DOCX export</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Use the Word file for sharing</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            The DOCX action turns the saved report into a shareable Word document for leadership circulation without
+            forcing you to rebuild the summary each time.
+          </p>
+        </article>
+
+        <article className="rounded-[24px] border border-[#ddd3f0] bg-white p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#4B248C]">Archive use</p>
+          <h3 className="mt-2 text-xl font-semibold text-[#241c33]">Come here for history, not generation</h3>
+          <p className="mt-2 text-sm text-[#5f5673]">
+            Generate fresh reports from Insights, then use this archive to reopen older summaries, compare periods, and
+            export Word copies again.
+          </p>
+        </article>
       </div>
 
       <article className="overflow-hidden rounded-[28px] border border-[#ddd3f0] bg-white shadow-sm">
@@ -104,7 +134,8 @@ export default async function ReportArchivePage({
               {reports.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-[#5f5673]">
-                    No persisted reports exist for this department yet.
+                    No persisted reports exist for this department yet. Generate the first one from Insights to start
+                    this archive.
                   </td>
                 </tr>
               ) : null}

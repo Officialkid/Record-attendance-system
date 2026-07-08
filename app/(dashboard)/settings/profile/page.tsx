@@ -36,6 +36,12 @@ export default async function ProfilePage() {
     <section className="space-y-4">
       <ProfileCard user={user} assignedDepartments={assignedDepartments} />
 
+      <div className="rounded-2xl border border-[#ddd3f0] bg-white p-4 text-sm text-[#5f5673] shadow-sm">
+        This page is your personal control panel. Use it to confirm department access, connect your own Google
+        Calendar if you want personal event mirroring, update your avatar, and check what CIOM Portal thinks your
+        current role is.
+      </div>
+
       {user.status === 'pending' && assignedDepartments.length === 0 ? (
         <div className="rounded-2xl border border-[#eadfb8] bg-[#fffbf0] p-4 text-sm text-[#5f5673]">
           Your account is signed in successfully, but your ministry workspace still needs a department invite link.

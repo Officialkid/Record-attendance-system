@@ -10,6 +10,7 @@ import {
   addExpenseCategory,
   addExpenseItem,
   createEvent,
+  importCampBudgetWorkbook,
   createStandaloneContributionLedger,
   createStandaloneExpenseLedger,
   deleteEvent,
@@ -777,6 +778,39 @@ export async function createEventAction(input: Parameters<typeof createEvent>[1]
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Failed to create event.',
+    };
+  }
+}
+
+export async function importCampBudgetWorkbookAction(formData: FormData) {
+  try {
+    const user = await requireSessionUser();
+    const workbook = formData.get('workbook');
+    if (!(workbook instanceof File) || workbook.size === 0) {
+      throw new Error('Choose the workbook file before importing.');
+    }
+
+    const result = await importCampBudgetWorkbook(user, {
+      name: String(formData.get('name') || ''),
+      sheetPrefix: String(formData.get('sheetPrefix') || ''),
+      defaultExpectedAmount: Number(formData.get('defaultExpectedAmount') || 1),
+      workbook,
+    });
+
+    await revalidateProgramsEventPaths(result.eventId);
+    revalidatePath('/dashboard');
+
+    return {
+      success: true,
+      message: `Imported ${result.importedItemCount} expense lines into ${String(
+        formData.get('name') || ''
+      )}. Expected ${result.expectedTotal.toLocaleString()} and final ${result.actualTotal.toLocaleString()}.`,
+      ...result,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to import the workbook budget.',
     };
   }
 }

@@ -96,6 +96,20 @@ export async function getCapHealthSnapshot() {
       ...cronMissingVars,
     ])
   );
+  const dynamicGuidanceNote =
+    configuredDriver === 'postgres'
+      ? reachable
+        ? 'CIOM Portal is running on the Postgres/Neon path and the database connection is healthy.'
+        : databaseMissingVars.length > 0
+          ? 'CIOM Portal is configured for the Postgres/Neon runtime path, but required database environment values are still missing.'
+          : 'CIOM Portal is configured for the Postgres/Neon runtime path, but the current database connection check is failing.'
+      : configuredDriver === 'd1-remote'
+        ? reachable
+          ? 'CIOM Portal is running on the Cloudflare D1 path and the database connection is healthy.'
+          : databaseMissingVars.length > 0
+            ? 'CIOM Portal is configured for the D1 runtime path, but required Cloudflare environment values are still missing.'
+            : 'CIOM Portal is configured for the D1 runtime path, but the current database connection check is failing.'
+        : 'CIOM Portal is using the local SQLite development fallback.';
 
   return {
     app: {
@@ -195,12 +209,7 @@ export async function getCapHealthSnapshot() {
                 'GOOGLE_CLIENT_SECRET',
               ]
             : ['NEXTAUTH_SECRET', 'AUTH_SECRET', 'CAP_ADMIN_EMAIL', 'CRON_SECRET'],
-      note:
-        configuredDriver === 'postgres'
-          ? 'CIOM Portal is configured for the Postgres/Neon runtime path. Live proof still requires a working DATABASE_URL.'
-          : configuredDriver === 'd1-remote'
-            ? 'CIOM Portal is configured for the D1 runtime path. Live proof still requires working Cloudflare credentials.'
-            : 'CIOM Portal is using the local SQLite development fallback.',
+      note: dynamicGuidanceNote,
     },
   };
 }

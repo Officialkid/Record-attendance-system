@@ -181,6 +181,12 @@ export const createEventSchema = z.object({
   defaultExpectedAmount: z.coerce.number().positive('Enter a positive expected amount.'),
 });
 
+export const importCampBudgetWorkbookSchema = z.object({
+  name: z.string().min(3, 'Enter an event name.'),
+  sheetPrefix: z.string().min(2, 'Enter the workbook sheet prefix, for example Jewels.'),
+  defaultExpectedAmount: z.coerce.number().positive('Enter a positive default contribution amount.').default(1),
+});
+
 export const createStandaloneContributionLedgerSchema = z.object({
   name: z.string().min(3, 'Enter a ledger name.'),
   defaultExpectedAmount: z.coerce.number().positive('Enter a positive expected amount.'),
