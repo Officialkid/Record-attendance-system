@@ -87,8 +87,21 @@ export function ProgramsEventWorkspace({
 
   const hasOrganizerAccess = detail.activeSide === 'organizer' || detail.canManageEvent;
   const hasFinanceAccess = detail.activeSide === 'finance' || detail.canManageEvent;
+  const defaultWorkspaceView = detail.canManageEvent ? null : detail.activeSide === 'finance' ? 'finance' : 'organizer';
   const workspaceView =
-    selectedView || (detail.canManageEvent ? null : detail.activeSide === 'finance' ? 'finance' : 'organizer');
+    selectedView === 'organizer'
+      ? hasOrganizerAccess
+        ? 'organizer'
+        : hasFinanceAccess
+          ? 'finance'
+          : null
+      : selectedView === 'finance'
+        ? hasFinanceAccess
+          ? 'finance'
+          : hasOrganizerAccess
+            ? 'organizer'
+            : null
+        : defaultWorkspaceView;
 
   const totalCollected = detail.financialSummary?.totalCollected || 0;
   const totalSpent = detail.financialSummary?.totalSpent || 0;
@@ -310,52 +323,56 @@ export function ProgramsEventWorkspace({
           </section>
 
           <section className="grid gap-4 md:grid-cols-2">
-            <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-              <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
-                Recent collections
-              </summary>
-              <div className="mt-3 space-y-3">
-                {recentPayments.length === 0 ? (
-                  <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                    No payments recorded yet.
-                  </p>
-                ) : (
-                  recentPayments.map((payment) => {
-                    const participant = detail.participants.find((item) => item.id === payment.participantId);
-                    return (
-                      <div key={payment.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                        <p className="font-semibold text-[#241c33]">{participant?.name || 'Participant'}</p>
+            {hasOrganizerAccess ? (
+              <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+                  Recent collections
+                </summary>
+                <div className="mt-3 space-y-3">
+                  {recentPayments.length === 0 ? (
+                    <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                      No payments recorded yet.
+                    </p>
+                  ) : (
+                    recentPayments.map((payment) => {
+                      const participant = detail.participants.find((item) => item.id === payment.participantId);
+                      return (
+                        <div key={payment.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                          <p className="font-semibold text-[#241c33]">{participant?.name || 'Participant'}</p>
+                          <p className="mt-1 text-sm text-[#5f5673]">
+                            Paid {payment.amount.toLocaleString()} on {payment.paymentDate}
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </details>
+            ) : null}
+
+            {hasFinanceAccess ? (
+              <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
+                <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
+                  Recent expenses
+                </summary>
+                <div className="mt-3 space-y-3">
+                  {recentExpenses.length === 0 ? (
+                    <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
+                      No expense items recorded yet.
+                    </p>
+                  ) : (
+                    recentExpenses.map((item) => (
+                      <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
+                        <p className="font-semibold text-[#241c33]">{item.description}</p>
                         <p className="mt-1 text-sm text-[#5f5673]">
-                          Paid {payment.amount.toLocaleString()} on {payment.paymentDate}
+                          Actual: {item.actualAmount ?? '-'} • Status: {item.paymentStatus}
                         </p>
                       </div>
-                    );
-                  })
-                )}
-              </div>
-            </details>
-
-            <details className="rounded-[24px] border border-[#ddd3f0] bg-white p-5 shadow-sm">
-              <summary className="cursor-pointer list-none text-sm font-semibold text-[#241c33]">
-                Recent expenses
-              </summary>
-              <div className="mt-3 space-y-3">
-                {recentExpenses.length === 0 ? (
-                  <p className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] px-4 py-3 text-sm text-[#5f5673]">
-                    No expense items recorded yet.
-                  </p>
-                ) : (
-                  recentExpenses.map((item) => (
-                    <div key={item.id} className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-                      <p className="font-semibold text-[#241c33]">{item.description}</p>
-                      <p className="mt-1 text-sm text-[#5f5673]">
-                        Actual: {item.actualAmount ?? '-'} • Status: {item.paymentStatus}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </details>
+                    ))
+                  )}
+                </div>
+              </details>
+            ) : null}
           </section>
         </>
       ) : null}

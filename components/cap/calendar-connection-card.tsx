@@ -21,6 +21,11 @@ export function CalendarConnectionCard({
         Connect your own Google Calendar so CIOM Portal can mirror ministry meeting reminders onto your personal
         calendar when needed.
       </p>
+      <p className="mt-2 text-sm text-[#7a7190]">
+        If Google shows an unauthorized error during connection, the Google OAuth app is usually still in testing mode.
+        Add that person as a Google Auth Platform test user or publish the consent screen, and confirm the production
+        redirect URI points to `/api/auth/callback/google`.
+      </p>
 
       <div className="mt-4 rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
         <p className="text-sm font-medium text-[#241c33]">

@@ -849,34 +849,40 @@ export async function getEventDetail(
   requestedSide?: string | null
 ): Promise<EventDetail> {
   const access = await resolveEventAccess(user, eventId, requestedSide);
+  const canAccessOrganizerWorkspace = access.sides.includes('organizer') || access.sides.includes('admin');
+  const canAccessFinanceWorkspace = access.sides.includes('finance') || access.sides.includes('admin');
 
-  const contributionLedgerRow = await firstRow<{
-    id: number;
-    name: string;
-    owner_department_id: number | null;
-    event_id: number | null;
-    default_expected_amount: number;
-    status: 'active' | 'closed';
-    created_at: string;
-  }>(
-    `SELECT id, name, owner_department_id, event_id, default_expected_amount, status, created_at
-     FROM contribution_ledgers
-     WHERE event_id = ?`,
-    eventId
-  );
-  const expenseLedgerRow = await firstRow<{
-    id: number;
-    name: string;
-    owner_department_id: number | null;
-    event_id: number | null;
-    status: 'active' | 'closed';
-    created_at: string;
-  }>(
-    `SELECT id, name, owner_department_id, event_id, status, created_at
-     FROM expense_ledgers
-     WHERE event_id = ?`,
-    eventId
-  );
+  const contributionLedgerRow = canAccessOrganizerWorkspace
+    ? await firstRow<{
+        id: number;
+        name: string;
+        owner_department_id: number | null;
+        event_id: number | null;
+        default_expected_amount: number;
+        status: 'active' | 'closed';
+        created_at: string;
+      }>(
+        `SELECT id, name, owner_department_id, event_id, default_expected_amount, status, created_at
+         FROM contribution_ledgers
+         WHERE event_id = ?`,
+        eventId
+      )
+    : undefined;
+  const expenseLedgerRow = canAccessFinanceWorkspace
+    ? await firstRow<{
+        id: number;
+        name: string;
+        owner_department_id: number | null;
+        event_id: number | null;
+        status: 'active' | 'closed';
+        created_at: string;
+      }>(
+        `SELECT id, name, owner_department_id, event_id, status, created_at
+         FROM expense_ledgers
+         WHERE event_id = ?`,
+        eventId
+      )
+    : undefined;
 
   const participants = contributionLedgerRow
     ? await allRows<{
@@ -975,7 +981,18 @@ export async function getEventDetail(
       )
     : [];
 
-  const totalCollected = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalCollected = access.canViewReconciliation
+    ? (
+        await firstRow<{ total_collected: number | null }>(
+          `SELECT COALESCE(SUM(contribution_payments.amount), 0) AS total_collected
+           FROM contribution_ledgers
+           LEFT JOIN contribution_participants ON contribution_participants.ledger_id = contribution_ledgers.id
+           LEFT JOIN contribution_payments ON contribution_payments.participant_id = contribution_participants.id
+           WHERE contribution_ledgers.event_id = ?`,
+          eventId
+        )
+      )?.total_collected || 0
+    : payments.reduce((sum, payment) => sum + payment.amount, 0);
   const totalSpent = expenseItems.reduce((sum, item) => sum + (item.actual_amount || 0), 0);
 
   const mappedParticipants: ContributionParticipant[] = participants.map((row) => {

@@ -14,7 +14,6 @@ import {
   setEventVisibilityAction,
 } from '@/app/actions/cap';
 import type { EventListItem, UserRecord } from '@/lib/cap/types';
-import { ProgramsEventSummaryChart } from './programs-event-summary-chart';
 
 type EventMembership = {
   id: number;
@@ -31,10 +30,6 @@ type StandaloneLedgers = {
 };
 
 function formatCount(value: number) {
-  return value.toLocaleString();
-}
-
-function formatCurrencyShort(value: number) {
   return value.toLocaleString();
 }
 
@@ -146,14 +141,8 @@ export function ProgramsHub({
   const [budgetSheetPrefix, setBudgetSheetPrefix] = useState('Jewels');
   const [budgetWorkbookFile, setBudgetWorkbookFile] = useState<File | null>(null);
 
-  const totalCollected = events.reduce((sum, event) => sum + event.totalCollected, 0);
-  const totalSpent = events.reduce((sum, event) => sum + event.totalSpent, 0);
-  const totalBalance = events.reduce((sum, event) => sum + event.balanceRetained, 0);
-  const totalParticipants = events.reduce((sum, event) => sum + event.participantCount, 0);
-  const totalExpenseItems = events.reduce((sum, event) => sum + event.expenseItemCount, 0);
   const recentEvents = events.filter((event) => event.status === 'active');
   const pastEvents = events.filter((event) => event.status === 'ended');
-  const collectionCoverage = totalCollected > 0 ? Math.round((totalSpent / totalCollected) * 100) : 0;
   const runAction = (task: () => Promise<{ success: boolean; message: string }>, onSuccess?: () => void) => {
     setError('');
     setMessage('');
@@ -208,8 +197,8 @@ export function ProgramsHub({
                 <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(recentEvents.length)}</p>
               </div>
               <div className="rounded-2xl border border-[#e6def4] bg-white/80 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Net balance</p>
-                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(totalBalance)}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-[#7a7190]">Archived events</p>
+                <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCount(pastEvents.length)}</p>
               </div>
             </div>
           </div>
@@ -321,48 +310,20 @@ export function ProgramsHub({
       {message ? <p className="rounded-2xl bg-[#f4fff4] px-4 py-3 text-sm text-[#255b2f]">{message}</p> : null}
       {error ? <p className="rounded-2xl bg-[#fff1ec] px-4 py-3 text-sm text-[#a63e1c]">{error}</p> : null}
 
-      <details className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm" open>
-        <summary className="cursor-pointer list-none">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Department analysis</p>
-              <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Shared analysis</h3>
-            </div>
-            <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
-              {recentEvents.length} recent • {pastEvents.length} past
-            </div>
-          </div>
-        </summary>
-
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-            <p className="text-xs text-[#5f5673]">Collected</p>
-            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCurrencyShort(totalCollected)}</p>
-          </div>
-          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-            <p className="text-xs text-[#5f5673]">Spent</p>
-            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCurrencyShort(totalSpent)}</p>
-          </div>
-          <div className="rounded-2xl border border-[#e6def4] bg-[#fbf9fe] p-4">
-            <p className="text-xs text-[#5f5673]">Balance</p>
-            <p className="mt-2 text-2xl font-semibold text-[#241c33]">{formatCurrencyShort(totalBalance)}</p>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-[24px] border border-[#ddd3f0] bg-[#f8f5fd] p-4">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-[#241c33]">Committee chart</p>
-            <p className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#4B248C]">
-              Coverage {collectionCoverage}%
+      <section className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#C9A461]">Event access</p>
+            <h3 className="mt-2 text-2xl font-semibold text-[#241c33]">Per-event dashboards only</h3>
+            <p className="mt-2 max-w-3xl text-sm text-[#5f5673]">
+              Collections and expenses stay inside each event. Open one event below to view its own organizer or expenses workspace without mixing figures across different programs.
             </p>
           </div>
-          <ProgramsEventSummaryChart
-            totalCollected={totalCollected}
-            totalSpent={totalSpent}
-            balanceRetained={totalBalance}
-          />
+          <div className="rounded-full bg-[#ede7f7] px-3 py-1 text-xs font-semibold text-[#4B248C]">
+            {recentEvents.length} recent • {pastEvents.length} past
+          </div>
         </div>
-      </details>
+      </section>
 
       <section id="recent-events" className="space-y-6">
         <article className="rounded-[28px] border border-[#ddd3f0] bg-white p-6 shadow-sm">
